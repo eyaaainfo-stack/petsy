@@ -1,0 +1,54 @@
+{
+    "choose_language_title":"choose your language",
+    "next_button" : "next",
+    "🇹🇳   Arabe" : "🇹🇳  Arabic",
+    "🇫🇷   Français" : "🇫🇷  French",
+    "🇬🇧   English" : "🇬🇧  English",
+    "onboarding_title_1": "Find a trusted pet sitter",
+    "onboarding_subtitle_1": "Entrust your furry friend to passionnate caregivers near you, with complete peace of mind.",
+    "onboarding_title_2": "Book with peace of mind",
+    "onboarding_subtitle_2": "Add, edit or trackyour bookings in seconds -stress-free.",
+    "onboarding_title_3": "Stay in touch with your ease",
+    "onboarding_subtitle_3": "Chat directly with each other anytime and feel reassured through the sstay.",
+    "onboarding_title_4": "Manage your schedule with ease",         
+    "onboarding_subtitle_4": "Accept or decline booking requests based on your availability you're in control.",
+    "skip_button" : "skip",
+    "get_started_button" : "get started",
+     "welcome_title": "Welcome to PETSY",
+    "welcome_subtitle": "We are so happy to see you here",
+     "choose_account_type_title": "Choose your account type",
+
+    "account_type_owner_title": "Pet Owner",
+    "account_type_owner_description": "I'm looking for trusted care for my pet.",
+
+    "account_type_sitter_title": "Pet Sitter",
+    "account_type_sitter_description": "I take care of pets and offer my sitting services.",
+
+    "account_type_admin_title": "Admin",
+    "account_type_admin_description": "I manage and oversee the Petsy platform.",
+
+    "account_type_courier_title": "Petsy Courier",
+    "account_type_courier_description": "I ensure your pet's transport, safely.",
+     "admin_badge_label": "Admin",
+    "admin_login_title": "Admin Login",
+    "admin_login_subtitle": "Sign in to manage the Petsy platform",
+    "email_hint": "Email",
+    "password_hint": "Password",
+    "forgot_password_button": "Forgot password?",
+    "login_button": "Login",
+    "email_required_error": "Please enter your email",
+    "email_invalid_error": "Please enter a valid email",
+    "password_required_error": "Please enter your password",
+    "login_welcome_back_title": "Welcome back",
+    "login_subtitle": "Log in to your account",
+    "continue_with_label": "Continue through",
+
+    "email_address_label": "Email Address",
+    "password_label": "Password",
+    "your_email_hint": "Your email",
+    "signup_button": "Sign up"
+}
+
+   
+
+   

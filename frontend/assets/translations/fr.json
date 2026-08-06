@@ -1,0 +1,51 @@
+{
+    "choose_language_title":"choisissez votre langue",
+    "next_button" : "suivant",
+    "🇹🇳   Arabe" : "🇹🇳  Arabe",
+    "🇫🇷   Français" : "🇫🇷  Français",
+    "🇬🇧   English" : "🇬🇧  anglais",
+    "onboarding_title_1": "Trouvez un gardien d'animaux de confiance",
+    "onboarding_subtitle_1": " Confiez votre ami pelé à des soignants passionnés près de chez vous, avec un sentiment de sécurité total.",
+    "onboarding_title_2": "Réservez en toute tranquillité",
+    "onboarding_subtitle_2": "Add, edit or trackyour bookings in seconds -stress-free.",
+    "onboarding_title_3": "Restez en contact avec votre facilité",
+    "onboarding_subtitle_3": "Chattez directement les uns avec les autres à tout moment et soyez rassuré pendant le séjour.",
+    "onboarding_title_4": "Gérez votre emploi du temps en toute simplicité",         
+    "onboarding_subtitle_4": "Acceptez ou refusez les demandes de réservation selon votre disponibilité, vous êtes le maître de votre emploi du temps.",
+    "skip_button" : "passer",
+    "get_started_button" : "commencer",
+        "welcome_title": "Bienvenue à PETSY",
+    "welcome_subtitle": "Nous sommes très heureux de vous voir ici",
+         "choose_account_type_title": "Choisissez votre type de compte",
+
+    "account_type_owner_title": "Propriétaire d'animaux",
+    "account_type_owner_description": "je cherche un soin de confiance pour mon animal.",
+
+    "account_type_sitter_title": "Gardien d'animaux",
+    "account_type_sitter_description": "Je prends soin des animaux et j'offre mes services de garde.",
+
+    "account_type_admin_title": "Admin",
+    "account_type_admin_description": "Je gère et supervise la plateforme Petsy.",
+
+    "account_type_courier_title": "Petsy Courier",
+    "account_type_courier_description": "Je m'assure du transport de votre animal, en toute sécurité.",
+     "admin_badge_label": "Administrateur",
+    "admin_login_title": "connexion administrateur",
+    "admin_login_subtitle": "Connectez-vous pour gérer la plateforme Petsy",
+    "email_hint": "Email",
+    "password_hint": "Password",
+    "forgot_password_button": "Mot de passe oublié?",
+    "login_button": "Se connecter",
+    "email_required_error": "Veuillez entrer votre email",
+    "email_invalid_error": "Veuillez entrer un email valide",
+    "password_required_error": "Veuillez entrer votre mot de passe",
+    "login_welcome_back_title": "Merci de votre retour",
+    "login_subtitle": "Connectez-vous à votre compte",
+    "continue_with_label": "Continuer avec",
+
+    "email_address_label": "Adresse email",
+    "password_label": "Mot de passe",
+    "your_email_hint": "Votre email",
+    "signup_button": "S'inscrire"
+
+}
