@@ -3,25 +3,29 @@ import 'package:easy_localization/easy_localization.dart';
 import '../../constants/app_colors.dart';
 import '../../widgets/back_button.dart';
 import '../../widgets/button.dart';
+import '../../widgets/outlined_button.dart';
 import '../../widgets/paw_widget.dart';
+import 'user_signin.dart';
 
 // ============================================================================
-// UserSignInScreen ("Sign up" - 7sab jdid)
+// UserLoginScreen ("Login" - 7sab MAWJOUD)
 // ============================================================================
-// Nafs design/logo/titre/soutitre mte3 UserLoginScreen (fel nefs folder),
-// ghir bla "Forgot Password?" (mch loji9i tab9a fi écran 7sab JDID, 7it
-// mafamech "password ne5tel" 3la 7sab ma3andouch bd).
+// Nafs logo/titre/soutitre/design mte3 UserSignInScreen, ghir el TARTIB
+// mbeddel (inspiré mel design Facebook elli b3aththou):
+//   Email -> Password -> Bouton "Login" -> "Forgot Password?" (TA7T el
+//   bouton, mch fou9u) -> "Create new account" (CustomOutlinedButton,
+//   mawjoud déjà fel widgets/) -> divider "Continue through" + social icons
 // ============================================================================
-class UserSignInScreen extends StatefulWidget {
+class UserLoginScreen extends StatefulWidget {
   final String role; // 'owner', 'sitter', wala 'courier'
 
-  const UserSignInScreen({super.key, required this.role});
+  const UserLoginScreen({super.key, required this.role});
 
   @override
-  State<UserSignInScreen> createState() => _UserSignInScreenState();
+  State<UserLoginScreen> createState() => _UserLoginScreenState();
 }
 
-class _UserSignInScreenState extends State<UserSignInScreen> {
+class _UserLoginScreenState extends State<UserLoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -52,10 +56,17 @@ class _UserSignInScreenState extends State<UserSignInScreen> {
     return null;
   }
 
-  void _onSubmitPressed() {
+  void _onLoginPressed() {
     if (_formKey.currentState!.validate()) {
-      // TODO: inscription 7a9i9iya (API, role: widget.role)
+      // TODO: authentification 7a9i9iya (API, role: widget.role)
     }
+  }
+
+  // Yemchi lel écran "Sign up" (7sab jdid), b'nefs el role
+  void _onCreateAccountPressed() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => UserSignInScreen(role: widget.role)),
+    );
   }
 
   InputDecoration _fieldDecoration({
@@ -157,7 +168,7 @@ class _UserSignInScreenState extends State<UserSignInScreen> {
 
                     SizedBox(height: screenSize.height * 0.045),
 
-                    // 📧 Email
+                    // 1️⃣ Email
                     _fieldLabel('email_address_label'.tr(), screenSize.width),
                     SizedBox(height: screenSize.height * 0.008),
                     TextFormField(
@@ -172,7 +183,7 @@ class _UserSignInScreenState extends State<UserSignInScreen> {
 
                     SizedBox(height: screenSize.height * 0.022),
 
-                    // 🔒 Password
+                    // 2️⃣ Password
                     _fieldLabel('password_label'.tr(), screenSize.width),
                     SizedBox(height: screenSize.height * 0.008),
                     TextFormField(
@@ -192,24 +203,62 @@ class _UserSignInScreenState extends State<UserSignInScreen> {
                       ),
                     ),
 
-                    // 🔵 "Forgot Password?" et7a - m3andch ma3na hna
-                    // (7sab jdid, mazel ma fama password ne5tel)
+                    SizedBox(height: screenSize.height * 0.03),
 
-                    SizedBox(height: screenSize.height * 0.035),
-
+                    // 3️⃣ Bouton "Login" (nafs CustomButton, text tbeddel
+                    // l "login_button" mch "signup_button")
                     Center(
                       child: CustomButton(
-                        text: 'signup_button'.tr(),
+                        text: 'login_button'.tr(),
                         color: AppColors.pinkpetsy,
                         widthFactor: 0.90,
                         heightFactor: 0.07,
                         fontFactor: 0.40,
-                        onPressed: _onSubmitPressed,
+                        onPressed: _onLoginPressed,
+                      ),
+                    ),
+
+                    SizedBox(height: screenSize.height * 0.02),
+
+                    // 4️⃣ "Forgot Password?" - TA7T el bouton (kifha kif
+                    // Facebook), mch fou9u kifma kan fel design l'oula
+                    Center(
+                      child: TextButton(
+                        onPressed: () {
+                          // TODO: navigation lel écran "Reset password"
+                        },
+                        child: Text(
+                          'forgot_password_button'.tr(),
+                          style: TextStyle(
+                            fontSize: screenSize.width * 0.036,
+                            color: AppColors.pinkpetsy,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    SizedBox(height: screenSize.height * 0.025),
+
+                    // 5️⃣ "Create new account" - CustomOutlinedButton
+                    // MAWJOUD déjà (widgets/outlined_button.dart), isSelected:
+                    // true bch ya5ou border/loun vertpetsy (mch grey), 7it
+                    // el widget ma3andouch paramètre "color" direct.
+                    Center(
+                      child: CustomOutlinedButton(
+                        text: 'create_account_button'.tr(),
+                        width: screenSize.width * 0.90,
+                        height: screenSize.height * 0.07,
+                        fontFactor: 0.38,
+                        isSelected: true,
+                        onPressed: _onCreateAccountPressed,
                       ),
                     ),
 
                     SizedBox(height: screenSize.height * 0.038),
 
+                    // 6️⃣ Divider "Continue through" + social icons (fel
+                    // lakher, kifma tlabt)
                     Row(
                       children: [
                         Expanded(child: Divider(color: AppColors.pinkpetsy.withOpacity(0.4))),

@@ -4,7 +4,9 @@ import '../../constants/app_colors.dart';
 import '../../widgets/paw_widget.dart';
 import '../../widgets/back_button.dart';
 import 'admin/admin_login.dart';
-import 'user_login.dart'; // 👈 Importation mte3 user_login
+import 'user_signin.dart'; // 🔵 badalt mel 'user_login.dart': el file/class
+// tbeddel esmou l user_signin.dart / UserSignInScreen (nafs contenu el
+// "Sign up" el 9dim, ghir esmou tbeddel)
 
 class _AccountType {
   final IconData icon;
@@ -46,7 +48,7 @@ class AccountTypeView extends StatelessWidget {
 
   // --------------------------------------------------------------------
   // 🔵 Admin -> AdminLoginView
-  // 🔵 Owner / Sitter / Courier -> UserLoginScreen (m3a passation mte3 role)
+  // 🔵 Owner / Sitter / Courier -> UserSignInScreen (m3a passation mte3 role)
   // --------------------------------------------------------------------
   void _onAccountTypeSelected(BuildContext context, _AccountType type) {
     if (type.titleKey == 'account_type_admin_title') {
@@ -65,7 +67,7 @@ class AccountTypeView extends StatelessWidget {
 
       Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (_) => UserLoginScreen(role: selectedRole),
+          builder: (_) => UserSignInScreen(role: selectedRole),
         ),
       );
     }

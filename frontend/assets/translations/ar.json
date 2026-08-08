@@ -46,5 +46,7 @@
     "email_address_label": "عنوان البريد الإلكتروني",
     "password_label": "كلمة المرور",
     "your_email_hint": "بريدك الإلكتروني",
-    "signup_button": "تسجيل"
+    "signup_button": "تسجيل",
+    "create_account_button ": "إنشاء حساب جديد"
+
 }

@@ -46,6 +46,8 @@
     "email_address_label": "Adresse email",
     "password_label": "Mot de passe",
     "your_email_hint": "Votre email",
-    "signup_button": "S'inscrire"
+    "signup_button": "S'inscrire",
+    "create_account_button ": "Créer un nouveau compte"
+
 
 }
