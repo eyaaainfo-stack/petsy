@@ -4,6 +4,9 @@ import '../../constants/app_colors.dart';
 import '../../widgets/back_button.dart';
 import '../../widgets/button.dart';
 import '../../widgets/paw_widget.dart';
+import '../../controllers/validators.dart';
+import '../../controllers/auth_controller.dart';
+import 'user_create_profile.dart';
 
 // ============================================================================
 // UserSignInScreen ("Sign up" - 7sab jdid)
@@ -27,6 +30,9 @@ class _UserSignInScreenState extends State<UserSignInScreen> {
   final TextEditingController _passwordController = TextEditingController();
   bool _obscurePassword = true;
 
+  final AuthController _authController = AuthController();
+  bool _isSubmitting = false;
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -34,27 +40,40 @@ class _UserSignInScreenState extends State<UserSignInScreen> {
     super.dispose();
   }
 
-  String? _validateEmail(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'email_required_error'.tr();
-    }
-    final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-    if (!emailRegex.hasMatch(value.trim())) {
-      return 'email_invalid_error'.tr();
-    }
-    return null;
-  }
+  // 🔵 signupPassword (mch loginPassword): rules 9awiya - 8 caractères,
+  // 1 majuscule, 1 chiffre (chrahtha fel validators.dart)
+  String? _validateEmail(String? value) => Validators.email(value);
+  String? _validatePassword(String? value) => Validators.signupPassword(value);
 
-  String? _validatePassword(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'password_required_error'.tr();
-    }
-    return null;
-  }
+  Future<void> _onSubmitPressed() async {
+    if (_isSubmitting) return;
+    if (!_formKey.currentState!.validate()) return;
 
-  void _onSubmitPressed() {
-    if (_formKey.currentState!.validate()) {
-      // TODO: inscription 7a9i9iya (API, role: widget.role)
+    setState(() => _isSubmitting = true);
+
+    final result = await _authController.signUp(
+      email: _emailController.text,
+      password: _passwordController.text,
+      role: widget.role,
+    );
+
+    if (!mounted) return;
+    setState(() => _isSubmitting = false);
+
+    // 🔵 ZID houni: kif el signup yenja7, nemchiw l'écran UserCreateProfile
+    // (nafs role elli 5tarha el user mel account_type.dart)
+    if (result.success) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => UserCreateProfileScreen(role: widget.role)),
+      );
+    } else {
+      // 🔵 ZID: 9bal, kif el signup yefchel, ma kanech yban 7ata 7aja
+      // (el user ma3rafch 3lech el bouton "ma yemchich"). Tاوة
+      // nwarriwlou el message el sa7i7 (email mawjoud déjà, mafamech
+      // connexion m3a el server, etc.)
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result.errorMessage ?? 'login_generic_error'.tr())),
+      );
     }
   }
 
@@ -109,8 +128,6 @@ class _UserSignInScreenState extends State<UserSignInScreen> {
             buildPetPaw(context: context, size: screenSize.width * 0.08, topPercent: 0.03, leftPercent: 0.82, color: AppColors.pinkpetsy.withOpacity(0.6)),
             buildPetPaw(context: context, size: screenSize.width * 0.075, topPercent: 0.86, leftPercent: 0.16, color: AppColors.pinkpetsy.withOpacity(0.6)),
             buildPetPaw(context: context, size: screenSize.width * 0.06, topPercent: 0.905, leftPercent: 0.04, color: AppColors.pinkpetsy.withOpacity(0.6)),
-
-            const CustomBackButton(),
 
             SingleChildScrollView(
               padding: EdgeInsets.symmetric(horizontal: screenSize.width * 0.08),
@@ -199,7 +216,7 @@ class _UserSignInScreenState extends State<UserSignInScreen> {
 
                     Center(
                       child: CustomButton(
-                        text: 'signup_button'.tr(),
+                        text: _isSubmitting ? 'loading_label'.tr() : 'signup_button'.tr(),
                         color: AppColors.pinkpetsy,
                         widthFactor: 0.90,
                         heightFactor: 0.07,
@@ -262,6 +279,9 @@ class _UserSignInScreenState extends State<UserSignInScreen> {
                 ),
               ),
             ),
+
+            // 🔙 zdinaha HOUNI (lakher fel Stack) - chrahtha fel admin_login
+            const CustomBackButton(),
           ],
         ),
       ),

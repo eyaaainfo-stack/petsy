@@ -35,6 +35,23 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
 
+  # 🔵 zdineha: bch nnajjmou n5tarou location 3al khariita (OpenStreetMap)
+  flutter_map: ^7.0.0
+  # 🔵 zdineha toua: performance a7sen lel khariita (kif tzid bel usba3,
+  # el tiles el mch me7tejinhom (barra el écran) y-cancel-aw automatique
+  # mel web, mch te7mel el kol - hedhi bالضبط el "remarque" elli t3addit)
+  flutter_map_cancellable_tile_provider: ^3.0.2
+  latlong2: ^0.9.0
+  # GPS (location 7a9i9iya tel user)
+  geolocator: ^13.0.1
+  # bch nnajjmou n3maloulou appel lel API tel recherche (Nominatim/OSM)
+  http: ^1.2.0
+
+  # 🔵 zdineha: bch nnajjmou n5tarou photo mel galerie wala nakhdou wa7da
+  # jdida (kamera) - te5dem fel mobile W el web (federated plugin,
+  # ma7tajch package منفصلة lel web).
+  image_picker: ^1.1.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -56,6 +73,3 @@ flutter:
   assets:
     - assets/translations/
     - assets/images/
-  
-
-  

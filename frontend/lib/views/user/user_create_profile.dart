@@ -1,0 +1,495 @@
+import 'dart:typed_data';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:latlong2/latlong.dart';
+import '../../constants/app_colors.dart';
+import '../../widgets/back_button.dart';
+import '../../widgets/button.dart';
+import '../../widgets/paw_widget.dart';
+import '../../widgets/map.dart';
+import '../../controllers/user_create_profile_controller.dart';
+import 'owner/create_pet_profile.dart';
+
+// ============================================================================
+// UserCreateProfileScreen
+// ============================================================================
+class UserCreateProfileScreen extends StatefulWidget {
+  final String role;
+
+  const UserCreateProfileScreen({super.key, required this.role});
+
+  @override
+  State<UserCreateProfileScreen> createState() => _UserCreateProfileScreenState();
+}
+
+class _UserCreateProfileScreenState extends State<UserCreateProfileScreen> {
+  final _formKey = GlobalKey<FormState>();
+
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _birthdayController = TextEditingController();
+  final TextEditingController _cityController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _aboutController = TextEditingController();
+  // 🔵 ZID houni: text elli yban fel 7a9el "Localization" (mch el user
+  // yekteb fih, ghir yban feh el coordonnées ba3d ma y5tar mel khariita)
+  final TextEditingController _locationController = TextEditingController();
+
+  // 🔵 el LatLng el 7a9i9i (elli bch tab3ath lel backend) - el
+  // controller (fouq) howa ghir "l3arda" (display), houni el data.
+  LatLng? _selectedLocation;
+
+  final UserCreateProfileController _profileController = UserCreateProfileController();
+  bool _isSubmitting = false;
+
+  // --------------------------------------------------------------------
+  // 🔵 el photo: Uint8List (bytes), MCH "File" (dart:io). 3lech? 7it
+  // "dart:io" ma te5demch fel Flutter WEB (el app tejri fel Chrome fel
+  // testing tou3ek) - Uint8List + Image.memory() khadmin fel mobile
+  // W el web bla farq.
+  // --------------------------------------------------------------------
+  Uint8List? _profileImageBytes;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _birthdayController.dispose();
+    _cityController.dispose();
+    _phoneController.dispose();
+    _aboutController.dispose();
+    _locationController.dispose();
+    super.dispose();
+  }
+
+  // --------------------------------------------------------------------
+  // Photo: ki tdouss 3al badge camera, twarri bottom sheet fiha "Galerie"
+  // w "Appareil photo" - el user y5tar mnin.
+  // --------------------------------------------------------------------
+  void _showImageSourceSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Wrap(
+            children: [
+              ListTile(
+                leading: Icon(Icons.photo_library_outlined, color: AppColors.vertpetsy),
+                title: Text('gallery_option'.tr()),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _pickImage(ImageSource.gallery);
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.photo_camera_outlined, color: AppColors.vertpetsy),
+                title: Text('camera_option'.tr()),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _pickImage(ImageSource.camera);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? picked = await picker.pickImage(source: source, imageQuality: 80);
+    if (picked == null) return; // el user 3ellel (cancel)
+
+    final bytes = await picked.readAsBytes();
+    if (!mounted) return;
+    setState(() => _profileImageBytes = bytes);
+  }
+
+  // --------------------------------------------------------------------
+  // Localization: yeftah LocationPickerScreen (widgets/map.dart) -
+  // "await Navigator.push<LatLng>" ken el écran ba3ed ma yet7al yerja3
+  // "value" (bel "pop(value)"), n7ottouha houni fel "result".
+  // --------------------------------------------------------------------
+  Future<void> _pickLocation() async {
+    final LatLng? result = await Navigator.of(context).push<LatLng>(
+      MaterialPageRoute(
+        builder: (_) => LocationPickerScreen(initialLocation: _selectedLocation),
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        _selectedLocation = result;
+        // n3ardou el coordonnées fel 7a9el (mafamech reverse-geocoding
+        // tawa - te7taj package/API zeda, TODO lowkan te7taj esm el blasa
+        // bel 7arf bdal el ra9mat)
+        _locationController.text =
+            '${result.latitude.toStringAsFixed(5)}, ${result.longitude.toStringAsFixed(5)}';
+      });
+    }
+  }
+
+  // --------------------------------------------------------------------
+  // City: mch TextField 3adi - bottom sheet feha 24 wilaya, el user
+  // y5tar mnhom, mayekteich b'yedou.
+  // --------------------------------------------------------------------
+  void _showCityPicker() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) {
+        final screenSize = MediaQuery.of(context).size;
+        return SafeArea(
+          child: SizedBox(
+            height: screenSize.height * 0.6,
+            child: Column(
+              children: [
+                Padding(
+                  padding: EdgeInsets.all(screenSize.width * 0.04),
+                  child: Text(
+                    'select_city_title'.tr(),
+                    style: TextStyle(
+                      fontSize: screenSize.width * 0.045,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.pinkpetsy,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: tunisiaGovernorates.length,
+                    itemBuilder: (context, index) {
+                      final governorate = tunisiaGovernorates[index];
+                      return ListTile(
+                        title: Text(governorate),
+                        onTap: () {
+                          setState(() => _cityController.text = governorate);
+                          Navigator.pop(sheetContext);
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _pickBirthday() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime(now.year - 18, now.month, now.day),
+      firstDate: DateTime(now.year - 100),
+      lastDate: now,
+    );
+    if (picked != null) {
+      setState(() {
+        _birthdayController.text =
+            '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
+      });
+    }
+  }
+
+  Future<void> _onNextPressed() async {
+    if (_isSubmitting) return;
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isSubmitting = true);
+
+    final success = await _profileController.submitProfile(
+      role: widget.role,
+      name: _nameController.text,
+      birthday: _birthdayController.text,
+      city: _cityController.text,
+      phone: _phoneController.text,
+      aboutYou: _aboutController.text,
+      location: _selectedLocation,
+    );
+
+    if (!mounted) return;
+    setState(() => _isSubmitting = false);
+
+    if (!success) return;
+
+    // 🔵 ZID houni: lowkan el role "owner", nemchiw l'écran PetProfileScreen
+    // (bch yzid pets tou3ou). El b39dhin (sitter/courier) mazel TODO
+    // (home mte3hom).
+    if (widget.role == 'owner') {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => CreatePetProfileScreen(
+            ownerName: _nameController.text,
+            ownerCity: _cityController.text,
+            // 🔵 ZID: el photo mkhtara houni (avatar picker fou9) kanet
+            // tedhi3 (ma tab3athech lel écrans elli baadha) - tاوة تسافر.
+            ownerPhotoBytes: _profileImageBytes,
+          ),
+        ),
+      );
+    } else {
+      // TODO: navigation lel home mte3 el role (widget.role)
+    }
+  }
+
+  InputDecoration _fieldDecoration({required BuildContext context, Widget? suffixIcon}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return InputDecoration(
+      filled: true,
+      fillColor: isDark ? Colors.white.withOpacity(0.06) : Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      suffixIcon: suffixIcon,
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: AppColors.pinkpetsy.withOpacity(0.5)),
+      ),
+      focusedBorder: const OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(12)),
+        borderSide: BorderSide(color: AppColors.pinkpetsy, width: 1.8),
+      ),
+      // 🔵 msg el 5ata: border a7mar + text a7mar explicite (bch tban
+      // "en rouge" akid, mch tetrak lel Theme el default)
+      errorBorder: const OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(12)),
+        borderSide: BorderSide(color: AppColors.error, width: 1.2),
+      ),
+      focusedErrorBorder: const OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(12)),
+        borderSide: BorderSide(color: AppColors.error, width: 1.5),
+      ),
+      errorStyle: const TextStyle(color: AppColors.error, fontWeight: FontWeight.w600),
+    );
+  }
+
+  Widget _fieldLabel(String text, double screenWidth) {
+    return Text(
+      text,
+      style: TextStyle(
+        fontSize: screenWidth * 0.037,
+        fontWeight: FontWeight.bold,
+        color: AppColors.pinkpetsy,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+
+    return Scaffold(
+      body: SafeArea(
+        child: Stack(
+          children: [
+            buildPetPaw(context: context, size: screenSize.width * 0.09, topPercent: 0.025, leftPercent: 0.80, color: AppColors.pinkpetsy.withOpacity(0.6)),
+            buildPetPaw(context: context, size: screenSize.width * 0.065, topPercent: 0.06, leftPercent: 0.88, color: AppColors.pinkpetsy.withOpacity(0.6)),
+
+            SingleChildScrollView(
+              padding: EdgeInsets.symmetric(horizontal: screenSize.width * 0.08),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    SizedBox(height: screenSize.height * 0.09),
+
+                    Center(
+                      child: Text(
+                        'create_profile_title'.tr(),
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: screenSize.width * 0.052,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.vertpetsy,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: screenSize.height * 0.004),
+                    Center(
+                      child: Text(
+                        'create_profile_subtitle'.tr(),
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: screenSize.width * 0.046,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.pinkpetsy,
+                        ),
+                      ),
+                    ),
+
+                    SizedBox(height: screenSize.height * 0.03),
+
+                    // 📷 Avatar + badge camera -> el bottom sheet (Galerie/Camera)
+                    Center(
+                      child: GestureDetector(
+                        onTap: _showImageSourceSheet,
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            CircleAvatar(
+                              radius: screenSize.width * 0.14,
+                              backgroundColor: AppColors.vertpetsy.withOpacity(0.15),
+                              // lowkan 3andna photo mkhtara, twarriha; lowkan
+                              // le, el icon el default el shakhs (person)
+                              backgroundImage: _profileImageBytes != null ? MemoryImage(_profileImageBytes!) : null,
+                              child: _profileImageBytes == null
+                                  ? Icon(Icons.person, size: screenSize.width * 0.16, color: Colors.black87)
+                                  : null,
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              right: screenSize.width * 0.005,
+                              child: Container(
+                                width: screenSize.width * 0.09,
+                                height: screenSize.width * 0.09,
+                                decoration: BoxDecoration(
+                                  color: AppColors.vertpetsy,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Theme.of(context).scaffoldBackgroundColor, width: 2.5),
+                                ),
+                                child: Icon(Icons.camera_alt, size: screenSize.width * 0.045, color: Colors.white),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    SizedBox(height: screenSize.height * 0.012),
+
+                    Center(
+                      child: Text(
+                        'add_photo_label'.tr(),
+                        style: TextStyle(
+                          fontSize: screenSize.width * 0.036,
+                          color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                        ),
+                      ),
+                    ),
+
+                    SizedBox(height: screenSize.height * 0.035),
+
+                    // Name
+                    _fieldLabel('name_label'.tr(), screenSize.width),
+                    SizedBox(height: screenSize.height * 0.008),
+                    TextFormField(
+                      controller: _nameController,
+                      validator: ProfileValidators.name,
+                      decoration: _fieldDecoration(context: context),
+                    ),
+
+                    SizedBox(height: screenSize.height * 0.02),
+
+                    // Birthday
+                    _fieldLabel('birthday_label'.tr(), screenSize.width),
+                    SizedBox(height: screenSize.height * 0.008),
+                    TextFormField(
+                      controller: _birthdayController,
+                      readOnly: true,
+                      onTap: _pickBirthday,
+                      decoration: _fieldDecoration(
+                        context: context,
+                        suffixIcon: Icon(Icons.calendar_today_outlined, color: AppColors.pinkpetsy.withOpacity(0.7), size: screenSize.width * 0.05),
+                      ),
+                    ),
+
+                    SizedBox(height: screenSize.height * 0.02),
+
+                    // City -> bottom sheet bel 24 wilaya (mch TextField 3adi)
+                    _fieldLabel('city_label'.tr(), screenSize.width),
+                    SizedBox(height: screenSize.height * 0.008),
+                    TextFormField(
+                      controller: _cityController,
+                      readOnly: true,
+                      onTap: _showCityPicker,
+                      decoration: _fieldDecoration(
+                        context: context,
+                        suffixIcon: Icon(Icons.location_on_outlined, color: AppColors.pinkpetsy.withOpacity(0.7), size: screenSize.width * 0.05),
+                      ),
+                    ),
+
+                    SizedBox(height: screenSize.height * 0.02),
+
+                    // Localization -> yeftah el khariita (widgets/map.dart)
+                    _fieldLabel('localization_label'.tr(), screenSize.width),
+                    SizedBox(height: screenSize.height * 0.008),
+                    TextFormField(
+                      controller: _locationController,
+                      readOnly: true,
+                      onTap: _pickLocation,
+                      decoration: _fieldDecoration(
+                        context: context,
+                        suffixIcon: Icon(Icons.map_outlined, color: AppColors.pinkpetsy.withOpacity(0.7), size: screenSize.width * 0.05),
+                      ),
+                    ),
+
+                    SizedBox(height: screenSize.height * 0.02),
+
+                    // Phone Number -> 8 ra9ma bel 7arf, clavier ar9am bess
+                    _fieldLabel('phone_number_label'.tr(), screenSize.width),
+                    SizedBox(height: screenSize.height * 0.008),
+                    TextFormField(
+                      controller: _phoneController,
+                      keyboardType: TextInputType.number,
+                      // digitsOnly: yemna3 el user yekteb 7ata 7arf (bess
+                      // ar9am). LengthLimitingTextInputFormatter(8): ma
+                      // ye5aliihch yekteb aktar mel 8 ra9mat.
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(8),
+                      ],
+                      validator: ProfileValidators.phone,
+                      decoration: _fieldDecoration(context: context),
+                    ),
+
+                    SizedBox(height: screenSize.height * 0.02),
+
+                    // About you -> obligatoire GHIR lel sitter/courier
+                    _fieldLabel('about_you_label'.tr(), screenSize.width),
+                    SizedBox(height: screenSize.height * 0.008),
+                    TextFormField(
+                      controller: _aboutController,
+                      maxLines: 4,
+                      validator: (value) => ProfileValidators.aboutYou(value, widget.role),
+                      decoration: _fieldDecoration(context: context),
+                    ),
+
+                    SizedBox(height: screenSize.height * 0.04),
+
+                    Center(
+                      child: CustomButton(
+                        text: _isSubmitting ? 'loading_label'.tr() : 'next_button'.tr(),
+                        color: AppColors.pinkpetsy,
+                        widthFactor: 0.90,
+                        heightFactor: 0.07,
+                        fontFactor: 0.40,
+                        onPressed: _onNextPressed,
+                      ),
+                    ),
+
+                    SizedBox(height: screenSize.height * 0.04),
+                  ],
+                ),
+              ),
+            ),
+
+            // 🔙 zdinaha HOUNI (lakher fel Stack) - chrahtha fel admin_login
+            const CustomBackButton(),
+          ],
+        ),
+      ),
+    );
+  }
+}

@@ -5,6 +5,8 @@ import '../../widgets/back_button.dart';
 import '../../widgets/button.dart';
 import '../../widgets/outlined_button.dart';
 import '../../widgets/paw_widget.dart';
+import '../../controllers/validators.dart';
+import '../../controllers/auth_controller.dart';
 import 'user_signin.dart';
 
 // ============================================================================
@@ -31,6 +33,18 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
   bool _obscurePassword = true;
 
+  // 🔵 el "controller" el 7a9i9i (chrahtha 9bal): fih el mant9 (login)
+  // mafi el widget, mch el UI.
+  final AuthController _authController = AuthController();
+
+  bool _isSubmitting = false;
+
+  // 🔵 el 2 messages el 5ata mte3 el server (email ghalet / password
+  // ghalet) - mokhtelfin 3ala el validators el 3adiyin (format check),
+  // 7it houma yban فقط ba3d el appel lel "backend" (el mock houni).
+  String? _emailServerError;
+  String? _passwordServerError;
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -38,27 +52,52 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
     super.dispose();
   }
 
-  String? _validateEmail(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'email_required_error'.tr();
-    }
-    final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-    if (!emailRegex.hasMatch(value.trim())) {
-      return 'email_invalid_error'.tr();
-    }
-    return null;
-  }
+  String? _validateEmail(String? value) => Validators.email(value);
+  String? _validatePassword(String? value) => Validators.loginPassword(value);
 
-  String? _validatePassword(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'password_required_error'.tr();
-    }
-    return null;
-  }
+  Future<void> _onLoginPressed() async {
+    if (_isSubmitting) return;
 
-  void _onLoginPressed() {
-    if (_formKey.currentState!.validate()) {
-      // TODO: authentification 7a9i9iya (API, role: widget.role)
+    // 1️⃣ format checks el 3adiyin loula (email/password fadhi wala
+    // format ghalet) - lowkan ghalet, nou9fou hnaya bla appel backend.
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isSubmitting = true;
+      _emailServerError = null;
+      _passwordServerError = null;
+    });
+
+    // 2️⃣ appel el "backend" (mock tawa, chrahtha fel auth_controller.dart)
+    final result = await _authController.login(
+      email: _emailController.text,
+      password: _passwordController.text,
+      role: widget.role,
+    );
+
+    if (!mounted) return;
+
+    // 3️⃣ 3ala 7sab noue3 el 5ata, nwarriw el message TAHT el 7a9el
+    // el SA7I7 (email walla password), kifha kif Facebook.
+    setState(() {
+      _isSubmitting = false;
+      switch (result.errorType) {
+        case LoginErrorType.invalidEmail:
+          _emailServerError = 'login_email_not_found_error'.tr();
+          break;
+        case LoginErrorType.invalidPassword:
+          _passwordServerError = 'login_wrong_password_error'.tr();
+          break;
+        case LoginErrorType.generic:
+          _emailServerError = 'login_generic_error'.tr();
+          break;
+        case LoginErrorType.none:
+          break;
+      }
+    });
+
+    if (result.success) {
+      // TODO: navigation lel home mte3 el role (widget.role)
     }
   }
 
@@ -73,6 +112,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
     required BuildContext context,
     required String hintText,
     Widget? suffixIcon,
+    String? errorText,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -80,6 +120,10 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
       hintText: hintText,
       hintStyle: TextStyle(color: Colors.grey.shade400),
       suffixIcon: suffixIcon,
+      // 🔵 errorText: lowkan el "backend" (mock) rja3 5ata mrattab
+      // b'hedha el 7a9el (email/password), yban houni TA7T el 7a9el -
+      // mokhtelef 3ala el validator (elli ychek format bess).
+      errorText: errorText,
       filled: true,
       fillColor: isDark ? Colors.white.withOpacity(0.06) : Colors.white,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -120,8 +164,6 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
             buildPetPaw(context: context, size: screenSize.width * 0.08, topPercent: 0.03, leftPercent: 0.82, color: AppColors.pinkpetsy.withOpacity(0.6)),
             buildPetPaw(context: context, size: screenSize.width * 0.075, topPercent: 0.86, leftPercent: 0.16, color: AppColors.pinkpetsy.withOpacity(0.6)),
             buildPetPaw(context: context, size: screenSize.width * 0.06, topPercent: 0.905, leftPercent: 0.04, color: AppColors.pinkpetsy.withOpacity(0.6)),
-
-            const CustomBackButton(),
 
             SingleChildScrollView(
               padding: EdgeInsets.symmetric(horizontal: screenSize.width * 0.08),
@@ -175,9 +217,18 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       validator: _validateEmail,
+                      // kol ma el user yebda yekteb, nmasso7 el 5ata
+                      // el "server" (mch loji9i tab9a t8ban ba3d ma
+                      // bda ybadel el email)
+                      onChanged: (_) {
+                        if (_emailServerError != null) {
+                          setState(() => _emailServerError = null);
+                        }
+                      },
                       decoration: _fieldDecoration(
                         context: context,
                         hintText: 'your_email_hint'.tr(),
+                        errorText: _emailServerError,
                       ),
                     ),
 
@@ -190,9 +241,15 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                       controller: _passwordController,
                       obscureText: _obscurePassword,
                       validator: _validatePassword,
+                      onChanged: (_) {
+                        if (_passwordServerError != null) {
+                          setState(() => _passwordServerError = null);
+                        }
+                      },
                       decoration: _fieldDecoration(
                         context: context,
                         hintText: '••••••••',
+                        errorText: _passwordServerError,
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
@@ -209,7 +266,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                     // l "login_button" mch "signup_button")
                     Center(
                       child: CustomButton(
-                        text: 'login_button'.tr(),
+                        text: _isSubmitting ? 'loading_label'.tr() : 'login_button'.tr(),
                         color: AppColors.pinkpetsy,
                         widthFactor: 0.90,
                         heightFactor: 0.07,
@@ -311,6 +368,9 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                 ),
               ),
             ),
+
+            // 🔙 zdinaha HOUNI (lakher fel Stack) - chrahtha fel admin_login
+            const CustomBackButton(),
           ],
         ),
       ),

@@ -1,4 +1,3 @@
-// models/User.js
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema(
@@ -6,24 +5,43 @@ const userSchema = new mongoose.Schema(
     email: { 
       type: String, 
       required: [true, 'Email is required'], 
-      unique: true 
+      unique: true,
+      lowercase: true,
+      trim: true
     },
     password: { 
       type: String, 
       required: [true, 'Password is required'] 
     },
+    // 🔵 badalna: mch required tawa - 7it el flow tel app yesta3mel
+    // el email/password fel signup, w el fullName/phone yet3amrou
+    // BA3D fi écran mnfassel (UserCreateProfileScreen). Ken lezmek
+    // ye5tejou fel écran mte3hom, chek houni b'el code (controller),
+    // mch b'el schema.
     fullName: { 
       type: String, 
-      required: [true, 'Full name is required'] // Obligatoire lil-nās koll (Admin inclued)
+      default: ''
     },
     phone: { 
       type: String, 
-      required: [true, 'Phone number is required'] // Obligatoire lil-nās koll
+      default: ''
+    },
+    // 🔵 ZID: photoUrl 3ala mستوى el User el asasi (mch Owner/Sitter
+    // wa7dhom) - bفضل el discriminator pattern, el 4 adwar (Admin,
+    // Owner, Sitter, Courier) yerthou hedha el 7a9el automatique.
+    photoUrl: { type: String, default: '' },
+    // 🔵 ZID: city (w location - lat/lng, mel map picker) 3ala mستوى
+    // el User el asasi - kol el 4 adwar yerthouha. HEDHA el 7a9el
+    // elli bch ykhalli el "sitters men nefs el ville" ye5dem 7a9i9i.
+    city: { type: String, default: '' },
+    location: {
+      lat: { type: Number, default: null },
+      lng: { type: Number, default: null },
     },
   },
   {
-    discriminatorKey: 'role',
-    collection: 'users',
+    discriminatorKey: 'role', // C'est ici que l'héritage se fait (le champ qui indique le type d'acteur)
+    collection: 'users',      // Tous les acteurs vont dans la même table "users"
     timestamps: true,
   }
 );

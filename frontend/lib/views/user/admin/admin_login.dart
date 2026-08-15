@@ -128,10 +128,6 @@ class _AdminLoginViewState extends State<AdminLoginView> {
             buildPetPaw(context: context, size: screenSize.width * 0.08, topPercent: 0.02, leftPercent: 0.80, color: AppColors.vertpetsy.withOpacity(0.5)),
             buildPetPaw(context: context, size: screenSize.width * 0.06, topPercent: 0.10, leftPercent: 0.08, color: AppColors.pinkpetsy.withOpacity(0.4)),
 
-            // 🔙 Bouton retour (CustomBackButton mawjoud déjà - yerja3
-            // automatique lel écran eli 9bal, AccountTypeView houni)
-            const CustomBackButton(),
-
             // ------------------------------------------------------------
             // SingleChildScrollView: JDID houni. Lezemna n7ottou el Form
             // fi widget "scrollable" 7it ki el keyboard yet7el (el user
@@ -292,6 +288,14 @@ class _AdminLoginViewState extends State<AdminLoginView> {
                 ),
               ),
             ),
+
+            // 🔙 Bouton retour - 🔵 zdinaha HOUNI (LAKHER fel Stack), mch
+            // 9bal el SingleChildScrollView. 3lech? Stack yeh-hit-test
+            // b'ordre 3aks (akher 3onsor fel list = fou9 el kol, yakhod
+            // el lmsa el loula). Lowkan CustomBackButton 9bal el
+            // ScrollView, el ScrollView (7ata lowkan el blasa fadhya
+            // bصريا) tekhod el lmsa 9bal ma touselou.
+            const CustomBackButton(),
           ],
         ),
       ),

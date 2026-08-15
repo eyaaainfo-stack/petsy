@@ -1,4 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 🔵 zdinahom: bch el app tnajjam ta5od el location 7a9i9iya
+         (geolocator package) -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <application
         android:label="frontend"
         android:name="${applicationName}"

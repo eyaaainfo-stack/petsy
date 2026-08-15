@@ -4,8 +4,8 @@ import '../../constants/app_colors.dart';
 import '../../widgets/paw_widget.dart';
 import '../../widgets/back_button.dart';
 import 'admin/admin_login.dart';
-import 'user_signin.dart'; // 🔵 badalt mel 'user_login.dart': el file/class
-// tbeddel esmou l user_signin.dart / UserSignInScreen (nafs contenu el
+import 'user_login.dart'; // 🔵 badalt mel 'user_login.dart': el file/class
+// tbeddel esmou l user_signin.dart / UserSignInScreen (nafs conteúdo el
 // "Sign up" el 9dim, ghir esmou tbeddel)
 
 class _AccountType {
@@ -67,7 +67,7 @@ class AccountTypeView extends StatelessWidget {
 
       Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (_) => UserSignInScreen(role: selectedRole),
+          builder: (_) => UserLoginScreen(role: selectedRole),
         ),
       );
     }

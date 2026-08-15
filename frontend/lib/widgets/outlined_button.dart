@@ -68,12 +68,19 @@ class CustomOutlinedButton extends StatelessWidget {
                     prefixIcon!,
                     const SizedBox(width: 8),
                   ],
-                  Text(
-                    text,
-                    style: TextStyle(
-                      fontSize: calculatedFontSize,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                  // 🔵 Flexible: bch el text yerja3 l'satr (wrap) lowkan
+                  // twil ma ykabach fel 3ard el bouton, bdal ma yofdha
+                  // (overflow) barra el bouton.
+                  Flexible(
+                    child: Text(
+                      text,
+                      textAlign: TextAlign.center,
+                      softWrap: true,
+                      style: TextStyle(
+                        fontSize: calculatedFontSize,
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                      ),
                     ),
                   ),
                 ],
