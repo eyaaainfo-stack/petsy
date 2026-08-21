@@ -42,6 +42,13 @@ class _UserCreateProfileScreenState extends State<UserCreateProfileScreen> {
   // 🔵 el LatLng el 7a9i9i (elli bch tab3ath lel backend) - el
   // controller (fouq) howa ghir "l3arda" (display), houni el data.
   LatLng? _selectedLocation;
+  // 🔴 FIX: kanet na9sa - esm el blasa (bel 7arf, mch ghir lat/lng)
+  // mel reverse-geocoding (widgets/map.dart).
+  String? _locationName;
+
+  // 🔵 ZID (kifma tlabt): Gender - "male"/"female" wela null (mazel
+  // ma5tarch).
+  String? _selectedGender;
 
   final UserCreateProfileController _profileController = UserCreateProfileController();
   bool _isSubmitting = false;
@@ -129,7 +136,7 @@ class _UserCreateProfileScreenState extends State<UserCreateProfileScreen> {
   // "value" (bel "pop(value)"), n7ottouha houni fel "result".
   // --------------------------------------------------------------------
   Future<void> _pickLocation() async {
-    final LatLng? result = await Navigator.of(context).push<LatLng>(
+    final LocationResult? result = await Navigator.of(context).push<LocationResult>(
       MaterialPageRoute(
         builder: (_) => LocationPickerScreen(initialLocation: _selectedLocation),
       ),
@@ -137,12 +144,11 @@ class _UserCreateProfileScreenState extends State<UserCreateProfileScreen> {
 
     if (result != null) {
       setState(() {
-        _selectedLocation = result;
-        // n3ardou el coordonnées fel 7a9el (mafamech reverse-geocoding
-        // tawa - te7taj package/API zeda, TODO lowkan te7taj esm el blasa
-        // bel 7arf bdal el ra9mat)
-        _locationController.text =
-            '${result.latitude.toStringAsFixed(5)}, ${result.longitude.toStringAsFixed(5)}';
+        _selectedLocation = result.latLng;
+        // 🔴 FIX: kanet twarri ghir "lat, lng" (coordonnées) - tawa
+        // esm el blasa 7a9i9i (reverse-geocoding, mel LocationPickerScreen).
+        _locationName = result.placeName;
+        _locationController.text = result.placeName;
       });
     }
   }
@@ -230,6 +236,8 @@ class _UserCreateProfileScreenState extends State<UserCreateProfileScreen> {
       phone: _phoneController.text,
       aboutYou: _aboutController.text,
       location: _selectedLocation,
+      locationName: _locationName,
+      gender: _selectedGender,
     );
 
     if (!mounted) return;
@@ -458,6 +466,43 @@ class _UserCreateProfileScreenState extends State<UserCreateProfileScreen> {
                         context: context,
                         suffixIcon: Icon(Icons.calendar_today_outlined, color: AppColors.pinkpetsy.withOpacity(0.7), size: screenSize.width * 0.05),
                       ),
+                    ),
+
+                    SizedBox(height: screenSize.height * 0.02),
+
+                    // 🔵 ZID (kifma tlabt): Gender - 2 boutons (Male/Female),
+                    // choix wa7ed bark (nafs el pattern tel pet gender fi
+                    // create_pet_profile.dart).
+                    _fieldLabel('gender_label'.tr(), screenSize.width),
+                    SizedBox(height: screenSize.height * 0.008),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => setState(() => _selectedGender = 'female'),
+                            style: OutlinedButton.styleFrom(
+                              backgroundColor: _selectedGender == 'female' ? AppColors.pinkpetsy.withOpacity(0.15) : null,
+                              side: BorderSide(color: _selectedGender == 'female' ? AppColors.pinkpetsy : AppColors.pinkpetsy.withOpacity(0.4)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              padding: EdgeInsets.symmetric(vertical: screenSize.height * 0.016),
+                            ),
+                            child: Text('female_label'.tr(), style: TextStyle(color: AppColors.pinkpetsy, fontWeight: FontWeight.w600)),
+                          ),
+                        ),
+                        SizedBox(width: screenSize.width * 0.03),
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => setState(() => _selectedGender = 'male'),
+                            style: OutlinedButton.styleFrom(
+                              backgroundColor: _selectedGender == 'male' ? AppColors.pinkpetsy.withOpacity(0.15) : null,
+                              side: BorderSide(color: _selectedGender == 'male' ? AppColors.pinkpetsy : AppColors.pinkpetsy.withOpacity(0.4)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              padding: EdgeInsets.symmetric(vertical: screenSize.height * 0.016),
+                            ),
+                            child: Text('male_label'.tr(), style: TextStyle(color: AppColors.pinkpetsy, fontWeight: FontWeight.w600)),
+                          ),
+                        ),
+                      ],
                     ),
 
                     SizedBox(height: screenSize.height * 0.02),

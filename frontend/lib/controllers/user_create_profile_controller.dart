@@ -100,10 +100,12 @@ class UserCreateProfileController {
     required String phone,
     required String aboutYou,
     LatLng? location,
+    String? locationName,
+    String? gender,
   }) async {
     // 🔵 ZID: print UNCONDITIONNEL - bch nchoufou b'a3yonna chnowa
     // el valeurs el 7a9i9iyin (khousousan "aboutYou") 9bal ma tab3ath.
-    debugPrint('🟠 [submitProfile] name="$name" birthday="$birthday" city="$city" phone="$phone" aboutYou="$aboutYou"');
+    debugPrint('🟠 [submitProfile] name="$name" birthday="$birthday" city="$city" phone="$phone" aboutYou="$aboutYou" gender="$gender" locationName="$locationName"');
     try {
       final response = await ApiService.patch(
         '/users/profile',
@@ -117,6 +119,9 @@ class UserCreateProfileController {
           // tawa el User model 3andou "birthday"/"bio", fa nab3thouhom.
           'birthday': birthday,
           'bio': aboutYou,
+          // 🔵 ZID: gender + esm el blasa (reverse-geocoding).
+          if (gender != null) 'gender': gender,
+          if (locationName != null) 'locationName': locationName,
         },
         token: AuthSession.token, // 🔵 mel session, chrahtha fel AuthController
       );

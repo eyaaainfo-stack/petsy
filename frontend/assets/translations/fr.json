@@ -198,6 +198,7 @@
     "no_car_label": "Pas de voiture",
     "update_your_photo_label": "Modifier votre photo",
     "update_button": "Mettre à jour",
-    "no_profile_data_error": "Impossible de charger votre profil. Tirez vers le bas pour réessayer."
+    "no_profile_data_error": "Impossible de charger votre profil. Tirez vers le bas pour réessayer.",
+    "no_pets_yet_label": "Vous n'avez pas encore ajouté d'animaux"
 
 }

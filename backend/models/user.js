@@ -36,6 +36,11 @@ const userSchema = new mongoose.Schema(
     // Flutter) - fa el data kanet tetzeya3 (ma tetsajjelch 7atta).
     birthday: { type: String, default: '' }, // format "DD/MM/YYYY" (kifma el front yeb3ath)
     bio: { type: String, default: '' }, // "About you" / "About me"
+    // 🔵 ZID: field jdid (my_profile_owner.dart/update_profile_owner.dart)
+    gender: { type: String, enum: ['male', 'female', ''], default: '' },
+    // 🔵 ZID: esm el blasa (reverse-geocoding, mch ghir lat/lng) - my
+    // "location" (lat/lng) déjà mawjouda taht, hedhi zeyda text bark.
+    locationName: { type: String, default: '' },
     // 🔵 ZID: city (w location - lat/lng, mel map picker) 3ala mستوى
     // el User el asasi - kol el 4 adwar yerthouha. HEDHA el 7a9el
     // elli bch ykhalli el "sitters men nefs el ville" ye5dem 7a9i9i.

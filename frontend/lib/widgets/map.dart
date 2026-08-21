@@ -10,6 +10,17 @@ import '../constants/app_colors.dart';
 import 'button.dart';
 
 // ============================================================================
+// LocationResult: el "value" elli LocationPickerScreen tarja3ha ba3d
+// "Confirm" - lat/lng W esm el blasa (reverse-geocoding, Nominatim).
+// ============================================================================
+class LocationResult {
+  final LatLng latLng;
+  final String placeName;
+
+  const LocationResult({required this.latLng, required this.placeName});
+}
+
+// ============================================================================
 // LocationPickerScreen
 // ============================================================================
 // Khariita interactive (OpenStreetMap). Feha 3 tri9at bch el user
@@ -21,6 +32,9 @@ import 'button.dart';
 //      Nominatim (API majjaniya tel OpenStreetMap) bch yel9a el LatLng.
 //   4. Coordonnées manuel: dialog sghira, el user ykteb latitude/
 //      longitude direct.
+// 🔴 FIX: 9bal, "Confirm" kan yrajja3 GHIR LatLng (esm el blasa TODO,
+// mch mawjoud) - tawa yrajja3 LocationResult (lat/lng + esm el blasa,
+// via reverse-geocoding Nominatim, ki tdouss "Confirm").
 // ============================================================================
 class LocationPickerScreen extends StatefulWidget {
   final LatLng? initialLocation;
@@ -42,6 +56,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
   LatLng? _selectedLocation;
   bool _isLocating = false;
   bool _isSearching = false;
+  bool _isConfirming = false; // 🔵 ZID: reverse-geocoding wa9t "Confirm"
 
   @override
   void initState() {
@@ -206,12 +221,44 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
     );
   }
 
-  void _onConfirmPressed() {
+  // --------------------------------------------------------------------
+  // 🔵 ZID: reverse-geocoding (Nominatim "reverse") - mel lat/lng, njibou
+  // esm el blasa (bel 7arf, mch ra9mat). Ki l'appel yefchel (bla internet,
+  // etc.), nrajj3ou "lat, lng" kifha kif 9bal (fallback, mch crash).
+  // --------------------------------------------------------------------
+  Future<String> _reverseGeocode(LatLng point) async {
+    try {
+      final uri = Uri.parse(
+        'https://nominatim.openstreetmap.org/reverse'
+        '?lat=${point.latitude}&lon=${point.longitude}&format=json',
+      );
+      final response = await http.get(
+        uri,
+        headers: {'User-Agent': 'com.example.petsy (Petsy Flutter App)'},
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body) as Map<String, dynamic>;
+        final String? displayName = data['display_name'] as String?;
+        if (displayName != null && displayName.isNotEmpty) return displayName;
+      }
+    } catch (_) {
+      // fallback ta7t
+    }
+    return '${point.latitude.toStringAsFixed(5)}, ${point.longitude.toStringAsFixed(5)}';
+  }
+
+  Future<void> _onConfirmPressed() async {
     if (_selectedLocation == null) {
       _showSnack('select_location_hint'.tr());
       return;
     }
-    Navigator.of(context).pop(_selectedLocation);
+
+    setState(() => _isConfirming = true);
+    final String placeName = await _reverseGeocode(_selectedLocation!);
+    if (!mounted) return;
+
+    Navigator.of(context).pop(LocationResult(latLng: _selectedLocation!, placeName: placeName));
   }
 
   @override
@@ -319,11 +366,12 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
             bottom: screenSize.height * 0.03,
             child: Center(
               child: CustomButton(
-                text: 'confirm_location_button'.tr(),
+                text: _isConfirming ? 'loading_label'.tr() : 'confirm_location_button'.tr(),
                 color: AppColors.pinkpetsy,
                 widthFactor: 0.85,
                 heightFactor: 0.065,
                 fontFactor: 0.40,
+                enabled: !_isConfirming,
                 onPressed: _onConfirmPressed,
               ),
             ),

@@ -9,6 +9,7 @@ import '../paw_widget.dart';
 import 'sidebar_item.dart';
 import '../../views/user/account_type.dart';
 import '../../views/user/owner/profile_owner.dart';
+import '../../views/user/owner/my_profile_owner.dart';
 
 // ============================================================================
 // SidebarOwner (Drawer tel owner)
@@ -172,7 +173,14 @@ class SidebarOwner extends StatelessWidget {
                       icon: Icons.person_outline,
                       label: 'account_label'.tr(),
                       sizes: sizes,
-                      onTap: () => _notImplementedYet(context),
+                      onTap: () {
+                        // 🔴 FIX: kanet TODO - tawa ymchi l "My Profile"
+                        // (my_profile_owner.dart).
+                        Navigator.of(context).pop();
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const MyProfileOwnerScreen()),
+                        );
+                      },
                     ),
                     SidebarItem(
                       icon: Icons.home_outlined,

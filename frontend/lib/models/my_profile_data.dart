@@ -34,6 +34,9 @@ class MyProfileData {
   final String bio;
   final String? photoUrl;
   final String role;
+  // 🔵 ZID (my_profile_owner.dart/update_profile_owner.dart)
+  final String? gender; // 'male' / 'female' / ''
+  final String? locationName;
 
   // 🔵 el 7ou9oul el 5assa bel sitter bark - null/fadhya lel owner/b39dhin.
   final String? residenceType;
@@ -50,6 +53,8 @@ class MyProfileData {
     required this.bio,
     this.photoUrl,
     required this.role,
+    this.gender,
+    this.locationName,
     this.residenceType,
     this.hasTransportation,
     this.hasPetAtHome,
@@ -66,6 +71,8 @@ class MyProfileData {
       bio: json['bio'] as String? ?? '',
       photoUrl: json['photoUrl'] as String?,
       role: json['role'] as String? ?? '',
+      gender: json['gender'] as String?,
+      locationName: json['locationName'] as String?,
       residenceType: json['residenceType'] as String?,
       hasTransportation: json['hasTransportation'] as bool?,
       hasPetAtHome: json['hasPetAtHome'] as bool?,

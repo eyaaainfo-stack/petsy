@@ -198,5 +198,6 @@
     "no_car_label": "No car",
     "update_your_photo_label": "Update your photo",
     "update_button": "Update",
-    "no_profile_data_error": "Couldn't load your profile. Pull down to try again."
+    "no_profile_data_error": "Couldn't load your profile. Pull down to try again.",
+    "no_pets_yet_label": "You haven't added any pets yet"
 }

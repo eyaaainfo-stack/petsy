@@ -30,6 +30,8 @@ exports.getProfile = async (req, res) => {
       photoUrl: baseUser.photoUrl,
       birthday: baseUser.birthday,
       bio: baseUser.bio,
+      gender: baseUser.gender,
+      locationName: baseUser.locationName,
     };
 
     // 🔴 FIX: el 7ou9oul el 5assa bel sitter (services/residenceType/...)
@@ -71,7 +73,7 @@ exports.updateProfile = async (req, res) => {
   console.log(`🟠 [UPDATE-PROFILE] userId: ${req.userId}`);
   console.log(`🟠 [UPDATE-PROFILE] Body mawsoul: ${JSON.stringify(req.body)}`);
   try {
-    const { fullName, phone, city, location, birthday, bio } = req.body;
+    const { fullName, phone, city, location, birthday, bio, gender, locationName } = req.body;
 
     const updates = {};
     if (fullName !== undefined) updates.fullName = fullName;
@@ -80,6 +82,8 @@ exports.updateProfile = async (req, res) => {
     if (location !== undefined) updates.location = location;
     if (birthday !== undefined) updates.birthday = birthday;
     if (bio !== undefined) updates.bio = bio;
+    if (gender !== undefined) updates.gender = gender;
+    if (locationName !== undefined) updates.locationName = locationName;
 
     console.log(`🟠 [UPDATE-PROFILE] updates elli bch ndouzou: ${JSON.stringify(updates)}`);
 
@@ -109,6 +113,8 @@ exports.updateProfile = async (req, res) => {
         photoUrl: user.photoUrl,
         birthday: user.birthday,
         bio: user.bio,
+        gender: user.gender,
+        locationName: user.locationName,
       },
     });
   } catch (error) {

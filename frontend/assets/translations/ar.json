@@ -198,5 +198,6 @@
     "no_car_label": "بدون سيارة",
     "update_your_photo_label": "غيّر صورتك",
     "update_button": "تحديث",
-    "no_profile_data_error": "تعذر تحميل ملفك الشخصي. اسحب للأسفل للمحاولة مجددا."
+    "no_profile_data_error": "تعذر تحميل ملفك الشخصي. اسحب للأسفل للمحاولة مجددا.",
+    "no_pets_yet_label": "لم تضف أي حيوان أليف بعد"
 }
