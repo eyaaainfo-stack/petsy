@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../constants/app_colors.dart';
+import '../../constants/app_sizes.dart';
 import '../../widgets/button.dart';
 import '../../widgets/paw_widget.dart';
 import '../../widgets/back_button.dart';
+import '../../controllers/app_preferences.dart';
 import 'account_type.dart';
 
 // ============================================================================
@@ -22,7 +24,7 @@ class WelcomeView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size;
+    final sizes = AppSizes.of(context);
 
     return Scaffold(
       body: SafeArea(
@@ -35,49 +37,49 @@ class WelcomeView extends StatelessWidget {
             // --------------------------------------------------------------
             buildPetPaw(
               context: context,
-              size: screenSize.width * 0.10,
+              size: sizes.welcomePawSize1,
               topPercent: 0.06,
               leftPercent: 0.68,
               color: AppColors.vertpetsy.withOpacity(0.6),
             ),
             buildPetPaw(
               context: context,
-              size: screenSize.width * 0.085,
+              size: sizes.welcomePawSize2,
               topPercent: 0.13,
               leftPercent: 0.08,
               color: AppColors.pinkpetsy.withOpacity(0.55),
             ),
             buildPetPaw(
               context: context,
-              size: screenSize.width * 0.075,
+              size: sizes.welcomePawSize3,
               topPercent: 0.26,
               leftPercent: 0.60,
               color: AppColors.vertpetsy.withOpacity(0.55),
             ),
             buildPetPaw(
               context: context,
-              size: screenSize.width * 0.07,
+              size: sizes.welcomePawSize4,
               topPercent: 0.50,
               leftPercent: 0.86,
               color: AppColors.pinkpetsy.withOpacity(0.55),
             ),
             buildPetPaw(
               context: context,
-              size: screenSize.width * 0.06,
+              size: sizes.welcomePawSize5,
               topPercent: 0.60,
               leftPercent: 0.42,
               color: AppColors.pinkpetsy.withOpacity(0.55),
             ),
             buildPetPaw(
               context: context,
-              size: screenSize.width * 0.065,
+              size: sizes.welcomePawSize6,
               topPercent: 0.72,
               leftPercent: 0.78,
               color: AppColors.vertpetsy.withOpacity(0.55),
             ),
             buildPetPaw(
               context: context,
-              size: screenSize.width * 0.075,
+              size: sizes.welcomePawSize7,
               topPercent: 0.80,
               leftPercent: 0.05,
               color: AppColors.vertpetsy.withOpacity(0.55),
@@ -92,11 +94,11 @@ class WelcomeView extends StatelessWidget {
             // lel te7t (image -> title -> soutitre -> bouton).
             // --------------------------------------------------------------
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: screenSize.width * 0.06),
+              padding: EdgeInsets.symmetric(horizontal: sizes.welcomeHorizontalPadding),
               child: Column(
                 children: [
                   // Espace fadhi fouq (7atta el image tji fel westt bel 3ard)
-                  SizedBox(height: screenSize.height * 0.2),
+                  SizedBox(height: sizes.welcomeTopGap),
 
                   // ----------------------------------------------------------
                   // 🖼️ IMAGE — houni el blasa mte3 soura el 3 hayawanet.
@@ -106,24 +108,24 @@ class WelcomeView extends StatelessWidget {
                   // ----------------------------------------------------------
                   Image.asset(
                     'assets/images/welcome_pets.png',
-                    width: screenSize.width * 0.80,
+                    width: sizes.welcomeImageWidth,
                     fit: BoxFit.contain,
                   ),
 
-                  SizedBox(height: screenSize.height * 0.035),
+                  SizedBox(height: sizes.welcomeImageTitleGap),
 
                   // Title "Welcome to PETSY" - loun fixe pinkpetsy
                   Text(
                     'welcome_title'.tr(),
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: screenSize.width * 0.072,
+                      fontSize: sizes.welcomeTitleFontSize,
                       fontWeight: FontWeight.bold,
                       color: AppColors.pinkpetsy,
                     ),
                   ),
 
-                  SizedBox(height: screenSize.height * 0.014),
+                  SizedBox(height: sizes.welcomeTitleSubtitleGap),
 
                   // Soutitre "We are so happy to see you here" - loun
                   // vertpetsy (teal) bch ykoun kifha kif el design elli
@@ -132,7 +134,7 @@ class WelcomeView extends StatelessWidget {
                     'welcome_subtitle'.tr(),
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: screenSize.width * 0.040,
+                      fontSize: sizes.welcomeSubtitleFontSize,
                       color: AppColors.vertpetsy,
                       height: 1.4,
                     ),
@@ -157,14 +159,20 @@ class WelcomeView extends StatelessWidget {
                     widthFactor: 0.90,
                     heightFactor: 0.075,
                     fontFactor: 0.40,
-                    onPressed: () {
+                    onPressed: () async {
+                      // 🔵 ZID: n7ottou el flag "el user 3adda el
+                      // onboarding" - bch el app ma tarja3ch twarrih
+                      // Language/slides mel jdid el marra el jaya elli
+                      // yeftah biha el app (chrahtha fel splash_decider.dart).
+                      await AppPreferences.setHasSeenOnboarding();
+                      if (!context.mounted) return;
                       Navigator.of(context).push(
                         MaterialPageRoute(builder: (_) => const AccountTypeView()),
                       );
                     },
                   ),
 
-                  SizedBox(height: screenSize.height * 0.04),
+                  SizedBox(height: sizes.welcomeBottomGap),
                 ],
               ),
             ),

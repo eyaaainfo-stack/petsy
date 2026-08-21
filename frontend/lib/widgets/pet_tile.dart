@@ -62,14 +62,20 @@ class PetTile extends StatelessWidget {
               color: AppColors.pinkpetsy.withOpacity(0.15),
               borderRadius: BorderRadius.circular(16),
             ),
-            // el photo el 7a9i9iya (mkhtara fel add_pet_photo.dart) lowkan
-            // mawjouda, wala icon placeholder.
+            // el photo el 7a9i9iya: photoBytes (mémoire, session
+            // 7aliya) awalan, wala photoUrl (mel backend, Image.network,
+            // ba3d login mel jdid) - wala icon placeholder.
             child: pet.photoBytes != null
                 ? ClipRRect(
                     borderRadius: BorderRadius.circular(16),
                     child: Image.memory(pet.photoBytes!, fit: BoxFit.cover),
                   )
-                : Icon(pet.icon, color: AppColors.pinkpetsy, size: size * 0.5),
+                : pet.photoUrl != null
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Image.network(pet.photoUrl!, fit: BoxFit.cover),
+                      )
+                    : Icon(pet.icon, color: AppColors.pinkpetsy, size: size * 0.5),
           ),
           SizedBox(height: size * 0.06),
           Text(pet.name, style: TextStyle(fontSize: size * 0.14, fontWeight: FontWeight.w600)),

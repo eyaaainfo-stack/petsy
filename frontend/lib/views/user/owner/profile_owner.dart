@@ -6,6 +6,7 @@ import '../../../constants/app_colors.dart';
 import '../../../models/pet_summary.dart';
 import '../../../services/api_service.dart';
 import '../../../widgets/pet_tile.dart';
+import '../../../widgets/drawers/sidebar_owner.dart';
 import 'create_pet_profile.dart';
 import 'see_all_pets.dart';
 import 'pet_profile.dart';
@@ -41,6 +42,12 @@ class ProfileOwnerScreen extends StatefulWidget {
   // 🔵 ZID: kanet tedhi3 (mkhtara fel UserCreateProfileScreen, ma
   // tousalch lel écran hedha) - tاوة تسافر kaملها.
   final Uint8List? ownerPhotoBytes;
+  // 🔴 FIX: bytes mawjoudin ghir direct ba3d signup (mémoire, session
+  // 7aliya) - ba3d login mel jdid, 3andna ghir el URL (mel backend,
+  // mathalan "/uploads/users/xxx.jpg"). Bla el paramètre hedha, el
+  // photo tel owner kanet dima tban icon ba3d login (7atta lowkan
+  // 3andou photo mzouda fel base) - nafs el mant9 tel pet (pet_tile.dart).
+  final String? ownerPhotoUrl;
 
   const ProfileOwnerScreen({
     super.key,
@@ -48,6 +55,7 @@ class ProfileOwnerScreen extends StatefulWidget {
     required this.ownerCity,
     required this.pets,
     this.ownerPhotoBytes,
+    this.ownerPhotoUrl,
   });
 
   @override
@@ -55,6 +63,7 @@ class ProfileOwnerScreen extends StatefulWidget {
 }
 
 class _ProfileOwnerScreenState extends State<ProfileOwnerScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _hasUnreadNotifications = true; // 🔴 mock - el no9ta el 7amra
 
   // 🔵 TAWA REAL: nemliw mel backend (GET /api/users/sitters?city=...)
@@ -115,6 +124,13 @@ class _ProfileOwnerScreenState extends State<ProfileOwnerScreen> {
         Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.65) ?? Colors.grey;
 
     return Scaffold(
+      key: _scaffoldKey,
+      drawer: SidebarOwner(
+        ownerName: widget.ownerName,
+        ownerCity: widget.ownerCity,
+        ownerPhotoBytes: widget.ownerPhotoBytes,
+        ownerPhotoUrl: widget.ownerPhotoUrl,
+      ),
       body: SafeArea(
         // 🔵 kolchi jowa SingleChildScrollView wa7da - hedhi elli
         // t5alli "Available for urgence sitting" (w el screen kaملها)
@@ -139,12 +155,16 @@ class _ProfileOwnerScreenState extends State<ProfileOwnerScreen> {
                       width: screenSize.width * 0.13,
                       height: screenSize.width * 0.13,
                       color: AppColors.vertpetsy.withOpacity(0.15),
-                      // 🔵 ZID: el photo el 7a9i9iya lowkan el owner
-                      //5tarha (UserCreateProfileScreen) - kanet tedhi3
-                      // 9bal, tاوة تسافر lel écran hedha.
+                      // 🔵 ZID: el photo el 7a9i9iya - bytes (mémoire,
+                      // ba3d signup direct) awalan, wala URL (mel
+                      // backend, Image.network, ba3d login mel jdid) -
+                      // wala icon placeholder. Nafs mant9 el pet
+                      // (widgets/pet_tile.dart).
                       child: widget.ownerPhotoBytes != null
                           ? Image.memory(widget.ownerPhotoBytes!, fit: BoxFit.cover)
-                          : Icon(Icons.person, color: AppColors.vertpetsy, size: screenSize.width * 0.08),
+                          : widget.ownerPhotoUrl != null
+                              ? Image.network(widget.ownerPhotoUrl!, fit: BoxFit.cover)
+                              : Icon(Icons.person, color: AppColors.vertpetsy, size: screenSize.width * 0.08),
                     ),
                   ),
 
@@ -180,7 +200,9 @@ class _ProfileOwnerScreenState extends State<ProfileOwnerScreen> {
                     backgroundColor: AppColors.pinkpetsy,
                     size: screenSize.width * 0.10,
                     onTap: () {
-                      // TODO: yeftah el drawer/menu
+                      // 🔴 FIX: kanet TODO - tawa yeftah SidebarOwner
+                      // (widgets/drawers/sidebar_owner.dart).
+                      _scaffoldKey.currentState?.openDrawer();
                     },
                   ),
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../constants/app_colors.dart';
+import '../../constants/app_sizes.dart';
 import '../../widgets/button.dart';
 import '../../widgets/paw_widget.dart';
 import '../../widgets/back_button.dart';
@@ -100,7 +101,7 @@ class _OnboardingViewState extends State<OnboardingView> {
 
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size;
+    final sizes = AppSizes.of(context);
     final bool isLastPage = _currentPage == _pages.length - 1;
 
     final Color mutedTextColor =
@@ -112,14 +113,14 @@ class _OnboardingViewState extends State<OnboardingView> {
           children: [
             buildPetPaw(
               context: context,
-              size: screenSize.width * 0.11,
+              size: sizes.onboardingPawSize1,
               topPercent: 0.025,
               leftPercent: 0.1,
               color: AppColors.vertpetsy.withOpacity(0.5),
             ),
             buildPetPaw(
               context: context,
-              size: screenSize.width * 0.07,
+              size: sizes.onboardingPawSize2,
               topPercent: 0.027,
               leftPercent: 0.86,
               color: AppColors.pinkpetsy.withOpacity(0.4),
@@ -132,11 +133,11 @@ class _OnboardingViewState extends State<OnboardingView> {
             Column(
               children: [
                 SizedBox(
-                  height: screenSize.height * 0.06,
+                  height: sizes.onboardingSkipAreaHeight,
                   child: Align(
                     alignment: AlignmentDirectional.topEnd,
                     child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: screenSize.width * 0.02),
+                      padding: EdgeInsets.symmetric(horizontal: sizes.onboardingSkipPaddingH),
                       child: isLastPage
                           ? null
                           : TextButton(
@@ -144,7 +145,7 @@ class _OnboardingViewState extends State<OnboardingView> {
                               child: Text(
                                 'skip_button'.tr(),
                                 style: TextStyle(
-                                  fontSize: screenSize.width * 0.033,
+                                  fontSize: sizes.onboardingSkipFontSize,
                                   fontWeight: FontWeight.w600,
                                   color: mutedTextColor,
                                 ),
@@ -163,32 +164,32 @@ class _OnboardingViewState extends State<OnboardingView> {
                     itemBuilder: (context, index) {
                       final page = _pages[index];
                       return Padding(
-                        padding: EdgeInsets.symmetric(horizontal: screenSize.width * 0.08),
+                        padding: EdgeInsets.symmetric(horizontal: sizes.onboardingPagePaddingH),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Image.asset(
                               page.imagePath,
-                              width: screenSize.width * 0.65,
-                              height: screenSize.width * 0.65,
+                              width: sizes.onboardingImageSize,
+                              height: sizes.onboardingImageSize,
                               fit: BoxFit.contain,
                             ),
                             Text(
                               page.titleKey.tr(),
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                fontSize: screenSize.width * 0.045,
+                                fontSize: sizes.onboardingTitleFontSize,
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.pinkpetsy,
                                 height: 1.2,
                               ),
                             ),
-                            SizedBox(height: screenSize.height * 0.018),
+                            SizedBox(height: sizes.onboardingTitleSubtitleGap),
                             Text(
                               page.subtitleKey.tr(),
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                fontSize: screenSize.width * 0.038,
+                                fontSize: sizes.onboardingSubtitleFontSize,
                                 color: mutedTextColor,
                                 height: 1.4,
                               ),
@@ -205,18 +206,18 @@ class _OnboardingViewState extends State<OnboardingView> {
                     final bool isActive = index == _currentPage;
                     return AnimatedContainer(
                       duration: const Duration(milliseconds: 250),
-                      margin: EdgeInsets.symmetric(horizontal: screenSize.width * 0.010),
-                      width: isActive ? screenSize.width * 0.065 : screenSize.width * 0.020,
-                      height: screenSize.width * 0.020,
+                      margin: EdgeInsets.symmetric(horizontal: sizes.onboardingDotMarginH),
+                      width: isActive ? sizes.onboardingDotActiveWidth : sizes.onboardingDotInactiveWidth,
+                      height: sizes.onboardingDotHeight,
                       decoration: BoxDecoration(
                         color: isActive ? AppColors.pinkpetsy : AppColors.vertpetsy.withOpacity(0.35),
-                        borderRadius: BorderRadius.circular(screenSize.width * 0.02),
+                        borderRadius: BorderRadius.circular(sizes.onboardingDotRadius),
                       ),
                     );
                   }),
                 ),
 
-                SizedBox(height: screenSize.height * 0.025),
+                SizedBox(height: sizes.onboardingDotsButtonGap),
 
                 CustomButton(
                   text: isLastPage ? 'get_started_button'.tr() : 'next_button'.tr(),
@@ -227,7 +228,7 @@ class _OnboardingViewState extends State<OnboardingView> {
                   onPressed: _goToNextPage,
                 ),
 
-                SizedBox(height: screenSize.height * 0.03),
+                SizedBox(height: sizes.onboardingBottomGap),
               ],
             ),
           ],

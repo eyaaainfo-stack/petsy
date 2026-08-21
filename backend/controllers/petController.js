@@ -6,10 +6,10 @@ const Animal = require('../models/animal');
 // ============================================================================
 exports.createPet = async (req, res) => {
   try {
-    const { owner, petType, name, age, breed, size, gender, behaviors, careInfo, vetClinicName, vetClinicPhone } = req.body;
+    const { petType, name, age, breed, size, gender, behaviors, careInfo, vetClinicName, vetClinicPhone } = req.body;
 
     const pet = await Animal.create({
-      owner,
+      owner: req.userId, // 🔵 sa77e7t: mel token (protect middleware), MCH mel body
       petType,
       name,
       age,
@@ -58,6 +58,24 @@ exports.uploadPetPhoto = async (req, res) => {
     }
 
     res.status(200).json({ message: 'Photo uploaded successfully', pet });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// ============================================================================
+// 3. GET PETS BY OWNER
+// ============================================================================
+// 🔵 ZID: hedhi elli el Flutter (user_login.dart) lezمha te3yet biha
+// ba3d el login - bch tجib el pets el 7a9i9iyin tel user (mafamech
+// ma tab9ach 3andou "pets" ka fadhya kif ye3mel login mel jdid).
+// ============================================================================
+exports.getPetsByOwner = async (req, res) => {
+  try {
+    // 🔵 mel token (protect middleware), MCH mel query - nafs el mant9
+    // amni tel createPet (bla ha, ay wa7ed ynajjam yechouf pets 7ad okhor).
+    const pets = await Animal.find({ owner: req.userId });
+    res.status(200).json({ pets });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

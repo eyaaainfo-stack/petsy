@@ -3,10 +3,26 @@
          (geolocator package) -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <!-- 🔵 ZID (fix el crash): "image_picker" te7taj hedhi el permission
+         MDECLARÉE fel manifest bch tنجم tel9a el kamera (ImageSource.camera)
+         - lowkan mch mawjouda, l'app te-crash direct (b'silence, tokhrej)
+         ki el user y5tar "Camera" (Gallery ta5dem bla ha, chrahtha
+         mch nafs el chemin). -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <!-- 🔵 ZID: bch el app tنجم tse2al el user "Allow this app to
+         ignore battery optimizations?" (dialog systeme, mch settings
+         b idek) - hedhi el permission LEZEMHA t-declari fel manifest
+         bech el Intent (REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, fel
+         MainActivity.kt) ye5dem. Google t9bel hedhi 3ala apps
+         eli lezemhom real-time (VoIP, tracking, etc.) - w petsy
+         3andha geolocator fa justifiable. -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
     <application
         android:label="frontend"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false"
+        android:fullBackupContent="false">
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -46,4 +62,8 @@
             <data android:mimeType="text/plain"/>
         </intent>
     </queries>
+    <!-- 🔵 ZID: "required=false" - bch el app teb9a installable 7ata
+         3al appareils elli ma3andhomch kamera (mch obligatoire, ghir
+         "on l'a besoin ken mawjouda"). -->
+    <uses-feature android:name="android.hardware.camera" android:required="false"/>
 </manifest>

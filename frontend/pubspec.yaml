@@ -46,11 +46,24 @@ dependencies:
   geolocator: ^13.0.1
   # bch nnajjmou n3maloulou appel lel API tel recherche (Nominatim/OSM)
   http: ^1.2.0
+  # 🔵 ZID: bch nnajjmou n7addou "content-type" (image/jpeg) fel photo
+  # upload (uploadPhoto fel api_service.dart) - mawjouda déjà "b'ta7t"
+  # (dépendance transitive tel http), houni ghir zdineha b'esmha bch
+  # nnajjmou n-importiwha direct. MA TBADDELCH ay version, ghir twarri
+  # esmha (mafamech risque).
+  http_parser: ^4.1.2
 
   # 🔵 zdineha: bch nnajjmou n5tarou photo mel galerie wala nakhdou wa7da
   # jdida (kamera) - te5dem fel mobile W el web (federated plugin,
   # ma7tajch package منفصلة lel web).
   image_picker: ^1.1.2
+
+  # 🔵 ZID: bch nnajjmou n7afdhou el session (token) W el flag
+  # "hasSeenOnboarding" fel DISQUE (mch fel mémoire bess) - hedhi elli
+  # kanet ta9sa: el app kant tensa el user login ki tsakkar w terja3
+  # te7el (AuthSession kan "in-memory" bess, chrahtha fel commentaire
+  # el 9dim fel auth_session.dart).
+  shared_preferences: ^2.2.3
 
 dev_dependencies:
   flutter_test:

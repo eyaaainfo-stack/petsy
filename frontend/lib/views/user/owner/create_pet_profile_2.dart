@@ -106,7 +106,15 @@ class _CreatePetProfile2ScreenState extends State<CreatePetProfile2Screen> {
 
     setState(() => _isSubmitting = true);
 
-    final success = await _controller.submitPetBehaviorAndCare(
+    // 🔵 sa77e7t: tاوة terja3 "petId" (String?), MCH "bool" - lowkan
+    // null, ma5demch (chekki server/connexion, chrahtha fel SnackBar).
+    final petId = await _controller.submitPetBehaviorAndCare(
+      petType: widget.petType,
+      name: widget.petName,
+      age: widget.petAge,
+      breed: widget.petBreed,
+      size: widget.petSize,
+      gender: widget.petGender,
       behaviors: _selectedBehaviors,
       careInfo: _careInfo,
       clinicName: _clinicNameController.text,
@@ -116,28 +124,36 @@ class _CreatePetProfile2ScreenState extends State<CreatePetProfile2Screen> {
     if (!mounted) return;
     setState(() => _isSubmitting = false);
 
-    if (success) {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => AddPetPhotoScreen(
-            petType: widget.petType,
-            ownerName: widget.ownerName,
-            ownerCity: widget.ownerCity,
-            petName: widget.petName,
-            existingPets: widget.existingPets,
-            ownerPhotoBytes: widget.ownerPhotoBytes,
-            petAge: widget.petAge,
-            petBreed: widget.petBreed,
-            petSize: widget.petSize,
-            petGender: widget.petGender,
-            petBehaviors: _selectedBehaviors.toList(),
-            petCareInfo: _careInfo,
-            petVetClinicName: _clinicNameController.text,
-            petVetClinicPhone: _clinicPhoneController.text,
-          ),
-        ),
+    if (petId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('pet_save_error'.tr())),
       );
+      return;
     }
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => AddPetPhotoScreen(
+          petType: widget.petType,
+          ownerName: widget.ownerName,
+          ownerCity: widget.ownerCity,
+          petName: widget.petName,
+          existingPets: widget.existingPets,
+          ownerPhotoBytes: widget.ownerPhotoBytes,
+          petAge: widget.petAge,
+          petBreed: widget.petBreed,
+          petSize: widget.petSize,
+          petGender: widget.petGender,
+          petBehaviors: _selectedBehaviors.toList(),
+          petCareInfo: _careInfo,
+          petVetClinicName: _clinicNameController.text,
+          petVetClinicPhone: _clinicPhoneController.text,
+          // 🔵 ZID: el ID el 7a9i9i (MongoDB) - lezmou bch AddPetPhotoScreen
+          // ta3raf win tab3ath el photo (POST /api/pets/:petId/photo).
+          petId: petId,
+        ),
+      ),
+    );
   }
 
   InputDecoration _fieldDecoration({required BuildContext context}) {

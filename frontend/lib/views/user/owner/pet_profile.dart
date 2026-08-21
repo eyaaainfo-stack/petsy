@@ -211,8 +211,10 @@ class _PetBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double pillHeight = screenSize.width * 0.16;
-    final double bannerHeight = screenSize.height * 0.28;
+    // 🔵 sa77e7t: bannerHeight/photo kanou kbar barcha (0.28/0.30) -
+    // "hassithou vulgaire" (kbir zayed 3an el design). Sghart el 2.
+    final double pillHeight = screenSize.width * 0.14;
+    final double bannerHeight = screenSize.height * 0.20;
 
     return Stack(
       clipBehavior: Clip.none,
@@ -229,27 +231,32 @@ class _PetBanner extends StatelessWidget {
           child: Stack(
             children: [
               Positioned(
-                top: screenSize.height * 0.02,
+                top: screenSize.height * 0.015,
                 right: screenSize.width * 0.06,
-                child: Icon(Icons.pets, color: AppColors.pinkpetsy.withOpacity(0.7), size: screenSize.width * 0.08),
+                child: Icon(Icons.pets, color: AppColors.pinkpetsy.withOpacity(0.7), size: screenSize.width * 0.06),
               ),
               Positioned(
-                bottom: screenSize.height * 0.06,
+                bottom: screenSize.height * 0.03,
                 left: screenSize.width * 0.06,
-                child: Icon(Icons.pets, color: AppColors.pinkpetsy.withOpacity(0.6), size: screenSize.width * 0.06),
+                child: Icon(Icons.pets, color: AppColors.pinkpetsy.withOpacity(0.6), size: screenSize.width * 0.05),
               ),
               Center(
                 child: Container(
-                  width: screenSize.width * 0.30,
-                  height: screenSize.width * 0.30,
+                  width: screenSize.width * 0.22,
+                  height: screenSize.width * 0.22,
                   decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.pinkpetsy, width: 2.5),
+                    // 🔵 sa77e7t: mrabba3 b zawaya mdawra (mch dayra) -
+                    // nafs mant9 add_pet_photo.dart/profile_owner.dart.
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: AppColors.pinkpetsy, width: 2),
                   ),
-                  child: ClipOval(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
                     child: pet.photoBytes != null
                         ? Image.memory(pet.photoBytes!, fit: BoxFit.cover)
-                        : Icon(pet.icon, color: AppColors.pinkpetsy, size: screenSize.width * 0.14),
+                        : pet.photoUrl != null
+                            ? Image.network(pet.photoUrl!, fit: BoxFit.cover)
+                            : Icon(pet.icon, color: AppColors.pinkpetsy, size: screenSize.width * 0.10),
                   ),
                 ),
               ),
@@ -306,19 +313,28 @@ class _InfoPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(vertical: screenWidth * 0.03),
+      padding: EdgeInsets.symmetric(vertical: screenWidth * 0.035),
       decoration: BoxDecoration(
         color: AppColors.pinkpetsy.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(16),
+        // 🔵 sa77e7t: radius kbar (mch mrabba3 b zawaya cha7i7a) - "mch
+        // carre kifma tlabt", tاوة chekel capsule/pilule aktar.
+        borderRadius: BorderRadius.circular(26),
       ),
       child: Column(
         children: [
           Container(
-            padding: EdgeInsets.all(screenWidth * 0.015),
-            decoration: BoxDecoration(color: AppColors.pinkpetsy.withOpacity(0.25), shape: BoxShape.circle),
+            // 🔵 sa77e7t: kanet "shape: BoxShape.circle" - hedhi tekhدem
+            // ghir m3a chekel mdawer (dayra), mch m3a ktiba ("Gender"
+            // 6 a7rouf ma tدخلch fi dayra bla ma tetkas). Tاوة "pilule"
+            // (borderRadius kbir 3ala rectangle, mch dayra 7a9i9iya).
+            padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.025, vertical: screenWidth * 0.012),
+            decoration: BoxDecoration(
+              color: AppColors.pinkpetsy.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(20),
+            ),
             child: Text(label, style: TextStyle(fontSize: screenWidth * 0.026, fontWeight: FontWeight.w600, color: AppColors.pinkpetsy)),
           ),
-          SizedBox(height: screenWidth * 0.015),
+          SizedBox(height: screenWidth * 0.02),
           Icon(icon, color: AppColors.pinkpetsy, size: screenWidth * 0.05),
           SizedBox(height: screenWidth * 0.008),
           Text(value, style: TextStyle(fontSize: screenWidth * 0.03, fontWeight: FontWeight.w600)),

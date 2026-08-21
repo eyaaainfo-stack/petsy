@@ -1,30 +1,32 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+// Test bassit ("smoke test") l'app Petsy - ychekek belli el app
+// t3amar bla crash (EasyLocalization + MyApp), MCH el counter app
+// el default (elli kan mawjoud houni 9bal, testa esm 3adad "0"/"1"
+// elli ma3andouch 3ala9a b'Petsy).
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:easy_localization/easy_localization.dart';
 
-import 'package:frontend/main.dart';
+import 'package:frontend/app.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('Petsy app launches without crashing', (WidgetTester tester) async {
+    // 🔵 EasyLocalization lezmha init 9bal ma tetsta3mel (nafs mant9
+    // main.dart) - bla ha, kol '.tr()' fel app tar7am exception.
+    await EasyLocalization.ensureInitialized();
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    await tester.pumpWidget(
+      EasyLocalization(
+        supportedLocales: const [Locale('fr'), Locale('ar'), Locale('en')],
+        path: 'assets/translations',
+        fallbackLocale: const Locale('fr'),
+        child: const MyApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // el app 3amaret bla crash - fama MaterialApp wa7ed wa9ef bnajjah
+    // (el écran el loula houwa LanguageView, mel routing fel app.dart).
+    expect(find.byType(MaterialApp), findsOneWidget);
   });
 }

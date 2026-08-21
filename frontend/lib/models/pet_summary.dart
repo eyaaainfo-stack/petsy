@@ -18,6 +18,12 @@ class PetSummary {
   final String name;
   final String petType; // 'dog' wala 'cat'
   final Uint8List? photoBytes;
+  // 🔵 ZID: photoUrl (mel backend, ba3d el upload) + id (el MongoDB
+  // _id 7a9i9i) - photoBytes te5dem bess houni fi hedhi el session
+  // (mémoire), photoUrl teb9a t3aych ba3d ma el user ye5rej mel app
+  // (Image.network bدل Image.memory).
+  final String? photoUrl;
+  final String? id;
 
   // 🔵 ZID: el ba9i mel data (age/breed/size/gender mel écran el
   // loula, behaviors/careInfo/vet mel écran el thenya) - kanet
@@ -35,6 +41,8 @@ class PetSummary {
     required this.name,
     required this.petType,
     this.photoBytes,
+    this.photoUrl,
+    this.id,
     this.age,
     this.breed,
     this.size,

@@ -30,6 +30,12 @@ const userSchema = new mongoose.Schema(
     // wa7dhom) - bفضل el discriminator pattern, el 4 adwar (Admin,
     // Owner, Sitter, Courier) yerthou hedha el 7a9el automatique.
     photoUrl: { type: String, default: '' },
+    // 🔴 FIX: kanou na9sin - el front (UserCreateProfileScreen) yekteb
+    // fihom (birthday date picker, "About you" textarea) lakin el
+    // backend ma3andouch 7ou9oul lihom (TODO mawjoud déjà fel controller
+    // Flutter) - fa el data kanet tetzeya3 (ma tetsajjelch 7atta).
+    birthday: { type: String, default: '' }, // format "DD/MM/YYYY" (kifma el front yeb3ath)
+    bio: { type: String, default: '' }, // "About you" / "About me"
     // 🔵 ZID: city (w location - lat/lng, mel map picker) 3ala mستوى
     // el User el asasi - kol el 4 adwar yerthouha. HEDHA el 7a9el
     // elli bch ykhalli el "sitters men nefs el ville" ye5dem 7a9i9i.

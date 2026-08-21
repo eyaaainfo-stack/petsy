@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:latlong2/latlong.dart';
 import '../services/api_service.dart';
@@ -100,6 +101,9 @@ class UserCreateProfileController {
     required String aboutYou,
     LatLng? location,
   }) async {
+    // 🔵 ZID: print UNCONDITIONNEL - bch nchoufou b'a3yonna chnowa
+    // el valeurs el 7a9i9iyin (khousousan "aboutYou") 9bal ma tab3ath.
+    debugPrint('🟠 [submitProfile] name="$name" birthday="$birthday" city="$city" phone="$phone" aboutYou="$aboutYou"');
     try {
       final response = await ApiService.patch(
         '/users/profile',
@@ -109,8 +113,10 @@ class UserCreateProfileController {
           'city': city,
           if (location != null)
             'location': {'lat': location.latitude, 'lng': location.longitude},
-          // TODO: birthday/aboutYou - lezmhom 7ou9oul jdida fel User
-          // schema (mazel mch mzoudin) ki tحب tzidhom.
+          // 🔴 FIX: kanou TODO (backend ma3andouch 7ou9oul lihom) -
+          // tawa el User model 3andou "birthday"/"bio", fa nab3thouhom.
+          'birthday': birthday,
+          'bio': aboutYou,
         },
         token: AuthSession.token, // 🔵 mel session, chrahtha fel AuthController
       );

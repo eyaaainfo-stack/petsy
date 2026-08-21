@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../constants/app_colors.dart';
+import '../../constants/app_sizes.dart';
 import '../../widgets/back_button.dart';
 import '../../widgets/button.dart';
 import '../../widgets/outlined_button.dart';
 import '../../widgets/paw_widget.dart';
 import '../../controllers/validators.dart';
 import '../../controllers/auth_controller.dart';
+import '../../repositories/pet_repository.dart';
+import '../../services/api_service.dart';
 import 'user_signin.dart';
+import 'owner/profile_owner.dart';
+import 'sitter/sitter_profile.dart';
 
 // ============================================================================
 // UserLoginScreen ("Login" - 7sab MAWJOUD)
@@ -97,7 +102,43 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
     });
 
     if (result.success) {
-      // TODO: navigation lel home mte3 el role (widget.role)
+      // 🔵 sa77e7t: tاوة njibou el pets el 7a9i9iyin mel backend (GET
+      // /api/pets, protégée, ta3raf el owner mel token) - mch [] fadhya.
+      if (result.role == 'owner') {
+        final pets = await PetRepository.fetchOwnerPets();
+        if (!mounted) return;
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (_) => ProfileOwnerScreen(
+              ownerName: result.fullName ?? '',
+              ownerCity: result.city ?? '',
+              pets: pets,
+              // 🔴 FIX: kanet na9sa - photo tel owner ma kanetch tban
+              // ba3d login (mediaBaseUrl + el path relatif mel backend,
+              // nafs mant9 PetRepository).
+              ownerPhotoUrl: (result.photoUrl != null && result.photoUrl!.isNotEmpty)
+                  ? '${ApiService.mediaBaseUrl}${result.photoUrl}'
+                  : null,
+            ),
+          ),
+          (route) => false,
+        );
+      } else if (result.role == 'sitter') {
+        if (!mounted) return;
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (_) => SitterProfileScreen(
+              sitterName: result.fullName ?? '',
+              sitterCity: result.city ?? '',
+              sitterPhotoUrl: (result.photoUrl != null && result.photoUrl!.isNotEmpty)
+                  ? '${ApiService.mediaBaseUrl}${result.photoUrl}'
+                  : null,
+            ),
+          ),
+          (route) => false,
+        );
+      }
+      // TODO: navigation lel home mte3 el b39dhin (courier/admin)
     }
   }
 
@@ -142,11 +183,11 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
     );
   }
 
-  Widget _fieldLabel(String text, double screenWidth) {
+  Widget _fieldLabel(String text, AppSizes sizes) {
     return Text(
       text,
       style: TextStyle(
-        fontSize: screenWidth * 0.037,
+        fontSize: sizes.authFieldLabelFontSize,
         fontWeight: FontWeight.bold,
         color: AppColors.pinkpetsy,
       ),
@@ -155,64 +196,64 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size;
+    final sizes = AppSizes.of(context);
 
     return Scaffold(
       body: SafeArea(
         child: Stack(
           children: [
-            buildPetPaw(context: context, size: screenSize.width * 0.08, topPercent: 0.03, leftPercent: 0.82, color: AppColors.pinkpetsy.withOpacity(0.6)),
-            buildPetPaw(context: context, size: screenSize.width * 0.075, topPercent: 0.86, leftPercent: 0.16, color: AppColors.pinkpetsy.withOpacity(0.6)),
-            buildPetPaw(context: context, size: screenSize.width * 0.06, topPercent: 0.905, leftPercent: 0.04, color: AppColors.pinkpetsy.withOpacity(0.6)),
+            buildPetPaw(context: context, size: sizes.authPawSize1, topPercent: 0.03, leftPercent: 0.82, color: AppColors.pinkpetsy.withOpacity(0.6)),
+            buildPetPaw(context: context, size: sizes.authPawSize2, topPercent: 0.86, leftPercent: 0.16, color: AppColors.pinkpetsy.withOpacity(0.6)),
+            buildPetPaw(context: context, size: sizes.authPawSize3, topPercent: 0.905, leftPercent: 0.04, color: AppColors.pinkpetsy.withOpacity(0.6)),
 
             SingleChildScrollView(
-              padding: EdgeInsets.symmetric(horizontal: screenSize.width * 0.08),
+              padding: EdgeInsets.symmetric(horizontal: sizes.authHorizontalPadding),
               child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    SizedBox(height: screenSize.height * 0.10),
+                    SizedBox(height: sizes.authTopGap),
 
                     Center(
                       child: Image.asset(
                         'assets/images/ppetsy.png',
-                        width: screenSize.width * 0.56,
+                        width: sizes.authLogoWidth,
                         fit: BoxFit.contain,
                       ),
                     ),
 
-                    SizedBox(height: screenSize.height * 0.022),
+                    SizedBox(height: sizes.authLogoTitleGap),
 
                     Center(
                       child: Text(
                         'login_welcome_back_title'.tr(),
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: screenSize.width * 0.052,
+                          fontSize: sizes.authTitleFontSize,
                           fontWeight: FontWeight.bold,
                           color: AppColors.vertpetsy,
                         ),
                       ),
                     ),
-                    SizedBox(height: screenSize.height * 0.004),
+                    SizedBox(height: sizes.authTitleSubtitleGap),
                     Center(
                       child: Text(
                         'login_subtitle'.tr(),
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: screenSize.width * 0.043,
+                          fontSize: sizes.authSubtitleFontSize,
                           fontWeight: FontWeight.bold,
                           color: AppColors.vertpetsy.withOpacity(0.85),
                         ),
                       ),
                     ),
 
-                    SizedBox(height: screenSize.height * 0.045),
+                    SizedBox(height: sizes.authSubtitleFieldsGap),
 
                     // 1️⃣ Email
-                    _fieldLabel('email_address_label'.tr(), screenSize.width),
-                    SizedBox(height: screenSize.height * 0.008),
+                    _fieldLabel('email_address_label'.tr(), sizes),
+                    SizedBox(height: sizes.authLabelFieldGap),
                     TextFormField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
@@ -232,11 +273,11 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                       ),
                     ),
 
-                    SizedBox(height: screenSize.height * 0.022),
+                    SizedBox(height: sizes.authFieldsGap),
 
                     // 2️⃣ Password
-                    _fieldLabel('password_label'.tr(), screenSize.width),
-                    SizedBox(height: screenSize.height * 0.008),
+                    _fieldLabel('password_label'.tr(), sizes),
+                    SizedBox(height: sizes.authLabelFieldGap),
                     TextFormField(
                       controller: _passwordController,
                       obscureText: _obscurePassword,
@@ -260,7 +301,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                       ),
                     ),
 
-                    SizedBox(height: screenSize.height * 0.03),
+                    SizedBox(height: sizes.authLoginPreButtonGap),
 
                     // 3️⃣ Bouton "Login" (nafs CustomButton, text tbeddel
                     // l "login_button" mch "signup_button")
@@ -275,7 +316,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                       ),
                     ),
 
-                    SizedBox(height: screenSize.height * 0.02),
+                    SizedBox(height: sizes.authLoginButtonForgotGap),
 
                     // 4️⃣ "Forgot Password?" - TA7T el bouton (kifha kif
                     // Facebook), mch fou9u kifma kan fel design l'oula
@@ -287,7 +328,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                         child: Text(
                           'forgot_password_button'.tr(),
                           style: TextStyle(
-                            fontSize: screenSize.width * 0.036,
+                            fontSize: sizes.authForgotPasswordFontSize,
                             color: AppColors.pinkpetsy,
                             fontWeight: FontWeight.w600,
                           ),
@@ -295,7 +336,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                       ),
                     ),
 
-                    SizedBox(height: screenSize.height * 0.025),
+                    SizedBox(height: sizes.authForgotCreateAccountGap),
 
                     // 5️⃣ "Create new account" - CustomOutlinedButton
                     // MAWJOUD déjà (widgets/outlined_button.dart), isSelected:
@@ -304,15 +345,15 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                     Center(
                       child: CustomOutlinedButton(
                         text: 'create_account_button'.tr(),
-                        width: screenSize.width * 0.90,
-                        height: screenSize.height * 0.07,
-                        fontFactor: 0.38,
+                        width: sizes.authButtonWidth,
+                        height: sizes.authButtonHeight,
+                        fontFactor: AppSizes.authCreateAccountFontFactor,
                         isSelected: true,
                         onPressed: _onCreateAccountPressed,
                       ),
                     ),
 
-                    SizedBox(height: screenSize.height * 0.038),
+                    SizedBox(height: sizes.authDividerGap),
 
                     // 6️⃣ Divider "Continue through" + social icons (fel
                     // lakher, kifma tlabt)
@@ -320,13 +361,13 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                       children: [
                         Expanded(child: Divider(color: AppColors.pinkpetsy.withOpacity(0.4))),
                         Padding(
-                          padding: EdgeInsets.symmetric(horizontal: screenSize.width * 0.03),
+                          padding: EdgeInsets.symmetric(horizontal: sizes.authDividerPaddingH),
                           child: Text(
                             'continue_with_label'.tr(),
                             style: TextStyle(
                               color: AppColors.pinkpetsy,
                               fontWeight: FontWeight.w500,
-                              fontSize: screenSize.width * 0.033,
+                              fontSize: sizes.authDividerFontSize,
                             ),
                           ),
                         ),
@@ -334,7 +375,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                       ],
                     ),
 
-                    SizedBox(height: screenSize.height * 0.025),
+                    SizedBox(height: sizes.authDividerSocialGap),
 
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -345,25 +386,25 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                           },
                           borderRadius: BorderRadius.circular(50),
                           child: Padding(
-                            padding: EdgeInsets.all(screenSize.width * 0.02),
-                            child: Icon(Icons.g_mobiledata_rounded, size: screenSize.width * 0.11, color: Colors.redAccent),
+                            padding: EdgeInsets.all(sizes.authSocialIconPadding),
+                            child: Icon(Icons.g_mobiledata_rounded, size: sizes.authGoogleIconSize, color: Colors.redAccent),
                           ),
                         ),
-                        SizedBox(width: screenSize.width * 0.05),
+                        SizedBox(width: sizes.authSocialIconsGap),
                         InkWell(
                           onTap: () {
                             // TODO: Facebook Sign-In
                           },
                           borderRadius: BorderRadius.circular(50),
                           child: Padding(
-                            padding: EdgeInsets.all(screenSize.width * 0.02),
-                            child: Icon(Icons.facebook_rounded, size: screenSize.width * 0.09, color: const Color(0xFF1877F2)),
+                            padding: EdgeInsets.all(sizes.authSocialIconPadding),
+                            child: Icon(Icons.facebook_rounded, size: sizes.authFacebookIconSize, color: const Color(0xFF1877F2)),
                           ),
                         ),
                       ],
                     ),
 
-                    SizedBox(height: screenSize.height * 0.03),
+                    SizedBox(height: sizes.authBottomGap),
                   ],
                 ),
               ),

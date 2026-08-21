@@ -10,7 +10,10 @@ import '../../widgets/button.dart';
 import '../../widgets/paw_widget.dart';
 import '../../widgets/map.dart';
 import '../../controllers/user_create_profile_controller.dart';
+import '../../controllers/auth_session.dart';
+import '../../services/api_service.dart';
 import 'owner/create_pet_profile.dart';
+import 'sitter/create_sitter_profile.dart';
 
 // ============================================================================
 // UserCreateProfileScreen
@@ -101,13 +104,23 @@ class _UserCreateProfileScreenState extends State<UserCreateProfileScreen> {
   }
 
   Future<void> _pickImage(ImageSource source) async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? picked = await picker.pickImage(source: source, imageQuality: 80);
-    if (picked == null) return; // el user 3ellel (cancel)
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? picked = await picker.pickImage(source: source, imageQuality: 80);
+      if (picked == null) return; // el user 3ellel (cancel)
 
-    final bytes = await picked.readAsBytes();
-    if (!mounted) return;
-    setState(() => _profileImageBytes = bytes);
+      final bytes = await picked.readAsBytes();
+      if (!mounted) return;
+      setState(() => _profileImageBytes = bytes);
+    } catch (_) {
+      // 🔵 ZID: lowkan el user rafedh el permission (kamera/galerie),
+      // wala 5ata fel plugin - nwarriw SnackBar bdal ma l'app te-crash
+      // wala teskot bla ay rasala.
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('photo_pick_error'.tr())),
+      );
+    }
   }
 
   // --------------------------------------------------------------------
@@ -224,9 +237,41 @@ class _UserCreateProfileScreenState extends State<UserCreateProfileScreen> {
 
     if (!success) return;
 
+    // 🔵 ZID: print UNCONDITIONNEL - bch nchoufou ken el code el jdid
+    // ye5dem khaless (ken ma bench, lezem hot restart 'R'), w ken el
+    // guard (_profileImageBytes/userId) howa elli null.
+    debugPrint('🟣 [UserCreateProfile._onNextPressed] hasPhoto=${_profileImageBytes != null} userId=${AuthSession.userId}');
+
+    // 🔵 sa77e7t el bug el kbir: houni kanet el photo (avatar el user)
+    // ma tetba3thech lel backend KHALESS (mafamech 7atta appel) - kanet
+    // tab9a fel mémoire bess (bytes) w tsafer bin el écrans bch tban
+    // fel UI, lakin el fichier 3omrou ma yousel l'uploads/users/ 7a9i9i.
+    // Tawa: appel 7a9i9i, ba3d ma el profile (fullName/city/...) yetsajel.
+    if (_profileImageBytes != null && AuthSession.userId != null) {
+      try {
+        final response = await ApiService.uploadPhoto(
+          '/users/${AuthSession.userId}/photo',
+          _profileImageBytes!,
+          token: AuthSession.token,
+        );
+        if (response.statusCode != 200) {
+          // 🔵 ZID: dima kan el catch fadhi (silence) - mch nnajmou
+          // nchoufou 3lech el upload yefchel. Tawa yban fel terminal
+          // (flutter run console) 3ala 9al ma tsir.
+          debugPrint('⚠️ [uploadUserPhoto] status ${response.statusCode}: ${response.body}');
+        }
+      } catch (error) {
+        debugPrint('⚠️ [uploadUserPhoto] exception: $error');
+        // 🔵 ma ne7bsouch el flow (l'user yekmel l'CreatePetProfileScreen
+        // 7ata lowkan el photo ma etle3tech) - ghir n-logguiw bch nnajmou
+        // nchoufou el ghalta el marra el jaya.
+      }
+    }
+
     // 🔵 ZID houni: lowkan el role "owner", nemchiw l'écran PetProfileScreen
-    // (bch yzid pets tou3ou). El b39dhin (sitter/courier) mazel TODO
-    // (home mte3hom).
+    // (bch yzid pets tou3ou). "sitter" -> CreateSitterProfileScreen (el
+    // 2 écrans el jdad: services+prices, mba3d home&transport). "courier"
+    // mazel TODO (home mte3ou).
     if (widget.role == 'owner') {
       Navigator.of(context).push(
         MaterialPageRoute(
@@ -239,8 +284,18 @@ class _UserCreateProfileScreenState extends State<UserCreateProfileScreen> {
           ),
         ),
       );
+    } else if (widget.role == 'sitter') {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => CreateSitterProfileScreen(
+            sitterName: _nameController.text,
+            sitterCity: _cityController.text,
+            sitterPhotoBytes: _profileImageBytes,
+          ),
+        ),
+      );
     } else {
-      // TODO: navigation lel home mte3 el role (widget.role)
+      // TODO: navigation lel home mte3 el role (widget.role) - courier
     }
   }
 
@@ -475,6 +530,7 @@ class _UserCreateProfileScreenState extends State<UserCreateProfileScreen> {
                         widthFactor: 0.90,
                         heightFactor: 0.07,
                         fontFactor: 0.40,
+                        enabled: !_isSubmitting,
                         onPressed: _onNextPressed,
                       ),
                     ),

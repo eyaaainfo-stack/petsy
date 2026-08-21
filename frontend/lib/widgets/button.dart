@@ -17,6 +17,15 @@ class CustomButton extends StatelessWidget {
   final IconData? icon;      // logo/icone 9bal el text (null = mafamech)
   final String? subtitle;    // description sghira TAHT el text, JOWA el bouton
   final bool showArrow;      // "›" fel lakher (bch el bouton ykoun "selection")
+  // 🔴 FIX: kanet na9sa - el bouton ma3andouch tari9a ynaHHi rou7ou
+  // (disable) ki el appel API ye5dem (_isSubmitting). El guard "if
+  // (_isSubmitting) return;" fel _onNextPressed ma yekfich (fama race
+  // condition: 2 taps sri3in ynajjmou ye3addiw el zouz 9bal ma
+  // _isSubmitting yetbeddel) - hedha elli sabbeb el double appel
+  // (create profile -> photo upload x2 -> Navigator.push x2). Tawa:
+  // enabled=false -> onPressed: null lel ElevatedButton - Flutter
+  // NAFSOU yamна3 el lamsa (mch guard b'yedna), 100% amen.
+  final bool enabled;
 
   const CustomButton({
     super.key,
@@ -29,6 +38,7 @@ class CustomButton extends StatelessWidget {
     this.icon,
     this.subtitle,
     this.showArrow = false,
+    this.enabled = true,
   });
 
   @override
@@ -46,13 +56,14 @@ class CustomButton extends StatelessWidget {
           return ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: color ?? AppColors.pinkpetsy,
+              disabledBackgroundColor: (color ?? AppColors.pinkpetsy).withOpacity(0.6),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(25.0),
               ),
               elevation: 2,
               padding: EdgeInsets.symmetric(horizontal: screenSize.width * 0.05),
             ),
-            onPressed: onPressed,
+            onPressed: enabled ? onPressed : null,
             // ------------------------------------------------------------
             // Row 3ala tool el bouton: [icon?] [text + subtitle?] [arrow?]
             // Lowkan icon/subtitle/showArrow kolhom mch mawjoudin (fel

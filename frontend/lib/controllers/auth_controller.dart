@@ -12,10 +12,20 @@ class LoginResult {
   final bool success;
   final LoginErrorType errorType;
   final String? token; // 🔵 ZID: el JWT token elli el backend yrajja3
+  // 🔵 ZID: bch nnajjmou n3amlou navigation lel ProfileOwnerScreen
+  // (7ata el "esm"/"blasa" tel user connecté, mch bess el token).
+  final String? fullName;
+  final String? city;
+  final String? role;
+  // 🔴 FIX: kanet na9sa - photo tel owner (mel backend, mathalan
+  // "/uploads/users/xxx.jpg") ma kanetch tetba3ath l'ProfileOwnerScreen
+  // ba3d login (kanet tban ghir ba3d signup direct, mel mémoire).
+  final String? photoUrl;
 
-  const LoginResult._(this.success, this.errorType, [this.token]);
+  const LoginResult._(this.success, this.errorType, [this.token, this.fullName, this.city, this.role, this.photoUrl]);
 
-  factory LoginResult.success(String token) => LoginResult._(true, LoginErrorType.none, token);
+  factory LoginResult.success(String token, {String? fullName, String? city, String? role, String? photoUrl}) =>
+      LoginResult._(true, LoginErrorType.none, token, fullName, city, role, photoUrl);
   factory LoginResult.emailNotFound() => const LoginResult._(false, LoginErrorType.invalidEmail);
   factory LoginResult.wrongPassword() => const LoginResult._(false, LoginErrorType.invalidPassword);
   factory LoginResult.genericError() => const LoginResult._(false, LoginErrorType.generic);
@@ -68,7 +78,13 @@ class AuthController {
         // bch UserCreateProfileController w profile_owner ynajmou
         // yosloula ba3d.
         AuthSession.save(token: token, userId: user['id'] as String);
-        return LoginResult.success(token);
+        return LoginResult.success(
+          token,
+          fullName: user['fullName'] as String?,
+          city: user['city'] as String?,
+          role: user['role'] as String?,
+          photoUrl: user['photoUrl'] as String?,
+        );
       } else if (response.statusCode == 404) {
         // el backend yrajja3 404 kif el email mch mawjoud
         return LoginResult.emailNotFound();

@@ -47,6 +47,12 @@ exports.login = async (req, res) => {
         fullName: user.fullName,
         phone: user.phone,
         role: user.role, // <-- Hna el-Front-end yaʿref el-role (admin/owner/sitter/courier)
+        // 🔴 FIX: kanou na9sin - el front (ProfileOwnerScreen) yesta3melhom
+        // direct ba3d login (city fel header, photoUrl fel photo tel owner)
+        // w kanou dima undefined/null 7atta lowkan el user 3andou photo
+        // mzouda fel base.
+        city: user.city,
+        photoUrl: user.photoUrl,
       },
     });
   } catch (error) {

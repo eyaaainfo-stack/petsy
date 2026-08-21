@@ -43,8 +43,6 @@ class SeeAllPetsScreen extends StatelessWidget {
             // 🐾 Paw (fou9-yemin, kifha kif el design)
             buildPetPaw(context: context, size: screenSize.width * 0.09, topPercent: 0.025, leftPercent: 0.85, color: AppColors.pinkpetsy.withOpacity(0.6)),
 
-            const CustomBackButton(),
-
             SingleChildScrollView(
               padding: EdgeInsets.symmetric(horizontal: screenSize.width * 0.06),
               child: Column(
@@ -116,6 +114,16 @@ class SeeAllPetsScreen extends StatelessWidget {
                 ],
               ),
             ),
+
+            // 🔙 Bouton retour - 🔴 FIX: zdinaha HOUNI (LAKHER fel Stack),
+            // mch 9bal el SingleChildScrollView. 3lech? Stack yeh-hit-test
+            // b'ordre 3aks (akher 3onsor fel list = fou9 el kol, yakhod
+            // el lamsa el loula). Lowkan CustomBackButton 9bal el
+            // ScrollView (kifma kanet), el ScrollView (7ata lowkan el
+            // blasa fadhya bصريا) tekhod el lamsa 9bal ma touselou - hedhi
+            // bالضبط el sebba elli el bouton ma kanch ye5dem. (Nafs el
+            // fix mawjoud déjà fi admin_login.dart/user_login.dart...)
+            const CustomBackButton(),
           ],
         ),
       ),

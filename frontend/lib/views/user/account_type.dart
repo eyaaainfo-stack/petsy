@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../constants/app_colors.dart';
+import '../../constants/app_sizes.dart';
 import '../../widgets/paw_widget.dart';
 import '../../widgets/back_button.dart';
 import 'admin/admin_login.dart';
@@ -75,7 +76,7 @@ class AccountTypeView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size;
+    final sizes = AppSizes.of(context);
     final Color mutedTextColor =
         Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.65) ?? Colors.grey;
 
@@ -83,50 +84,50 @@ class AccountTypeView extends StatelessWidget {
       body: SafeArea(
         child: Stack(
           children: [
-            buildPetPaw(context: context, size: screenSize.width * 0.09, topPercent: 0.04, leftPercent: 0.14, color: AppColors.pinkpetsy.withOpacity(0.6)),
-            buildPetPaw(context: context, size: screenSize.width * 0.07, topPercent: 0.03, leftPercent: 0.75, color: AppColors.pinkpetsy.withOpacity(0.6)),
-            buildPetPaw(context: context, size: screenSize.width * 0.06, topPercent: 0.02, leftPercent: 0.45, color: AppColors.vertpetsy.withOpacity(0.6)),
-            buildPetPaw(context: context, size: screenSize.width * 0.1, topPercent: 0.42, leftPercent: 0.005, color: AppColors.vertpetsy.withOpacity(0.6)),
-            buildPetPaw(context: context, size: screenSize.width * 0.3, topPercent: 0.45, leftPercent: 0.000005, color: AppColors.vertpetsy.withOpacity(0.6)),
-            buildPetPaw(context: context, size: screenSize.width * 0.07, topPercent: 0.63, leftPercent: 0.95, color: AppColors.vertpetsy.withOpacity(0.6)),
-            buildPetPaw(context: context, size: screenSize.width * 0.13, topPercent: 0.65, leftPercent: 0.85, color: AppColors.vertpetsy.withOpacity(0.6)),
-            buildPetPaw(context: context, size: screenSize.width * 0.07, topPercent: 0.77, leftPercent: 0.02, color: AppColors.vertpetsy.withOpacity(0.6)),
-            buildPetPaw(context: context, size: screenSize.width * 0.13, topPercent: 0.8, leftPercent: 0.07, color: AppColors.vertpetsy.withOpacity(0.6)),
-            buildPetPaw(context: context, size: screenSize.width * 0.1, topPercent: 0.95, leftPercent: 0.07, color: AppColors.vertpetsy.withOpacity(0.6)),
-            buildPetPaw(context: context, size: screenSize.width * 0.1, topPercent: 0.9, leftPercent: 0.005, color: AppColors.vertpetsy.withOpacity(0.6)),
+            buildPetPaw(context: context, size: sizes.accountTypePawSize1, topPercent: 0.04, leftPercent: 0.14, color: AppColors.pinkpetsy.withOpacity(0.6)),
+            buildPetPaw(context: context, size: sizes.accountTypePawSize2, topPercent: 0.03, leftPercent: 0.75, color: AppColors.pinkpetsy.withOpacity(0.6)),
+            buildPetPaw(context: context, size: sizes.accountTypePawSize3, topPercent: 0.02, leftPercent: 0.45, color: AppColors.vertpetsy.withOpacity(0.6)),
+            buildPetPaw(context: context, size: sizes.accountTypePawSize4, topPercent: 0.42, leftPercent: 0.005, color: AppColors.vertpetsy.withOpacity(0.6)),
+            buildPetPaw(context: context, size: sizes.accountTypePawSize5, topPercent: 0.45, leftPercent: 0.000005, color: AppColors.vertpetsy.withOpacity(0.6)),
+            buildPetPaw(context: context, size: sizes.accountTypePawSize6, topPercent: 0.63, leftPercent: 0.95, color: AppColors.vertpetsy.withOpacity(0.6)),
+            buildPetPaw(context: context, size: sizes.accountTypePawSize7, topPercent: 0.65, leftPercent: 0.85, color: AppColors.vertpetsy.withOpacity(0.6)),
+            buildPetPaw(context: context, size: sizes.accountTypePawSize8, topPercent: 0.77, leftPercent: 0.02, color: AppColors.vertpetsy.withOpacity(0.6)),
+            buildPetPaw(context: context, size: sizes.accountTypePawSize9, topPercent: 0.8, leftPercent: 0.07, color: AppColors.vertpetsy.withOpacity(0.6)),
+            buildPetPaw(context: context, size: sizes.accountTypePawSize10, topPercent: 0.95, leftPercent: 0.07, color: AppColors.vertpetsy.withOpacity(0.6)),
+            buildPetPaw(context: context, size: sizes.accountTypePawSize11, topPercent: 0.9, leftPercent: 0.005, color: AppColors.vertpetsy.withOpacity(0.6)),
 
             // 🔙 Back button -> yerja3 lel écran Welcome
             const CustomBackButton(),
 
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: screenSize.width * 0.07),
+              padding: EdgeInsets.symmetric(horizontal: sizes.accountTypeHorizontalPadding),
               child: Column(
                 children: [
-                  SizedBox(height: screenSize.height * 0.15),
+                  SizedBox(height: sizes.accountTypeTopGap),
 
                   Image.asset(
                     'assets/images/ppetsy.png',
-                    width: screenSize.width * 0.62,
+                    width: sizes.accountTypeLogoWidth,
                     fit: BoxFit.contain,
                   ),
 
-                  SizedBox(height: screenSize.height * 0.08),
+                  SizedBox(height: sizes.accountTypeLogoTitleGap),
                   Text(
                     'choose_account_type_title'.tr(),
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: screenSize.width * 0.052,
+                      fontSize: sizes.accountTypeTitleFontSize,
                       fontWeight: FontWeight.bold,
                       color: AppColors.pinkpetsy,
                     ),
                   ),
 
-                  SizedBox(height: screenSize.height * 0.029),
+                  SizedBox(height: sizes.accountTypeTitleButtonsGap),
 
                   Column(
                     children: _accountTypes.map((type) {
                       return Padding(
-                        padding: EdgeInsets.only(bottom: screenSize.height * 0.022),
+                        padding: EdgeInsets.only(bottom: sizes.accountTypeButtonSpacing),
                         child: _AccountTypeButton(
                           type: type,
                           mutedTextColor: mutedTextColor,
@@ -136,7 +137,7 @@ class AccountTypeView extends StatelessWidget {
                     }).toList(),
                   ),
 
-                  SizedBox(height: screenSize.height * 0.02),
+                  SizedBox(height: sizes.accountTypeBottomGap),
                 ],
               ),
             ),
@@ -163,12 +164,12 @@ class _AccountTypeButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size;
+    final sizes = AppSizes.of(context);
 
     return Center(
       child: SizedBox(
-        width: screenSize.width * 0.7,
-        height: screenSize.height * 0.11,
+        width: sizes.accountButtonWidth,
+        height: sizes.accountButtonHeight,
         child: ElevatedButton(
           onPressed: onTap,
           style: ElevatedButton.styleFrom(
@@ -178,8 +179,8 @@ class _AccountTypeButton extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
             ),
             padding: EdgeInsets.symmetric(
-              horizontal: screenSize.width * 0.03,
-              vertical: screenSize.height * 0.03,
+              horizontal: sizes.accountButtonPaddingH,
+              vertical: sizes.accountButtonPaddingV,
             ),
           ),
           child: Row(
@@ -187,41 +188,45 @@ class _AccountTypeButton extends StatelessWidget {
               Icon(
                 type.icon,
                 color: Colors.white,
-                size: screenSize.width * 0.045,
+                size: sizes.accountButtonIconSize,
               ),
-              SizedBox(width: screenSize.width * 0.015),
+              SizedBox(width: sizes.accountButtonGap),
 
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      type.titleKey.tr(),
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: screenSize.width * 0.032,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        type.titleKey.tr(),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: sizes.accountButtonTitleFontSize,
+                        ),
                       ),
-                    ),
-                    SizedBox(height: screenSize.height * 0.003),
-                    Text(
-                      type.descriptionKey.tr(),
-                      style: TextStyle(
-                        fontSize: screenSize.width * 0.021,
-                        color: Colors.white70,
-                        height: 1.2,
+                      SizedBox(height: sizes.accountButtonTitleGap),
+                      Text(
+                        type.descriptionKey.tr(),
+                        style: TextStyle(
+                          fontSize: sizes.accountButtonDescFontSize,
+                          color: Colors.white70,
+                          height: 1.2,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
 
-              SizedBox(width: screenSize.width * 0.02),
+              SizedBox(width: sizes.accountButtonEndGap),
 
               Icon(
                 Icons.arrow_forward_ios,
                 color: Colors.white,
-                size: screenSize.width * 0.038,
+                size: sizes.accountButtonArrowIconSize,
               ),
             ],
           ),

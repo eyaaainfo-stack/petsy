@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -8,6 +9,8 @@ import '../../../widgets/button.dart';
 import '../../../widgets/outlined_button.dart';
 import '../../../widgets/paw_widget.dart';
 import '../../../models/pet_summary.dart';
+import '../../../services/api_service.dart';
+import '../../../controllers/auth_session.dart';
 import 'create_pet_profile.dart';
 import 'profile_owner.dart';
 
@@ -42,6 +45,10 @@ class AddPetPhotoScreen extends StatefulWidget {
   final Map<String, bool> petCareInfo;
   final String? petVetClinicName;
   final String? petVetClinicPhone;
+  // 🔵 ZID: el ID el 7a9i9i (MongoDB, mel POST /api/pets elli déjà
+  // sar fel écran 2) - lezmou bch na3rfou win nab3thou el photo
+  // (POST /api/pets/:petId/photo).
+  final String? petId;
 
   const AddPetPhotoScreen({
     super.key,
@@ -59,6 +66,7 @@ class AddPetPhotoScreen extends StatefulWidget {
     this.petCareInfo = const {},
     this.petVetClinicName,
     this.petVetClinicPhone,
+    this.petId,
   });
 
   @override
@@ -106,13 +114,23 @@ class _AddPetPhotoScreenState extends State<AddPetPhotoScreen> {
   }
 
   Future<void> _pickImage(ImageSource source) async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? picked = await picker.pickImage(source: source, imageQuality: 80);
-    if (picked == null) return;
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? picked = await picker.pickImage(source: source, imageQuality: 80);
+      if (picked == null) return;
 
-    final bytes = await picked.readAsBytes();
-    if (!mounted) return;
-    setState(() => _photoBytes = bytes);
+      final bytes = await picked.readAsBytes();
+      if (!mounted) return;
+      setState(() => _photoBytes = bytes);
+    } catch (_) {
+      // 🔵 ZID: lowkan el user rafedh el permission (kamera/galerie),
+      // wala 5ata fel plugin - nwarriw SnackBar bdal ma l'app te-crash
+      // wala teskot bla ay rasala.
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('photo_pick_error'.tr())),
+      );
+    }
   }
 
   Future<void> _onNextPressed() async {
@@ -129,10 +147,41 @@ class _AddPetPhotoScreenState extends State<AddPetPhotoScreen> {
 
     setState(() => _isSubmitting = true);
 
-    // TODO: POST el photo (multipart/form-data) lel backend, route
-    // mte3ha (mathalan POST /api/pets/:id/photo) - chrahtha fel réponse
-    // el text.
-    await Future.delayed(const Duration(milliseconds: 500));
+    // 🔵 ZID: print UNCONDITIONNEL (barra el "if") - bch nchoufou
+    // bel-dha8t win el chemin ye9taa3: ken el print hedha ma bench
+    // khaless, ye3ni el app mazelt testa3mel el code el 9dim (lezem
+    // hot restart 'R'). Ken ban lakin petId=null, ye3ni el mochkla
+    // fi create_pet_profile_2 (el POST /pets), mch houni.
+    debugPrint('🟣 [AddPetPhoto._onNextPressed] petId=${widget.petId} hasToken=${AuthSession.token != null}');
+
+    // 🔵 sa77e7t el bug el kbir: houni kan "Future.delayed" (rien),
+    // el photo 3omرha ma tetba3thech - tاوة appel 7a9i9i, b'el petId
+    // el 7a9i9i (mel POST /api/pets elli sar fel écran 2).
+    String? photoUrl;
+    if (widget.petId != null) {
+      try {
+        final response = await ApiService.uploadPhoto(
+          '/pets/${widget.petId}/photo',
+          _photoBytes!,
+          token: AuthSession.token,
+        );
+        if (response.statusCode == 200) {
+          final Map<String, dynamic> data = jsonDecode(response.body) as Map<String, dynamic>;
+          final Map<String, dynamic> pet = data['pet'] as Map<String, dynamic>;
+          photoUrl = pet['photoUrl'] as String?;
+        } else {
+          // 🔵 ZID: kan el catch fadhi (silence) - mch nnajmou nchoufou
+          // 3lech el upload yefchel (404? 500? multer error?). Tawa
+          // yban fel terminal (flutter run console).
+          debugPrint('⚠️ [uploadPetPhoto] status ${response.statusCode}: ${response.body}');
+        }
+      } catch (error) {
+        // el upload fechel (server/connexion) - nkamlou 7ata kif,
+        // el photo tab9a bالضبط mahfoudha b'el bytes (mémoire) l'had
+        // el session, ghir mch fel backend.
+        debugPrint('⚠️ [uploadPetPhoto] exception: $error');
+      }
+    }
 
     if (!mounted) return;
     setState(() => _isSubmitting = false);
@@ -143,9 +192,11 @@ class _AddPetPhotoScreenState extends State<AddPetPhotoScreen> {
     final List<PetSummary> finalPets = [
       ...widget.existingPets,
       PetSummary(
+        id: widget.petId,
         name: widget.petName,
         petType: widget.petType,
         photoBytes: _photoBytes,
+        photoUrl: photoUrl,
         age: widget.petAge,
         breed: widget.petBreed,
         size: widget.petSize,
@@ -178,7 +229,7 @@ class _AddPetPhotoScreenState extends State<AddPetPhotoScreen> {
   // 3adet el marrat (kol marra tzid pet, w fel akher ay écran, "Next"
   // yemchi direct l'ProfileOwnerScreen w ynahi el stack kaملha).
   // --------------------------------------------------------------------
-  void _onAddAnotherPetPressed() {
+  Future<void> _onAddAnotherPetPressed() async {
     // 🔵 ZID: obligatoire zeda houni (nafs chart tel "Next").
     if (_photoBytes == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -187,12 +238,45 @@ class _AddPetPhotoScreenState extends State<AddPetPhotoScreen> {
       return;
     }
 
+    setState(() => _isSubmitting = true);
+
+    debugPrint('🟣 [AddPetPhoto._onAddAnotherPetPressed] petId=${widget.petId} hasToken=${AuthSession.token != null}');
+
+    // 🔵 sa77e7t: nafs el bug tel "_onNextPressed" - kanet ma tab3athch
+    // el photo lel backend 7ata (mch 7ata "Future.delayed" - walou).
+    String? photoUrl;
+    if (widget.petId != null) {
+      try {
+        final response = await ApiService.uploadPhoto(
+          '/pets/${widget.petId}/photo',
+          _photoBytes!,
+          token: AuthSession.token,
+        );
+        if (response.statusCode == 200) {
+          final Map<String, dynamic> data = jsonDecode(response.body) as Map<String, dynamic>;
+          final Map<String, dynamic> pet = data['pet'] as Map<String, dynamic>;
+          photoUrl = pet['photoUrl'] as String?;
+        } else {
+          debugPrint('⚠️ [uploadPetPhoto] status ${response.statusCode}: ${response.body}');
+        }
+      } catch (error) {
+        // el upload fechel - nkamlou 7ata kif, el photo tab9a mahfoudha
+        // b'el bytes (mémoire) l'had el session bess.
+        debugPrint('⚠️ [uploadPetPhoto] exception: $error');
+      }
+    }
+
+    if (!mounted) return;
+    setState(() => _isSubmitting = false);
+
     final List<PetSummary> updatedExistingPets = [
       ...widget.existingPets,
       PetSummary(
+        id: widget.petId,
         name: widget.petName,
         petType: widget.petType,
         photoBytes: _photoBytes,
+        photoUrl: photoUrl,
         age: widget.petAge,
         breed: widget.petBreed,
         size: widget.petSize,
@@ -204,6 +288,7 @@ class _AddPetPhotoScreenState extends State<AddPetPhotoScreen> {
       ),
     ];
 
+    if (!mounted) return;
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => CreatePetProfileScreen(
