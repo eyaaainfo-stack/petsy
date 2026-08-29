@@ -49,6 +49,18 @@ const userSchema = new mongoose.Schema(
       lat: { type: Number, default: null },
       lng: { type: Number, default: null },
     },
+    // 🔵 ZID: "Forgot Password" flow (mdp_oublier_1/2/3.dart) - code el
+    // verification (5 ra9mat) + expiry, mba3d token mo2a99at (ba3d ma
+    // el code yet2akked, bch el user ynajjam ye5dem "Set New Password"
+    // bla ma y3awad ye5tar el code mel jdid). "select: false" - ma
+    // yban-ch fel queries el 3adiya (bch ma yetsarrabch bel ghalta).
+    passwordResetCode: { type: String, select: false, default: null },
+    passwordResetCodeExpiry: { type: Date, select: false, default: null },
+    passwordResetToken: { type: String, select: false, default: null },
+    passwordResetTokenExpiry: { type: Date, select: false, default: null },
+    // 🔵 ZID: "My Favourites" (my_favourites_screen.dart, owner) - liste
+    // el sitters elli el owner 3ajbouh (heart icon 3al card).
+    favorites: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   },
   {
     discriminatorKey: 'role', // C'est ici que l'héritage se fait (le champ qui indique le type d'acteur)
@@ -56,5 +68,62 @@ const userSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+// ============================================================================
+// Index "fullName" UNIQUE (kifma tlab: "el esm ykoun unique kima el
+// insta") - case-insensitive (collation strength:2 -> "Rami"/"rami"
+// nafs 7aja), w "partialFilterExpression" bch el docs elli fullName
+// tou3hom mazel fadhi ('', el user 3omrou ma 3adda UserCreateProfile-
+// Screen) MA yed5louch fel contrainte unique (bla ha, EL WA7ED bark
+// mel signups el jdad ynajjam ye5ou "" - el b39yin kolhom ye7osbou
+// "duplicate").
+// ============================================================================
+userSchema.index(
+  { fullName: 1 },
+  {
+    unique: true,
+    collation: { locale: 'en', strength: 2 },
+    partialFilterExpression: { fullName: { $type: 'string', $gt: '' } },
+  }
+);
+
+// ============================================================================
+// Cascade delete: Animal ◆-- User (composition, kifma el conception/
+// class diagram) - ki el User (owner) yetfassa5, el Animal (pets) tou3ou
+// yetfassa5ou automatique zeda.
+//
+// 🔴 IMPORTANT: hedha "hook" mستوى Mongoose (application) - ye5dem GHIR
+// ki el delete ysir MEL KOD (mathalan route future "delete account",
+// wela script Node.js yesta3mel el model). Ken ta7ذef document direct
+// mel MongoDB Compass/mongo shell (barra el app), el hook hedha MA
+// YETFA33ALCH - MongoDB nafsou (NoSQL) ma3andouch "ON DELETE CASCADE"
+// native kifha kif SQL, el cascade DIMA lezmha code (houni bark).
+//
+// 2 hooks (bch yghatou el 2 tri9at el aktar common lel delete):
+//  1. "findOneAndDelete" (query middleware) - covers User.findByIdAndDelete()
+//     w User.findOneAndDelete() zeda.
+//  2. "deleteOne" (document middleware) - covers userInstance.deleteOne()
+//     (ki el document mjabed déjà, w ta7ذefou b rou7ou).
+// ============================================================================
+userSchema.pre('findOneAndDelete', async function (next) {
+  // n7ottou el _id el document elli bch yetfassa5 (9bal el delete 7a9i9i)
+  // bch nnajjmou nesta3mlouh fel "post" (ba3d ma el delete ye9das).
+  const docToDelete = await this.model.findOne(this.getFilter());
+  this._deletedUserId = docToDelete ? docToDelete._id : null;
+  next();
+});
+
+userSchema.post('findOneAndDelete', async function () {
+  if (this._deletedUserId) {
+    // mongoose.model('Animal') (bel esm, mch require direct) - bch
+    // najjmou n7aynou "circular require" bin user.js w animal.js.
+    await mongoose.model('Animal').deleteMany({ owner: this._deletedUserId });
+  }
+});
+
+userSchema.pre('deleteOne', { document: true, query: false }, async function (next) {
+  await mongoose.model('Animal').deleteMany({ owner: this._id });
+  next();
+});
 
 module.exports = mongoose.model('User', userSchema);

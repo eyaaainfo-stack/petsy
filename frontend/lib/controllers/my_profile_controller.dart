@@ -23,4 +23,20 @@ class MyProfileController {
       return null;
     }
   }
+
+  // 🔵 ZID: view_profile_sitter.dart - profile 7AD OKHOR (sitter), mch
+  // el user el connecté nafsou (nafs "shape" mel MyProfileData, backend
+  // route mnfassla: GET /users/:sitterId/public-profile).
+  Future<MyProfileData?> fetchSitterPublicProfile(String sitterId) async {
+    try {
+      final response = await ApiService.get('/users/$sitterId/public-profile', token: AuthSession.token);
+
+      if (response.statusCode != 200) return null;
+
+      final Map<String, dynamic> data = jsonDecode(response.body) as Map<String, dynamic>;
+      return MyProfileData.fromJson(data['user'] as Map<String, dynamic>);
+    } catch (_) {
+      return null;
+    }
+  }
 }

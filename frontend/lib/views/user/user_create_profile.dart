@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,6 +10,7 @@ import '../../widgets/back_button.dart';
 import '../../widgets/button.dart';
 import '../../widgets/paw_widget.dart';
 import '../../widgets/map.dart';
+import '../../widgets/photo_crop_screen.dart';
 import '../../controllers/user_create_profile_controller.dart';
 import '../../controllers/auth_session.dart';
 import '../../services/api_service.dart';
@@ -34,6 +36,15 @@ class _UserCreateProfileScreenState extends State<UserCreateProfileScreen> {
   final TextEditingController _birthdayController = TextEditingController();
   final TextEditingController _cityController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
+
+  // 🔵 ZID: el "raw" ar9am tel phone (bla "+216 " prefix/spaces) - houwa
+  // elli el backend/écrans l'okhrin (booking_details.dart, request.dart...)
+  // yentaظrouh (8 ar9am bark, nafs el convention el 9dima).
+  String get _rawPhoneDigits {
+    String digits = _phoneController.text.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.startsWith('216')) digits = digits.substring(3);
+    return digits;
+  }
   final TextEditingController _aboutController = TextEditingController();
   // 🔵 ZID houni: text elli yban fel 7a9el "Localization" (mch el user
   // yekteb fih, ghir yban feh el coordonnées ba3d ma y5tar mel khariita)
@@ -54,6 +65,16 @@ class _UserCreateProfileScreenState extends State<UserCreateProfileScreen> {
   bool _isSubmitting = false;
 
   // --------------------------------------------------------------------
+  // 🔵 ZID (kifma tlab): "el esm unique kima el insta" - check LIVE
+  // (debounced, 500ms ba3d ma el user yew9ef yekteb) ki el esm disponible
+  // wla le. null = mazel ma tchekkatch (wela el esm 9asser barcha/vide).
+  // --------------------------------------------------------------------
+  Timer? _nameCheckDebounce;
+  bool _checkingName = false;
+  bool? _nameAvailable;
+  String? _lastCheckedName;
+
+  // --------------------------------------------------------------------
   // 🔵 el photo: Uint8List (bytes), MCH "File" (dart:io). 3lech? 7it
   // "dart:io" ma te5demch fel Flutter WEB (el app tejri fel Chrome fel
   // testing tou3ek) - Uint8List + Image.memory() khadmin fel mobile
@@ -62,7 +83,52 @@ class _UserCreateProfileScreenState extends State<UserCreateProfileScreen> {
   Uint8List? _profileImageBytes;
 
   @override
+  void initState() {
+    super.initState();
+    _nameController.addListener(_onNameChanged);
+    // 🔵 ZID (kifma tlab): "+216" yban men el bidaya (mch bark ki el
+    // user ybda yekteb) - cursor mba3d el prefix direct.
+    _phoneController.value = const TextEditingValue(
+      text: '+216 ',
+      selection: TextSelection.collapsed(offset: 5),
+    );
+  }
+
+  void _onNameChanged() {
+    final String name = _nameController.text.trim();
+    _nameCheckDebounce?.cancel();
+
+    // 🔵 esm 9asser barcha (mathalan 7arf wa7ed) wela vide - ma nchekkouch,
+    // n5aliw el état "neutre" (bla check icon).
+    if (name.length < 2) {
+      setState(() {
+        _checkingName = false;
+        _nameAvailable = null;
+        _lastCheckedName = null;
+      });
+      return;
+    }
+
+    setState(() => _checkingName = true);
+    _nameCheckDebounce = Timer(const Duration(milliseconds: 500), () async {
+      final available = await _profileController.checkNameAvailability(name);
+      if (!mounted) return;
+      // 🔵 el user ynajjam ykemmel yekteb wa9t el appel - nchekkou el
+      // esm mazel nafsou 9bal ma nesta3mlou el réponse (bla ha, réponse
+      // batia ynajjam ye5ta3 el état 3ala esm jdid).
+      if (_nameController.text.trim() != name) return;
+      setState(() {
+        _checkingName = false;
+        _nameAvailable = available;
+        _lastCheckedName = name;
+      });
+    });
+  }
+
+  @override
   void dispose() {
+    _nameCheckDebounce?.cancel();
+    _nameController.removeListener(_onNameChanged);
     _nameController.dispose();
     _birthdayController.dispose();
     _cityController.dispose();
@@ -118,7 +184,14 @@ class _UserCreateProfileScreenState extends State<UserCreateProfileScreen> {
 
       final bytes = await picked.readAsBytes();
       if (!mounted) return;
-      setState(() => _profileImageBytes = bytes);
+
+      // 🔴 FIX (kifma tlab): "kima el insta" - 9bal ma nesta3mlouha
+      // direct, el user y'eddi (drag) w y-zoumi bch ye5tar chnou el
+      // jozz elli yban. Lowkan "Cancel" (null) - n5alliw el photo el
+      // 9dima (lowkan mawjouda) bla ma nbeddlouha.
+      final cropped = await PhotoCropScreen.show(context, bytes);
+      if (!mounted || cropped == null) return;
+      setState(() => _profileImageBytes = cropped);
     } catch (_) {
       // 🔵 ZID: lowkan el user rafedh el permission (kamera/galerie),
       // wala 5ata fel plugin - nwarriw SnackBar bdal ma l'app te-crash
@@ -150,7 +223,41 @@ class _UserCreateProfileScreenState extends State<UserCreateProfileScreen> {
         _locationName = result.placeName;
         _locationController.text = result.placeName;
       });
+
+      // 🔵 ZID (kifma tlabt): ken el location el mkhtara fi wilaya
+      // MO5TALFA 3an el "City" el mkhtara déjà, nbaddlouha automatique
+      // + nwarriw popup (bch el user y3ref 3lech tbaddlet, mch tetbaddel
+      // "b'sokot").
+      final String? matchedGovernorate = matchTunisianGovernorate(result.rawStateName);
+      debugPrint('🗺️ [_pickLocation] rawStateName="${result.rawStateName}" matchedGovernorate="$matchedGovernorate" currentCity="${_cityController.text}"');
+      if (matchedGovernorate != null && matchedGovernorate != _cityController.text && mounted) {
+        final String oldCity = _cityController.text;
+        setState(() => _cityController.text = matchedGovernorate);
+        // 🔵 el popup ghir lowkan kan 3andou city mkhtara déjà (mch
+        // el loula marra, wa9tha "badalna" 7aja mch mawjouda asasan).
+        if (oldCity.isNotEmpty) {
+          _showCityAutoChangedDialog(oldCity: oldCity, newCity: matchedGovernorate);
+        }
+      }
     }
+  }
+
+  void _showCityAutoChangedDialog({required String oldCity, required String newCity}) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text('city_auto_updated_title'.tr()),
+          content: Text('city_auto_updated_message'.tr(namedArgs: {'oldCity': oldCity, 'newCity': newCity})),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text('ok_button'.tr()),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   // --------------------------------------------------------------------
@@ -233,7 +340,11 @@ class _UserCreateProfileScreenState extends State<UserCreateProfileScreen> {
       name: _nameController.text,
       birthday: _birthdayController.text,
       city: _cityController.text,
-      phone: _phoneController.text,
+      // 🔴 FIX (kifma tlab): el 7a9el tawa formaté ("+216 XX XXX XXX")
+      // lel USER bark - el backend w el ba9i tel écrans (booking_
+      // details.dart, request.dart...) yentaظرou 8 ar9am bark (bla
+      // prefix/spaces) - n7ottou el "raw" houni.
+      phone: _rawPhoneDigits,
       aboutYou: _aboutController.text,
       location: _selectedLocation,
       locationName: _locationName,
@@ -243,7 +354,16 @@ class _UserCreateProfileScreenState extends State<UserCreateProfileScreen> {
     if (!mounted) return;
     setState(() => _isSubmitting = false);
 
-    if (!success) return;
+    if (!success) {
+      // 🔵 ZID: filet de sécurité - lowkan el check live ma l7e9ch
+      // (mathalan submit sri3 barcha) w el backend rafedh (esm meakhoud
+      // entre temps), n3allmou el user (mch ne5liwha silence kifma
+      // kanet 9bal).
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('profile_submit_error'.tr())),
+      );
+      return;
+    }
 
     // 🔵 ZID: print UNCONDITIONNEL - bch nchoufou ken el code el jdid
     // ye5dem khaless (ken ma bench, lezem hot restart 'R'), w ken el
@@ -449,9 +569,50 @@ class _UserCreateProfileScreenState extends State<UserCreateProfileScreen> {
                     SizedBox(height: screenSize.height * 0.008),
                     TextFormField(
                       controller: _nameController,
-                      validator: ProfileValidators.name,
-                      decoration: _fieldDecoration(context: context),
+                      validator: (value) {
+                        final baseError = ProfileValidators.name(value);
+                        if (baseError != null) return baseError;
+                        // 🔵 el submit ma ykemmelch lowkan el esm meakhoud
+                        // (chekkatnah live) - blastha nban rasala ta7t el
+                        // 7a9el (kifma el mockup insta).
+                        if (_nameAvailable == false && _lastCheckedName == value?.trim()) {
+                          return 'name_taken_error'.tr();
+                        }
+                        return null;
+                      },
+                      decoration: _fieldDecoration(
+                        context: context,
+                        suffixIcon: _checkingName
+                            ? Padding(
+                                padding: EdgeInsets.all(screenSize.width * 0.035),
+                                child: SizedBox(
+                                  width: screenSize.width * 0.04,
+                                  height: screenSize.width * 0.04,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.vertpetsy),
+                                ),
+                              )
+                            : (_nameAvailable != null && _lastCheckedName == _nameController.text.trim())
+                                ? Icon(
+                                    _nameAvailable == true ? Icons.check_circle : Icons.cancel,
+                                    color: _nameAvailable == true ? AppColors.success : AppColors.error,
+                                  )
+                                : null,
+                      ),
                     ),
+                    // 🔵 ZID (kifma tlab): rasala ta7t el 7a9el (mch bess
+                    // el icon) - "disponible" (vert) wela "meakhoud" (a7mar),
+                    // nafs mant9 el insta/fb.
+                    if (!_checkingName && _nameAvailable != null && _lastCheckedName == _nameController.text.trim()) ...[
+                      SizedBox(height: screenSize.height * 0.006),
+                      Text(
+                        _nameAvailable == true ? 'name_available_label'.tr() : 'name_taken_error'.tr(),
+                        style: TextStyle(
+                          fontSize: screenSize.width * 0.03,
+                          color: _nameAvailable == true ? AppColors.success : AppColors.error,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
 
                     SizedBox(height: screenSize.height * 0.02),
 
@@ -495,7 +656,7 @@ class _UserCreateProfileScreenState extends State<UserCreateProfileScreen> {
                             onPressed: () => setState(() => _selectedGender = 'male'),
                             style: OutlinedButton.styleFrom(
                               backgroundColor: _selectedGender == 'male' ? AppColors.pinkpetsy.withOpacity(0.15) : null,
-                              side: BorderSide(color: _selectedGender == 'male' ? AppColors.pinkpetsy : AppColors.pinkpetsy.withOpacity(0.4)),
+                              side: BorderSide(color: _selectedGender == 'male' ? AppColors.pinkpetsy : AppColors.pinkpetsy.withValues(alpha: 0.4)),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               padding: EdgeInsets.symmetric(vertical: screenSize.height * 0.016),
                             ),
@@ -503,6 +664,23 @@ class _UserCreateProfileScreenState extends State<UserCreateProfileScreen> {
                           ),
                         ),
                       ],
+                    ),
+
+                    SizedBox(height: screenSize.height * 0.02),
+
+                    // 🔴 FIX (kifma tlab): "Localization" tawa 9bal
+                    // "City" (mch ba3دها) - Localization -> yeftah el
+                    // khariita (widgets/map.dart)
+                    _fieldLabel('localization_label'.tr(), screenSize.width),
+                    SizedBox(height: screenSize.height * 0.008),
+                    TextFormField(
+                      controller: _locationController,
+                      readOnly: true,
+                      onTap: _pickLocation,
+                      decoration: _fieldDecoration(
+                        context: context,
+                        suffixIcon: Icon(Icons.map_outlined, color: AppColors.pinkpetsy.withOpacity(0.7), size: screenSize.width * 0.05),
+                      ),
                     ),
 
                     SizedBox(height: screenSize.height * 0.02),
@@ -522,34 +700,15 @@ class _UserCreateProfileScreenState extends State<UserCreateProfileScreen> {
 
                     SizedBox(height: screenSize.height * 0.02),
 
-                    // Localization -> yeftah el khariita (widgets/map.dart)
-                    _fieldLabel('localization_label'.tr(), screenSize.width),
-                    SizedBox(height: screenSize.height * 0.008),
-                    TextFormField(
-                      controller: _locationController,
-                      readOnly: true,
-                      onTap: _pickLocation,
-                      decoration: _fieldDecoration(
-                        context: context,
-                        suffixIcon: Icon(Icons.map_outlined, color: AppColors.pinkpetsy.withOpacity(0.7), size: screenSize.width * 0.05),
-                      ),
-                    ),
-
-                    SizedBox(height: screenSize.height * 0.02),
-
-                    // Phone Number -> 8 ra9ma bel 7arf, clavier ar9am bess
+                    // Phone Number -> "+216 XX XXX XXX" (kifma tlab) -
+                    // el user yekteb ar9am bark, el prefix+spaces
+                    // yet7otou automatique.
                     _fieldLabel('phone_number_label'.tr(), screenSize.width),
                     SizedBox(height: screenSize.height * 0.008),
                     TextFormField(
                       controller: _phoneController,
                       keyboardType: TextInputType.number,
-                      // digitsOnly: yemna3 el user yekteb 7ata 7arf (bess
-                      // ar9am). LengthLimitingTextInputFormatter(8): ma
-                      // ye5aliihch yekteb aktar mel 8 ra9mat.
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(8),
-                      ],
+                      inputFormatters: [_TunisianPhoneFormatter()],
                       validator: ProfileValidators.phone,
                       decoration: _fieldDecoration(context: context),
                     ),
@@ -592,5 +751,31 @@ class _UserCreateProfileScreenState extends State<UserCreateProfileScreen> {
         ),
       ),
     );
+  }
+}
+
+// ============================================================================
+// _TunisianPhoneFormatter
+// ============================================================================
+// 🔵 ZID (kifma tlab): "+216 [espace] 2num [espace] 3num [espace] 3num"
+// - ki el user yekteb ar9am bark, el prefix "+216 " w el spaces (2-3-3)
+// yet7otou automatique. El "raw" (bla formatting) yousel mel getter
+// "_rawPhoneDigits" (fou9) - houni bark UI/UX, mch data 7a9i9iya.
+// ============================================================================
+class _TunisianPhoneFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    String digits = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.startsWith('216')) digits = digits.substring(3);
+    if (digits.length > 8) digits = digits.substring(0, 8);
+
+    final StringBuffer buffer = StringBuffer('+216 ');
+    for (int i = 0; i < digits.length; i++) {
+      buffer.write(digits[i]);
+      if ((i == 1 || i == 4) && i != digits.length - 1) buffer.write(' ');
+    }
+    final String formatted = buffer.toString();
+
+    return TextEditingValue(text: formatted, selection: TextSelection.collapsed(offset: formatted.length));
   }
 }

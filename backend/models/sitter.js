@@ -27,6 +27,14 @@ const Sitter = User.discriminator(
     hasTransportation: { type: Boolean, default: null },
     hasPetAtHome: { type: Boolean, default: null },
     ownedPetTypes: { type: [String], default: [] }, // 'dog' / 'cat'
+    // 🔵 ZID (kifma tlab): "disponibilité" - ayemet el sitter MA
+    // yekhdemch fihom.
+    // - recurringDaysOff: ayemet fixa fel jom3a (1=Mon...7=Sun, nafs
+    //   convention DateTime.weekday el Flutter/sitter_calender.dart).
+    // - specificDatesOff: dates mo7addda (a3yed, jours fériés, wela
+    //   ayemet zadhom el sitter b'rou7ou mel calendrier).
+    recurringDaysOff: { type: [Number], default: [] },
+    specificDatesOff: { type: [Date], default: [] },
     // Ajoute les autres attributs spécifiques du Sitter selon ton diagramme de classe
   })
 );

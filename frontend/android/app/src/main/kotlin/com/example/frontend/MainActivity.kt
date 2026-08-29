@@ -46,7 +46,16 @@ class MainActivity : FlutterActivity() {
                     "requestIgnoreBatteryOptimizations" -> {
                         try {
                             val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
-                            if (!powerManager.isIgnoringBatteryOptimizations(packageName)) {
+                            // 🔴 FIX: kanet t3ayet l "startActivity" 7atta ken
+                            // el téléphone MSAKKER (screen off/locked) - fi
+                            // ba3dh el appareils (khousousan Huawei/EMUI),
+                            // hedha ynajjam yseb'bab crash/exit direct wa9t
+                            // el launch (flutter run + phone msakker). Tawa:
+                            // "isInteractive" (screen 7ay/mfattah) - lowkan
+                            // el screen msakker, ma ne7awlouch nel3bou b'ha
+                            // (ntar9awha lel marra el jaya elli el app tefte7
+                            // w el screen mfattah).
+                            if (!powerManager.isIgnoringBatteryOptimizations(packageName) && powerManager.isInteractive) {
                                 val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
                                     data = Uri.parse("package:$packageName")
                                 }

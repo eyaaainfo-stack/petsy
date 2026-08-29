@@ -16,6 +16,9 @@ class SidebarItem extends StatelessWidget {
   final VoidCallback onTap;
   final AppSizes sizes;
   final bool showDivider;
+  // 🔵 ZID: badge b ra9m (mathalan notifications ma9rou2ach) - null/0 =
+  // mafamech badge 7atta.
+  final int? badgeCount;
 
   const SidebarItem({
     super.key,
@@ -25,6 +28,7 @@ class SidebarItem extends StatelessWidget {
     required this.onTap,
     required this.sizes,
     this.showDivider = true,
+    this.badgeCount,
   });
 
   @override
@@ -45,6 +49,19 @@ class SidebarItem extends StatelessWidget {
                     style: TextStyle(color: Colors.white, fontSize: sizes.sidebarItemFontSize, fontWeight: FontWeight.w600),
                   ),
                 ),
+                if (badgeCount != null && badgeCount! > 0) ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+                    constraints: const BoxConstraints(minWidth: 20),
+                    child: Text(
+                      badgeCount! > 99 ? '99+' : '$badgeCount',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: iconColor ?? Colors.teal.shade700, fontWeight: FontWeight.bold, fontSize: sizes.sidebarItemFontSize * 0.75),
+                    ),
+                  ),
+                  SizedBox(width: sizes.screenWidth * 0.02),
+                ],
                 Icon(Icons.chevron_right, color: Colors.white.withOpacity(0.8), size: sizes.sidebarItemIconSize * 0.8),
               ],
             ),

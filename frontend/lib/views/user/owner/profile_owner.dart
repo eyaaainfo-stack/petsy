@@ -5,11 +5,20 @@ import 'package:easy_localization/easy_localization.dart';
 import '../../../constants/app_colors.dart';
 import '../../../models/pet_summary.dart';
 import '../../../services/api_service.dart';
+import '../../../controllers/auth_session.dart';
 import '../../../widgets/pet_tile.dart';
 import '../../../widgets/drawers/sidebar_owner.dart';
 import 'create_pet_profile.dart';
 import 'see_all_pets.dart';
 import 'pet_profile.dart';
+import '../sitter/view_profile_sitter.dart';
+import '../notifications_screen.dart';
+import '../../../controllers/notification_controller.dart';
+import '../../../controllers/favorites_controller.dart';
+import 'my_favourites_screen.dart';
+import 'search.dart';
+import '../../../controllers/checkout_questionnaire_controller.dart';
+import '../../../widgets/checkout_questionnaire_dialog.dart';
 
 // ============================================================================
 // _SitterSummary
@@ -19,17 +28,23 @@ import 'pet_profile.dart';
 // tlabt: "sinn yokod feragh, mch tamlhom fake").
 // ============================================================================
 class _SitterSummary {
+  final String? id; // 🔵 ZID: bch nnajjmou nemchiw l'ViewProfileSitterScreen(sitterId: ...)
   final String name;
   final double rating; // 1-5
-  final double distanceKm;
+  final double? distanceKm; // 🔴 FIX: null = mafamech location (owner wela sitter) - mch 0 (elli kan y5alli el user y7es eno "distance 0" 7a9i9i)
   final String city;
+  // 🔴 FIX: kanet na9sa tamaman - el card el sitter kan ma3andouch
+  // photo, ghir icon generic.
+  final String? photoUrl;
   bool isFavorite;
 
   _SitterSummary({
+    this.id,
     required this.name,
     required this.rating,
     required this.distanceKm,
     required this.city,
+    this.photoUrl,
     this.isFavorite = false,
   });
 }
@@ -64,7 +79,11 @@ class ProfileOwnerScreen extends StatefulWidget {
 
 class _ProfileOwnerScreenState extends State<ProfileOwnerScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  bool _hasUnreadNotifications = true; // 🔴 mock - el no9ta el 7amra
+  // 🔴 FIX: kanet mock (True dima) - tawa data 7a9i9iya (GET /api/
+  // bookings/notifications/unread-count, fel initState() ta7t).
+  bool _hasUnreadNotifications = false;
+  final NotificationController _notificationController = NotificationController();
+  final FavoritesController _favoritesController = FavoritesController();
 
   // 🔵 TAWA REAL: nemliw mel backend (GET /api/users/sitters?city=...)
   // fel initState() - el list tebda fadhya ('_isLoadingSitters' true),
@@ -76,11 +95,37 @@ class _ProfileOwnerScreenState extends State<ProfileOwnerScreen> {
   void initState() {
     super.initState();
     _fetchSitters();
+    _fetchUnreadNotificationsCount();
+    // 🔵 ZID (kifma tlab): questionnaire ba3d el checkout - nchekkou
+    // ba3d el frame el loul (bch "context" ykoun jahez lel dialog).
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkPendingQuestionnaires());
+  }
+
+  // 🔵 ZID: yjib el liste, ywarri l'wa7ed l'loul (blur backdrop) - lowkan
+  // "completed" (mch "Later"), ychek 3la wa7ed okhor mestani w ywarrih
+  // zeda (chain, bch el user ma yeb9ach ye7taj yre-open el app lkol wa7ed).
+  Future<void> _checkPendingQuestionnaires() async {
+    final pending = await CheckoutQuestionnaireController().fetchPending();
+    if (!mounted || pending.isEmpty) return;
+    final completed = await CheckoutQuestionnaireDialog.show(context, pending.first.bookingId);
+    if (completed && mounted) _checkPendingQuestionnaires();
+  }
+
+  // 🔴 FIX: el appel el 7a9i9i kan na9es (declaration bark, ma yet3ayetch
+  // biha 7atta) - hedhi el sebba el 7a9i9iya elli el bell ma yban-ch fiha
+  // notification 7atta lowkan mawjouda 7a9i9atan fel backend.
+  Future<void> _fetchUnreadNotificationsCount() async {
+    final count = await _notificationController.fetchUnreadCount();
+    if (!mounted) return;
+    setState(() => _hasUnreadNotifications = count > 0);
   }
 
   Future<void> _fetchSitters() async {
     try {
-      final response = await ApiService.get('/users/sitters?city=${widget.ownerCity}');
+      // 🔴 FIX: kanet bla token (route déjà kanet public) - tawa el
+      // route protégée (bch el backend ye3ref el owner el connecté w
+      // ye7seb el distance) - lezمها token.
+      final response = await ApiService.get('/users/sitters?city=${widget.ownerCity}', token: AuthSession.token);
 
       if (!mounted) return;
 
@@ -89,17 +134,22 @@ class _ProfileOwnerScreenState extends State<ProfileOwnerScreen> {
         final List<dynamic> sittersJson = data['sitters'] as List<dynamic>;
 
         setState(() {
-          // 🔵 el backend tawa ma yرja3ch rating/distance (mazel ma
-          // 3andouch système reviews/geoloc) - n7ottou 0 mo2a99tan,
-          // TODO ki ykoun 3andek hedhoum el 7isabet.
+          // 🔴 FIX (kifma tlab): el backend tawa YERJA3 rating 7a9i9i
+          // (moyenne el questionnaires "completed") - mch "0" statique.
           _sittersInMyCity = sittersJson.map((json) {
+            final String? rawPhotoUrl = json['photoUrl'] as String?;
             return _SitterSummary(
+              id: json['_id'] as String?,
               name: (json['fullName'] as String?)?.isNotEmpty == true
                   ? json['fullName'] as String
                   : json['city'] as String? ?? '',
-              rating: 0,
-              distanceKm: 0,
+              rating: (json['rating'] as num?)?.toDouble() ?? 0,
+              distanceKm: (json['distanceKm'] as num?)?.toDouble(),
               city: json['city'] as String? ?? '',
+              photoUrl: (rawPhotoUrl != null && rawPhotoUrl.isNotEmpty) ? '${ApiService.mediaBaseUrl}$rawPhotoUrl' : null,
+              // 🔵 ZID (kifma tlab): "My Favourites" - el heart mel
+              // bidaya sa7i7 (mfilé lowkan déjà favori mel backend).
+              isFavorite: json['isFavorite'] as bool? ?? false,
             );
           }).toList();
           _isLoadingSitters = false;
@@ -113,8 +163,21 @@ class _ProfileOwnerScreenState extends State<ProfileOwnerScreen> {
     }
   }
 
-  void _toggleFavorite(_SitterSummary sitter) {
+  // 🔴 FIX (kifma tlab): kanet ghir local (setState, tedhi3 ki el user
+  // ye5rej mel écran) - tawa te3mel appel 7a9i9i lel backend (mel
+  // FavoritesController) bch "yetsajjel 7a9i9atan".
+  Future<void> _toggleFavorite(_SitterSummary sitter) async {
+    // 🔵 optimistic update - el heart yetbeddel FI EL LAHDHA (bla
+    // ma yestenna el appel API), bch el UI y7es sri3.
     setState(() => sitter.isFavorite = !sitter.isFavorite);
+
+    final result = await _favoritesController.toggleFavorite(sitter.id ?? '');
+    if (!mounted) return;
+
+    if (result == null) {
+      // 🔴 el appel fechel - nrajj3ou el heart l7alto el asliya (revert).
+      setState(() => sitter.isFavorite = !sitter.isFavorite);
+    }
   }
 
   @override
@@ -217,7 +280,10 @@ class _ProfileOwnerScreenState extends State<ProfileOwnerScreen> {
                     showBadge: _hasUnreadNotifications,
                     onTap: () {
                       setState(() => _hasUnreadNotifications = false);
-                      // TODO: navigation lel écran notifications
+                      // 🔴 FIX: kanet TODO - tawa ymchi l "Notifications".
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+                      );
                     },
                   ),
                 ],
@@ -306,8 +372,10 @@ class _ProfileOwnerScreenState extends State<ProfileOwnerScreen> {
               SizedBox(height: screenSize.height * 0.03),
 
               // ------------------------------------------------------
-              // 🔵 el case tel recherche - TAWA bess UI (bla mant9),
-              // kifma tlabt.
+              // 🔵 ZID (kifma tlab): "kif nznel ala el search" -> ymchi
+              // l'SearchScreen (search.dart) - el barre houni bess UI
+              // (readOnly + onTap), el 7a9i9i (autocomplete+filtres)
+              // fel écran l'okhor.
               // ------------------------------------------------------
               Container(
                 decoration: BoxDecoration(
@@ -315,6 +383,12 @@ class _ProfileOwnerScreenState extends State<ProfileOwnerScreen> {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: TextField(
+                  readOnly: true,
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const SearchScreen()),
+                    );
+                  },
                   decoration: InputDecoration(
                     hintText: 'search_hint'.tr(),
                     hintStyle: TextStyle(color: mutedTextColor, fontSize: screenSize.width * 0.035),
@@ -389,6 +463,18 @@ class _ProfileOwnerScreenState extends State<ProfileOwnerScreen> {
                       screenWidth: screenSize.width,
                       mutedTextColor: mutedTextColor,
                       onFavoriteTap: () => _toggleFavorite(sitter),
+                      // 🔵 ZID: dass 3al card -> ViewProfileSitterScreen
+                      // (kifma tlab) - bark lowkan 3andna "id" (mel
+                      // backend).
+                      onTap: sitter.id == null
+                          ? null
+                          : () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => ViewProfileSitterScreen(sitterId: sitter.id!, distanceKm: sitter.distanceKm),
+                                ),
+                              );
+                            },
                     );
                   },
                 ),
@@ -468,40 +554,48 @@ class _SitterCard extends StatelessWidget {
   final double screenWidth;
   final Color mutedTextColor;
   final VoidCallback onFavoriteTap;
+  final VoidCallback? onTap;
 
   const _SitterCard({
     required this.sitter,
     required this.screenWidth,
     required this.mutedTextColor,
     required this.onFavoriteTap,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.06) : Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      padding: EdgeInsets.all(screenWidth * 0.02),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 🔵 photo mrabba3a (mch rectangle) - AspectRatio 1:1, bla
-          // 9alb fou9ha tawa (nzelnah taht, chrahtha fou9)
-          Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              // TODO: Image.network(sitter.photoUrl) lowkan mawjouda
-              child: Container(
-                width: double.infinity,
-                color: AppColors.vertpetsy.withOpacity(0.18),
-                child: Icon(Icons.person, color: AppColors.vertpetsy, size: screenWidth * 0.12),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark ? Colors.white.withOpacity(0.06) : Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        padding: EdgeInsets.all(screenWidth * 0.02),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 🔵 photo mrabba3a (mch rectangle) - AspectRatio 1:1, bla
+            // 9alb fou9ha tawa (nzelnah taht, chrahtha fou9)
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                // 🔴 FIX: kanet TODO (icon generic bark, 7atta lowkan el
+                // sitter 3andou photo mzouda).
+                child: Container(
+                  width: double.infinity,
+                  color: AppColors.vertpetsy.withOpacity(0.18),
+                  child: sitter.photoUrl != null
+                      ? Image.network(sitter.photoUrl!, fit: BoxFit.cover)
+                      : Icon(Icons.person, color: AppColors.vertpetsy, size: screenWidth * 0.12),
+                ),
               ),
             ),
-          ),
           SizedBox(height: screenWidth * 0.015),
 
           // 🔵 ZID: el esm 3al yesar w el 9alb (favoris) 3al yemin,
@@ -534,10 +628,17 @@ class _SitterCard extends StatelessWidget {
               Text(sitter.rating.toString(), style: TextStyle(fontSize: screenWidth * 0.028, color: mutedTextColor)),
               SizedBox(width: screenWidth * 0.025),
               Icon(Icons.location_on_outlined, color: mutedTextColor, size: screenWidth * 0.032),
-              Text('${sitter.distanceKm}km', style: TextStyle(fontSize: screenWidth * 0.028, color: mutedTextColor)),
+              // 🔴 FIX: kanet dima "0km" (mahroudh el 9dim) - tawa
+              // distance 7a9i9iya (Haversine, backend), wla "-" ken
+              // el owner wla el sitter ma3andouch location mzouda.
+              Text(
+                sitter.distanceKm != null ? '${sitter.distanceKm}km' : '-',
+                style: TextStyle(fontSize: screenWidth * 0.028, color: mutedTextColor),
+              ),
             ],
           ),
         ],
+      ),
       ),
     );
   }

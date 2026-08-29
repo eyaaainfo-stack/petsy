@@ -9,6 +9,10 @@ import 'sidebar_item.dart';
 import '../../views/user/account_type.dart';
 import '../../views/user/sitter/sitter_profile.dart';
 import '../../views/user/sitter/my_profile_sitter.dart';
+import '../../views/user/sitter/sitter_calender.dart';
+import '../../views/user/notifications_screen.dart';
+import '../../views/user/settings_screen.dart';
+import '../../controllers/notification_controller.dart';
 
 // ============================================================================
 // SidebarSitter (Drawer tel sitter)
@@ -21,7 +25,7 @@ import '../../views/user/sitter/my_profile_sitter.dart';
 // 🔴 "el photo mrabb3a" (kifma tlabt) - MCH dayra (CircleAvatar) kifha kif
 // el design mte3 el mockup el asli - ClipRRect b radius sghir bark.
 // ============================================================================
-class SidebarSitter extends StatelessWidget {
+class SidebarSitter extends StatefulWidget {
   final String sitterName;
   final String sitterCity;
   final Uint8List? sitterPhotoBytes;
@@ -34,6 +38,28 @@ class SidebarSitter extends StatelessWidget {
     this.sitterPhotoBytes,
     this.sitterPhotoUrl,
   });
+
+  @override
+  State<SidebarSitter> createState() => _SidebarSitterState();
+}
+
+class _SidebarSitterState extends State<SidebarSitter> {
+  // 🔵 ZID (kifma tlab): "yjiwni les notifications" - badge b ra9m
+  // el notifications ma9rou2ach, 7dha "Notifications" fel sidebar.
+  final NotificationController _notificationController = NotificationController();
+  int _unreadCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUnreadCount();
+  }
+
+  Future<void> _fetchUnreadCount() async {
+    final count = await _notificationController.fetchUnreadCount();
+    if (!mounted) return;
+    setState(() => _unreadCount = count);
+  }
 
   Future<void> _onLogoutPressed(BuildContext context) async {
     // 🔵 ZID: logout 7a9i9i (mch TODO) - ynahi el session (token/user
@@ -57,19 +83,19 @@ class SidebarSitter extends StatelessWidget {
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(
         builder: (_) => SitterProfileScreen(
-          sitterName: sitterName,
-          sitterCity: sitterCity,
-          sitterPhotoBytes: sitterPhotoBytes,
-          sitterPhotoUrl: sitterPhotoUrl,
+          sitterName: widget.sitterName,
+          sitterCity: widget.sitterCity,
+          sitterPhotoBytes: widget.sitterPhotoBytes,
+          sitterPhotoUrl: widget.sitterPhotoUrl,
         ),
       ),
       (route) => false,
     );
   }
 
-  // 🔵 el screens l'okhrin (Account/Calendar/Notifications/Messages/
-  // About us) mazel ma tsawbouch - TODO bark, ghir yghaleg el
-  // drawer (bla crash "route not found").
+  // 🔵 el screens l'okhrin (Calendar/Messages/About us) mazel ma
+  // tsawbouch - TODO bark, ghir yghaleg el drawer (bla crash "route
+  // not found").
   void _notImplementedYet(BuildContext context) {
     Navigator.of(context).pop();
   }
@@ -81,10 +107,16 @@ class SidebarSitter extends StatelessWidget {
     // W el bouton "About us" tawa yestaعمlouh el zoùz mel nefs el
     // variable (bla ma ykoun 2 rose mokhtalfin chwaya b'ghalta).
     final Color softPink = Color.lerp(AppColors.pinkpetsy, Colors.white, 0.35)!;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Drawer(
       width: sizes.sidebarWidth,
-      backgroundColor: AppColors.vertpetsy,
+      // 🔴 FIX (kifma tlab): "badel el vert bel blanc, w el bordure
+      // mte3ha bel vert" - bdal background KAMEL a5dhar, tawa abyadh
+      // (dark -> surface ghamqa, mch abyadh fa9i3 fel dark mode) +
+      // bordure a5dhar 3al drawer kaملou (shape).
+      backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+      shape: Border(right: BorderSide(color: AppColors.vertpetsy, width: 2)),
       child: SafeArea(
         child: Column(
           children: [
@@ -134,22 +166,27 @@ class SidebarSitter extends StatelessWidget {
                       children: [
                         SizedBox(height: sizes.screenHeight * 0.015),
                         // 🔴 "photo mrabb3a AKBAR" kifma tlabt
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: Container(
-                            width: sizes.sidebarPhotoSize,
-                            height: sizes.sidebarPhotoSize,
-                            color: Colors.white,
-                            child: sitterPhotoBytes != null
-                                ? Image.memory(sitterPhotoBytes!, fit: BoxFit.cover)
-                                : sitterPhotoUrl != null
-                                    ? Image.network(sitterPhotoUrl!, fit: BoxFit.cover)
-                                    : Icon(Icons.person, color: AppColors.pinkpetsy, size: sizes.sidebarPhotoSize * 0.55),
+                        // 🔵 ZID (kifma tlab): bordure a5dhar 3al pdp zeda.
+                        Container(
+                          padding: const EdgeInsets.all(2.5),
+                          decoration: BoxDecoration(borderRadius: BorderRadius.circular(22), border: Border.all(color: AppColors.vertpetsy, width: 2.5)),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: Container(
+                              width: sizes.sidebarPhotoSize,
+                              height: sizes.sidebarPhotoSize,
+                              color: Colors.white,
+                              child: widget.sitterPhotoBytes != null
+                                  ? Image.memory(widget.sitterPhotoBytes!, fit: BoxFit.cover)
+                                  : widget.sitterPhotoUrl != null
+                                      ? Image.network(widget.sitterPhotoUrl!, fit: BoxFit.cover)
+                                      : Icon(Icons.person, color: AppColors.pinkpetsy, size: sizes.sidebarPhotoSize * 0.55),
+                            ),
                           ),
                         ),
                         SizedBox(height: sizes.screenHeight * 0.014),
                         Text(
-                          sitterName,
+                          widget.sitterName,
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: Colors.white,
@@ -168,7 +205,7 @@ class SidebarSitter extends StatelessWidget {
 
             // ----------------------------------------------------------
             // Liste el menu (Account/Home/Calendar/Notifications/
-            // Messages/Log out) - fond teal
+            // Messages/Settings/Log out) - fond teal
             // ----------------------------------------------------------
             Expanded(
               child: SingleChildScrollView(
@@ -198,19 +235,47 @@ class SidebarSitter extends StatelessWidget {
                       icon: Icons.calendar_today_outlined,
                       label: 'calendar_label'.tr(),
                       sizes: sizes,
-                      onTap: () => _notImplementedYet(context),
+                      // 🔴 FIX (kifma tlab): kanet TODO - tawa ymchi l
+                      // "Calendar" (sitter_calender.dart).
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const SitterCalenderScreen()),
+                        );
+                      },
                     ),
                     SidebarItem(
                       icon: Icons.notifications_outlined,
                       label: 'notifications_label'.tr(),
                       sizes: sizes,
-                      onTap: () => _notImplementedYet(context),
+                      // 🔵 ZID (kifma tlab): badge b ra9m el notifications
+                      // ma9rou2ach.
+                      badgeCount: _unreadCount,
+                      onTap: () async {
+                        Navigator.of(context).pop();
+                        await Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+                        );
+                        _fetchUnreadCount();
+                      },
                     ),
                     SidebarItem(
                       icon: Icons.chat_bubble_outline,
                       label: 'messages_label'.tr(),
                       sizes: sizes,
                       onTap: () => _notImplementedYet(context),
+                    ),
+                    // 🔵 ZID (kifma tlab): "Settings" (Theme + Language)
+                    SidebarItem(
+                      icon: Icons.settings_outlined,
+                      label: 'settings_label'.tr(),
+                      sizes: sizes,
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                        );
+                      },
                     ),
                     SidebarItem(
                       icon: Icons.logout,

@@ -21,4 +21,8 @@ router.get('/', protect, petController.getPetsByOwner);
 // request.
 router.post('/:petId/photo', protect, petUpload.single('photo'), petController.uploadPetPhoto);
 
+// 🔵 ZID: update_pet_profile.dart - PATCH partiel (name/age/breed/size/
+// gender/behaviors/careInfo/vetClinicName/vetClinicPhone).
+router.patch('/:petId', protect, petController.updatePet);
+
 module.exports = router;

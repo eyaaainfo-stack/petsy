@@ -13,6 +13,7 @@ import '../../services/api_service.dart';
 import 'user_signin.dart';
 import 'owner/profile_owner.dart';
 import 'sitter/sitter_profile.dart';
+import 'mdp_oublier_1.dart';
 
 // ============================================================================
 // UserLoginScreen ("Login" - 7sab MAWJOUD)
@@ -323,7 +324,13 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                     Center(
                       child: TextButton(
                         onPressed: () {
-                          // TODO: navigation lel écran "Reset password"
+                          // 🔴 FIX: kanet TODO - tawa ymchi l "Reset
+                          // Your Password" (mdp_oublier_1.dart), el role
+                          // yousel mennou (bch el email yت7اقق mennou
+                          // ykoun nefs el account type).
+                          Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => MdpOublier1Screen(role: widget.role)),
+                          );
                         },
                         child: Text(
                           'forgot_password_button'.tr(),

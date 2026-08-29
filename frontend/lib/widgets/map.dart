@@ -16,8 +16,21 @@ import 'button.dart';
 class LocationResult {
   final LatLng latLng;
   final String placeName;
+  // 🔵 ZID: esm el wilaya (mel "address.state" tel Nominatim, RAW - mch
+  // matché 3al 24 wilaya déjà) - el CALLER (user_create_profile.dart/
+  // update_profile_owner.dart) howa elli ye3mel el match/comparaison
+  // (3andou déjà "tunisiaGovernorates"), map.dart yeb9a generic.
+  final String? rawStateName;
 
-  const LocationResult({required this.latLng, required this.placeName});
+  const LocationResult({required this.latLng, required this.placeName, this.rawStateName});
+}
+
+// 🔵 helper interne bark (mch exposée barra el fichier) - "placeName" +
+// "stateName" mel réponse Nominatim.
+class _ReverseGeocodeResult {
+  final String placeName;
+  final String? stateName;
+  const _ReverseGeocodeResult({required this.placeName, this.stateName});
 }
 
 // ============================================================================
@@ -226,11 +239,11 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
   // esm el blasa (bel 7arf, mch ra9mat). Ki l'appel yefchel (bla internet,
   // etc.), nrajj3ou "lat, lng" kifha kif 9bal (fallback, mch crash).
   // --------------------------------------------------------------------
-  Future<String> _reverseGeocode(LatLng point) async {
+  Future<_ReverseGeocodeResult> _reverseGeocode(LatLng point) async {
     try {
       final uri = Uri.parse(
         'https://nominatim.openstreetmap.org/reverse'
-        '?lat=${point.latitude}&lon=${point.longitude}&format=json',
+        '?lat=${point.latitude}&lon=${point.longitude}&format=json&addressdetails=1&accept-language=fr',
       );
       final response = await http.get(
         uri,
@@ -240,12 +253,26 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body) as Map<String, dynamic>;
         final String? displayName = data['display_name'] as String?;
-        if (displayName != null && displayName.isNotEmpty) return displayName;
+        // 🔵 "state" howa el 7a9el elli Nominatim yesta3milou lel
+        // wilaya/gouvernorat fi Tounes (mathalan "state": "Sfax").
+        final Map<String, dynamic>? address = data['address'] as Map<String, dynamic>?;
+        final String? state = address?['state'] as String?;
+        // 🔵 ZID: debugPrint UNCONDITIONNEL - bch nchoufou el "address"
+        // el KAMLA elli Nominatim rajja3 (ken "state" mch fih Sfax,
+        // n7ottou el 7a9el es-sa7i7 mel print hedha).
+        debugPrint('🗺️ [reverseGeocode] address complet: ${jsonEncode(address)}');
+        debugPrint('🗺️ [reverseGeocode] state extrait: "$state"');
+        if (displayName != null && displayName.isNotEmpty) {
+          return _ReverseGeocodeResult(placeName: displayName, stateName: state);
+        }
       }
     } catch (_) {
       // fallback ta7t
     }
-    return '${point.latitude.toStringAsFixed(5)}, ${point.longitude.toStringAsFixed(5)}';
+    return _ReverseGeocodeResult(
+      placeName: '${point.latitude.toStringAsFixed(5)}, ${point.longitude.toStringAsFixed(5)}',
+      stateName: null,
+    );
   }
 
   Future<void> _onConfirmPressed() async {
@@ -255,10 +282,14 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
     }
 
     setState(() => _isConfirming = true);
-    final String placeName = await _reverseGeocode(_selectedLocation!);
+    final _ReverseGeocodeResult geocode = await _reverseGeocode(_selectedLocation!);
     if (!mounted) return;
 
-    Navigator.of(context).pop(LocationResult(latLng: _selectedLocation!, placeName: placeName));
+    Navigator.of(context).pop(LocationResult(
+      latLng: _selectedLocation!,
+      placeName: geocode.placeName,
+      rawStateName: geocode.stateName,
+    ));
   }
 
   @override

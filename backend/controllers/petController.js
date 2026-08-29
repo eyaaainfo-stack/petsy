@@ -80,3 +80,44 @@ exports.getPetsByOwner = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+// ============================================================================
+// 4. UPDATE PET (route "protégée" - lezem el pet ykoun mte3 el user
+// el connecté, MCH ay pet)
+// ============================================================================
+// 🔵 ZID: update_pet_profile.dart (Flutter) - PATCH partiel (ghir el
+// 7ou9oul elli el user beddel). "owner: req.userId" fel filter (mch
+// bark "_id: petId") - bch ay wa7ed ma ynajjamch ybeddel pet 7ad okhor
+// (7atta ken ye5men el petId 7a9i9i).
+// ============================================================================
+exports.updatePet = async (req, res) => {
+  try {
+    const { petId } = req.params;
+    const { name, age, breed, size, gender, behaviors, careInfo, vetClinicName, vetClinicPhone } = req.body;
+
+    const updates = {};
+    if (name !== undefined) updates.name = name;
+    if (age !== undefined) updates.age = age;
+    if (breed !== undefined) updates.breed = breed;
+    if (size !== undefined) updates.size = size;
+    if (gender !== undefined) updates.gender = gender;
+    if (behaviors !== undefined) updates.behaviors = behaviors;
+    if (careInfo !== undefined) updates.careInfo = careInfo;
+    if (vetClinicName !== undefined) updates.vetClinicName = vetClinicName;
+    if (vetClinicPhone !== undefined) updates.vetClinicPhone = vetClinicPhone;
+
+    const pet = await Animal.findOneAndUpdate(
+      { _id: petId, owner: req.userId }, // 🔴 IMPORTANT: owner zeda, mch ghir _id
+      updates,
+      { new: true, runValidators: true }
+    );
+
+    if (!pet) {
+      return res.status(404).json({ message: 'Pet not found' });
+    }
+
+    res.status(200).json({ message: 'Pet updated successfully', pet });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};

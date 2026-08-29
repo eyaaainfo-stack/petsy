@@ -77,7 +77,17 @@ class AuthController {
         // 🔵 ZID: n7ottou el token/userId fel AuthSession (mémoire) -
         // bch UserCreateProfileController w profile_owner ynajmou
         // yosloula ba3d.
-        AuthSession.save(token: token, userId: user['id'] as String);
+        // 🔴 FIX: "role" (w "city"/"fullName") kanou MA yeb3thouch l
+        // AuthSession.save() - AuthSession.userRole kan DIMA null (7ata
+        // ba3d el login), w kol kod ye3tamed 3lih (mathalan
+        // notifications_screen.dart, "sitter" vs "owner") ma yekhdemch.
+        AuthSession.save(
+          token: token,
+          userId: user['id'] as String,
+          city: user['city'] as String?,
+          role: user['role'] as String?,
+          fullName: user['fullName'] as String?,
+        );
         return LoginResult.success(
           token,
           fullName: user['fullName'] as String?,
@@ -122,7 +132,10 @@ class AuthController {
         // 🔵 ZID: nafs el mant9 tel login - n7ottou el token direct,
         // bch UserCreateProfileScreen (elli tji ba3d) tنجم te3yet lel
         // route "protégée" (PATCH profile) bla ma te7taj écran login.
-        AuthSession.save(token: token, userId: user['id'] as String);
+        // 🔴 FIX: nafs mochkla el login - "role" lezem yetb3ath l
+        // AuthSession.save() (bla ha, AuthSession.userRole yeb9a null
+        // 7ata ba3d el signup, w écrans zeyda te7taj tel role).
+        AuthSession.save(token: token, userId: user['id'] as String, role: user['role'] as String? ?? role);
         return SignUpResult.success();
       }
 

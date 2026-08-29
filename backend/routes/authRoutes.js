@@ -11,4 +11,9 @@ router.post('/login', authController.login);
 // Route Register (Lil-Sitter, Owner, Courier)
 router.post('/register', authController.register);
 
+// 🔵 ZID: Forgot Password (mdp_oublier_1/2/3.dart) - 3 khtawet
+router.post('/forgot-password', authController.forgotPassword);
+router.post('/verify-reset-code', authController.verifyPasswordResetCode);
+router.post('/reset-password', authController.resetPassword);
+
 module.exports = router;

@@ -100,7 +100,38 @@ class _UpdateProfileOwnerScreenState extends State<UpdateProfileOwnerScreen> {
         _locationName = result.placeName;
         _locationController.text = result.placeName;
       });
+
+      // 🔵 ZID (kifma tlabt): nafs mant9 user_create_profile.dart -
+      // ken el location fi wilaya mo5talfa 3an el "City", nbaddlouha
+      // automatique + popup.
+      final String? matchedGovernorate = matchTunisianGovernorate(result.rawStateName);
+      debugPrint('🗺️ [_pickLocation] rawStateName="${result.rawStateName}" matchedGovernorate="$matchedGovernorate" currentCity="${_cityController.text}"');
+      if (matchedGovernorate != null && matchedGovernorate != _cityController.text && mounted) {
+        final String oldCity = _cityController.text;
+        setState(() => _cityController.text = matchedGovernorate);
+        if (oldCity.isNotEmpty) {
+          _showCityAutoChangedDialog(oldCity: oldCity, newCity: matchedGovernorate);
+        }
+      }
     }
+  }
+
+  void _showCityAutoChangedDialog({required String oldCity, required String newCity}) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text('city_auto_updated_title'.tr()),
+          content: Text('city_auto_updated_message'.tr(namedArgs: {'oldCity': oldCity, 'newCity': newCity})),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text('ok_button'.tr()),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _showPhotoSourceSheet() {

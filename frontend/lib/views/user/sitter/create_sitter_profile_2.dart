@@ -6,7 +6,7 @@ import '../../../constants/app_sizes.dart';
 import '../../../widgets/back_button.dart';
 import '../../../widgets/button.dart';
 import '../../../controllers/create_sitter_profile_2_controller.dart';
-import 'sitter_profile.dart';
+import 'sitter_availability_question.dart';
 
 // 🔵 el 3 khiyarat "win ta3mor" - single select (wa7ed bark mel 3).
 enum ResidenceType { apartment, house, countryHouse }
@@ -106,9 +106,11 @@ class _CreateSitterProfile2ScreenState extends State<CreateSitterProfile2Screen>
     }
 
     if (!mounted) return;
+    // 🔵 ZID (kifma tlab): étape jdida ("3andek ayemet ma thebbech
+    // tekhdem fihom?") 9bal ma nemchiw l'home - mch direct SitterProfileScreen.
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(
-        builder: (_) => SitterProfileScreen(
+        builder: (_) => SitterAvailabilityQuestionScreen(
           sitterName: widget.sitterName,
           sitterCity: widget.sitterCity,
           sitterPhotoBytes: widget.sitterPhotoBytes,
@@ -171,7 +173,53 @@ class _CreateSitterProfile2ScreenState extends State<CreateSitterProfile2Screen>
     required VoidCallback onTap,
     required AppSizes sizes,
     double? width, // null = ya5ou el hjm mel parent (Expanded) - safer
+    // 🔴 FIX (kifma tlab): "el card lkol ye5o l'image mtaa el pet, thto
+    // el type" - dog/cat bark (mch Apartment/House/CountryHouse, lezmou
+    // yeb9aw kifhom kanou, icon+label b'padding). Ki true: el image
+    // TEKHOU EL CARD KAMEL (edge-to-edge, bla padding), w el label
+    // yban f'bande TA7T el image (mch fou9ha b'padding kifma 9bal).
+    bool fillImage = false,
   }) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
+    if (fillImage && imageAsset != null) {
+      return GestureDetector(
+        onTap: onTap,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 🔴 FIX (kifma tlab: "el chat w chien mch fel card, thet
+            // el card") - el card (border/rounded) tawa IMAGE BARK
+            // (kaملha, edge-to-edge) - el label ("Dog"/"Cat") 5arjou,
+            // TA7T el card (mch f'bande jouwaha).
+            Container(
+              width: width,
+              height: sizes.sitterPetTypeCardHeight,
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isSelected ? AppColors.vertpetsy : AppColors.pinkpetsy.withOpacity(0.35),
+                  width: isSelected ? 2.5 : 1.2,
+                ),
+              ),
+              child: Image.asset(imageAsset, width: double.infinity, fit: BoxFit.cover),
+            ),
+            SizedBox(height: sizes.screenHeight * 0.008),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: sizes.screenWidth * 0.033,
+                fontWeight: FontWeight.bold,
+                color: isSelected ? AppColors.vertpetsy : Theme.of(context).textTheme.bodyLarge?.color,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -179,7 +227,12 @@ class _CreateSitterProfile2ScreenState extends State<CreateSitterProfile2Screen>
         width: width,
         padding: EdgeInsets.symmetric(vertical: sizes.screenHeight * 0.018, horizontal: sizes.screenWidth * 0.02),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.pinkpetsy.withOpacity(0.18) : Colors.white,
+          // 🔴 FIX (kifma tlab: "dark mode ma 3jebnich el alwen") - kanet
+          // "Colors.white" THABTA (ay theme) - fel dark mode kan yban
+          // murabba3 abyadh fa9i3 (w el label mba3d ma yban - text fatih
+          // fou9 abyadh). Tawa: dark -> tint fatih SHWAYA (mch abyadh
+          // slim), light -> abyadh kifma kan.
+          color: isSelected ? AppColors.pinkpetsy.withOpacity(0.18) : (isDark ? Colors.white.withOpacity(0.06) : Colors.white),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected ? AppColors.vertpetsy : AppColors.pinkpetsy.withOpacity(0.35),
@@ -403,6 +456,7 @@ class _CreateSitterProfile2ScreenState extends State<CreateSitterProfile2Screen>
                                           Expanded(
                                             child: _iconOptionCard(
                                               imageAsset: 'assets/images/dog.png',
+                                              fillImage: true,
                                               label: 'sitter_pet_type_dog'.tr(),
                                               isSelected: _ownedPetTypes.contains('dog'),
                                               onTap: () => setState(() {
@@ -415,6 +469,7 @@ class _CreateSitterProfile2ScreenState extends State<CreateSitterProfile2Screen>
                                           Expanded(
                                             child: _iconOptionCard(
                                               imageAsset: 'assets/images/cat.png',
+                                              fillImage: true,
                                               label: 'sitter_pet_type_cat'.tr(),
                                               isSelected: _ownedPetTypes.contains('cat'),
                                               onTap: () => setState(() {

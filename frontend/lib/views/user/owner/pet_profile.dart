@@ -3,6 +3,7 @@ import 'package:easy_localization/easy_localization.dart';
 import '../../../constants/app_colors.dart';
 import '../../../models/pet_summary.dart';
 import '../../../widgets/back_button.dart';
+import 'update_pet_profile.dart';
 
 // ============================================================================
 // PetProfileScreen
@@ -18,14 +19,46 @@ import '../../../widgets/back_button.dart';
 // 🔴 el "Create/View Moodboard" (mawjoudin fel design) - MECH mawjoudin
 // houni, 7it houma mch jozz mel data elli tetzad wa9t l'inscription
 // (feature mnfassla, TODO lel mostakbal lowkan tebni).
+//
+// 🔵 ZID: StatefulWidget (mch StatelessWidget kifma kanet) - bch
+// nnajjmou n7ottou "bouton stylo" (edit) elli yeftah UpdatePetProfileScreen,
+// w ki el user yerja3 mennha b'PetSummary jdid, ne3mlou setState (rebuild
+// direct, bla ma ne7tajou refetch el liste el kaملha mel backend).
 // ============================================================================
-class PetProfileScreen extends StatelessWidget {
+class PetProfileScreen extends StatefulWidget {
   final PetSummary pet;
+  // 🔵 ZID (kifma tlab: request.dart, sitter ychouf pet tel owner) -
+  // lowkan true, ne5fiw bouton l'edit (stylo) - sitter MA YNAJJAMCH
+  // ybeddel data tel pet tel owner.
+  final bool readOnly;
 
-  const PetProfileScreen({super.key, required this.pet});
+  const PetProfileScreen({super.key, required this.pet, this.readOnly = false});
+
+  @override
+  State<PetProfileScreen> createState() => _PetProfileScreenState();
+}
+
+class _PetProfileScreenState extends State<PetProfileScreen> {
+  late PetSummary _pet;
+
+  @override
+  void initState() {
+    super.initState();
+    _pet = widget.pet;
+  }
+
+  Future<void> _onEditPressed() async {
+    final PetSummary? updated = await Navigator.of(context).push<PetSummary>(
+      MaterialPageRoute(builder: (_) => UpdatePetProfileScreen(pet: _pet)),
+    );
+    if (updated != null && mounted) {
+      setState(() => _pet = updated);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final pet = _pet;
     final screenSize = MediaQuery.of(context).size;
     final Color textColor = Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black87;
 
@@ -40,7 +73,7 @@ class PetProfileScreen extends StatelessWidget {
               // fel a5er tou3ha, nafs mant9 el "_pillCard" mel
               // create_pet_profile_2.dart.
               // ------------------------------------------------------
-              _PetBanner(pet: pet, screenSize: screenSize),
+              _PetBanner(pet: pet, screenSize: screenSize, onEditPressed: widget.readOnly ? null : _onEditPressed),
 
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: screenSize.width * 0.07),
@@ -180,18 +213,29 @@ class PetProfileScreen extends StatelessWidget {
   }
 
   Widget _careInfoRow(String label, bool value, double screenWidth) {
+    // 🔴 FIX (kifma tlabt): "kima tableau" - 2 colonnes (label 3al
+    // yesar, "Oui"/"Non" 3al yemin, 7asb el valeur el 7a9i9iya) - mch
+    // dot mlouna (elli ma twarrich "Yes"/"No" bel 7arf).
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: screenWidth * 0.015),
+      padding: EdgeInsets.symmetric(vertical: screenWidth * 0.02),
       child: Row(
         children: [
-          Text(label, style: TextStyle(fontSize: screenWidth * 0.038)),
-          SizedBox(width: screenWidth * 0.02),
+          Expanded(
+            child: Text(label, style: TextStyle(fontSize: screenWidth * 0.038)),
+          ),
           Container(
-            width: screenWidth * 0.035,
-            height: screenWidth * 0.035,
+            padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.03, vertical: screenWidth * 0.01),
             decoration: BoxDecoration(
-              color: value ? AppColors.pinkpetsy : Colors.grey.withOpacity(0.3),
-              shape: BoxShape.circle,
+              color: value ? AppColors.pinkpetsy.withOpacity(0.15) : Colors.grey.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              value ? 'yes_label'.tr() : 'no_label'.tr(),
+              style: TextStyle(
+                fontSize: screenWidth * 0.033,
+                fontWeight: FontWeight.w600,
+                color: value ? AppColors.pinkpetsy : Colors.grey.shade600,
+              ),
             ),
           ),
         ],
@@ -206,8 +250,9 @@ class PetProfileScreen extends StatelessWidget {
 class _PetBanner extends StatelessWidget {
   final PetSummary pet;
   final Size screenSize;
+  final VoidCallback? onEditPressed;
 
-  const _PetBanner({required this.pet, required this.screenSize});
+  const _PetBanner({required this.pet, required this.screenSize, required this.onEditPressed});
 
   @override
   Widget build(BuildContext context) {
@@ -265,6 +310,23 @@ class _PetBanner extends StatelessWidget {
         ),
 
         const CustomBackButton(),
+
+        // 🔵 ZID (kifma tlabt): bouton stylo -> UpdatePetProfileScreen
+        // (mfaqoud lowkan readOnly - sitter ychouf bark).
+        if (onEditPressed != null)
+          Positioned(
+            top: screenSize.height * 0.015,
+            right: screenSize.width * 0.04,
+            child: InkWell(
+              onTap: onEditPressed,
+              borderRadius: BorderRadius.circular(30),
+              child: Container(
+                padding: EdgeInsets.all(screenSize.width * 0.022),
+                decoration: BoxDecoration(color: Colors.white.withOpacity(0.7), shape: BoxShape.circle),
+                child: Icon(Icons.edit_outlined, color: AppColors.pinkpetsy, size: screenSize.width * 0.05),
+              ),
+            ),
+          ),
 
         // Pill teal - tghouss ta7t el banner (nafs mant9 _pillCard)
         Positioned(

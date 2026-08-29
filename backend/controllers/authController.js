@@ -5,6 +5,7 @@ const Sitter = require('../models/sitter');
 const Courier = require('../models/courier');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 
 // ==========================================
 // 1. LOGIN (Mo-waḥḥad lil-acteurs el-koll)
@@ -149,6 +150,119 @@ exports.register = async (req, res) => {
     // kan yeb3ath 500 lel front bess bla ma yban 7ata 7aja fel
     // terminal. Tawa lازem yban kaملou (message + stack).
     console.error(`❌ [REGISTER] ERROR ba3d ${Date.now() - startTime}ms:`, error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// ==========================================
+// 3. FORGOT PASSWORD (mdp_oublier_1/2/3.dart) - 3 khtawet
+// ==========================================
+
+// 🔵 3a-1: el user yekteb el email -> nchekkou mawjoud W men NEFS
+// el role (kifma tlab: "mch ydakhal mail mta3 sitter fel account
+// type owner") -> ken sa7i7, ن3امро code (5 ra9mat) + n"eb3thouh"
+// (console.log houni - mafamech service email 7a9i9i mrakez tawa,
+// TODO lel production).
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email, role } = req.body;
+
+    if (!email || !role) {
+      return res.status(400).json({ message: 'Email and role are required' });
+    }
+
+    // 🔴 IMPORTANT: {email, role} f nefs el filter - hedhi bidhabt elli
+    // t7a99e9 "el mail lezem ykoun mta3 el account type heka bدأت".
+    const user = await User.findOne({ email, role });
+    if (!user) {
+      // 🔵 message 3am (mch "email exists lakin role mch sa7i7" bل
+      // exemple) - bch ma nzidouch info l'ay wa7ed ye5tabar b'iha
+      // (security: email enumeration).
+      return res.status(404).json({ message: 'No account found with this email for this account type' });
+    }
+
+    const code = Math.floor(10000 + Math.random() * 90000).toString(); // 5 ra9mat
+    user.passwordResetCode = code;
+    user.passwordResetCodeExpiry = new Date(Date.now() + 5 * 60 * 1000); // 5 dqi9a
+    await user.save({ validateBeforeSave: false });
+
+    // 🔴 TODO: appel service email 7a9i9i (mathalan nodemailer/SendGrid)
+    // - mazel mch mrakez, fa n7ottou el code fel terminal bark (bch
+    // tenjjam tjarreb el flow kaملou tawa bla email 7a9i9i).
+    console.log(`\n📧 [FORGOT-PASSWORD] Code el verification lel "${email}" (role: ${role}): ${code} (yesse7 5 d9ay9)\n`);
+
+    res.status(200).json({ message: 'Verification code sent' });
+  } catch (error) {
+    console.error('❌ FORGOT-PASSWORD ERROR:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// 🔵 3a-2: el user yekteb el code (5 ra9mat) -> nchekkou sa7i7 W
+// mazel s7i9 (5 d9ay9 ma 3addouch) -> ken sa7i7, n3amrou "resetToken"
+// mo2a99at (bch el écran el jay - "Set New Password" - ynajjam
+// ye5dem bla ma el user y3awad ye5tar el code mel jdid).
+exports.verifyPasswordResetCode = async (req, res) => {
+  try {
+    const { email, code } = req.body;
+
+    const user = await User.findOne({ email }).select('+passwordResetCode +passwordResetCodeExpiry');
+    if (!user || !user.passwordResetCode) {
+      return res.status(400).json({ message: 'Invalid or expired code' });
+    }
+
+    if (user.passwordResetCode !== code) {
+      return res.status(400).json({ message: 'Invalid code' });
+    }
+
+    if (!user.passwordResetCodeExpiry || user.passwordResetCodeExpiry < new Date()) {
+      return res.status(400).json({ message: 'Code expired' });
+    }
+
+    // el code sa7i7 - n3amrou token mo2a99at (15 d9i9a), n7ayyدou el
+    // code (single-use, ma yetsta3malch marra okhra).
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    user.passwordResetToken = resetToken;
+    user.passwordResetTokenExpiry = new Date(Date.now() + 15 * 60 * 1000);
+    user.passwordResetCode = null;
+    user.passwordResetCodeExpiry = null;
+    await user.save({ validateBeforeSave: false });
+
+    res.status(200).json({ message: 'Code verified', resetToken });
+  } catch (error) {
+    console.error('❌ VERIFY-RESET-CODE ERROR:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// 🔵 3a-3: el user yekteb password jdid (+ confirmation, el front
+// ye7e99e9 el zoùj kif kif 9bal el appel) -> nchekkou el resetToken
+// (mel écran el 9bali) sa7i7 W mazel s7i9 -> nbaddlou el password.
+exports.resetPassword = async (req, res) => {
+  try {
+    const { email, resetToken, newPassword } = req.body;
+
+    const user = await User.findOne({ email }).select('+passwordResetToken +passwordResetTokenExpiry');
+    if (!user || !user.passwordResetToken) {
+      return res.status(400).json({ message: 'Invalid or expired reset session' });
+    }
+
+    if (user.passwordResetToken !== resetToken) {
+      return res.status(400).json({ message: 'Invalid reset session' });
+    }
+
+    if (!user.passwordResetTokenExpiry || user.passwordResetTokenExpiry < new Date()) {
+      return res.status(400).json({ message: 'Reset session expired' });
+    }
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    user.passwordResetToken = null;
+    user.passwordResetTokenExpiry = null;
+    await user.save();
+
+    res.status(200).json({ message: 'Password reset successfully' });
+  } catch (error) {
+    console.error('❌ RESET-PASSWORD ERROR:', error);
     res.status(500).json({ error: error.message });
   }
 };

@@ -17,6 +17,12 @@ class AppPreferences {
   AppPreferences._();
 
   static const String _kHasSeenOnboarding = 'has_seen_onboarding';
+  // 🔴 FIX: kanet tetse2al fi KOL launch (splash_decider.dart initState)
+  // - el user y7es beliha "tzid tji fi kol marra" (khousousan ken
+  // dousit "Deny" marra, el dialog terja3 tban el launch elli jai).
+  // Tawa: marra WA7DA bark fi 3omr el app (flag mahfoudha), 7atta ken
+  // el user 7ram/denya - ma3andnach niya n-forsiwh, ghir na3lmouh marra.
+  static const String _kHasAskedBatteryOptimization = 'has_asked_battery_optimization';
 
   static Future<bool> hasSeenOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
@@ -26,5 +32,32 @@ class AppPreferences {
   static Future<void> setHasSeenOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_kHasSeenOnboarding, true);
+  }
+
+  static Future<bool> hasAskedBatteryOptimization() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_kHasAskedBatteryOptimization) ?? false;
+  }
+
+  static Future<void> setHasAskedBatteryOptimization() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_kHasAskedBatteryOptimization, true);
+  }
+
+  // ==========================================================================
+  // Theme preference (theme.dart - Settings) - 'system' (par défaut,
+  // yetba3 el brightness tel appareil) / 'light' / 'dark' (el user
+  // ye5tar b yedou, override).
+  // ==========================================================================
+  static const String _kThemePreference = 'theme_preference';
+
+  static Future<String> getThemePreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_kThemePreference) ?? 'system';
+  }
+
+  static Future<void> setThemePreference(String value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kThemePreference, value);
   }
 }

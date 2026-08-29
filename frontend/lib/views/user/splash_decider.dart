@@ -45,11 +45,16 @@ class _SplashDeciderState extends State<SplashDecider> {
     super.initState();
     _decide();
 
-    // 🔵 ZID: nse2alou el user "Allow battery optimizations exemption?"
-    // (dialog systeme Android) - GHIR ba3d ma el 1er frame yban
-    // (addPostFrameCallback), bch ma na3wa9ouch/na5rou el startup
-    // b ay chy. Marra wa7da bess tekfi (Android yeh'fedh el 5tiyar).
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // 🔴 FIX: kanet tetse2al fi KOL launch (fi kol ma el app tefte7)
+    // - tawa marra WA7DA bark fi 3omr el app (flag mahfoudha fel
+    // AppPreferences). Zeda: el appel yesir GHIR ba3d ma el 1er frame
+    // yban, w bark ken el app fel foreground/resumed (bch ma ye-crashich
+    // ken el screen tel telefon msakker wa9t el flutter run/launch).
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final bool alreadyAsked = await AppPreferences.hasAskedBatteryOptimization();
+      if (alreadyAsked) return;
+
+      await AppPreferences.setHasAskedBatteryOptimization();
       PowerSaveService.requestIgnoreBatteryOptimizations();
     });
   }

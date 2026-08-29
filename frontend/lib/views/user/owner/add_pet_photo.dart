@@ -8,6 +8,7 @@ import '../../../widgets/back_button.dart';
 import '../../../widgets/button.dart';
 import '../../../widgets/outlined_button.dart';
 import '../../../widgets/paw_widget.dart';
+import '../../../widgets/photo_crop_screen.dart';
 import '../../../models/pet_summary.dart';
 import '../../../services/api_service.dart';
 import '../../../controllers/auth_session.dart';
@@ -121,7 +122,14 @@ class _AddPetPhotoScreenState extends State<AddPetPhotoScreen> {
 
       final bytes = await picked.readAsBytes();
       if (!mounted) return;
-      setState(() => _photoBytes = bytes);
+
+      // 🔴 FIX (kifma tlab: "zidni fel add pet photo zeda kima el
+      // user") - nafs el étape "eddi/zoumi" (PhotoCropScreen) - lakin
+      // circularMask:false (el pets ybanou mrabba3 bzwaya modawra fel
+      // app, mch dayra kifma el user).
+      final cropped = await PhotoCropScreen.show(context, bytes, circularMask: false);
+      if (!mounted || cropped == null) return;
+      setState(() => _photoBytes = cropped);
     } catch (_) {
       // 🔵 ZID: lowkan el user rafedh el permission (kamera/galerie),
       // wala 5ata fel plugin - nwarriw SnackBar bdal ma l'app te-crash
@@ -168,7 +176,13 @@ class _AddPetPhotoScreenState extends State<AddPetPhotoScreen> {
         if (response.statusCode == 200) {
           final Map<String, dynamic> data = jsonDecode(response.body) as Map<String, dynamic>;
           final Map<String, dynamic> pet = data['pet'] as Map<String, dynamic>;
-          photoUrl = pet['photoUrl'] as String?;
+          // 🔴 FIX: el backend yrajja3 path RELATIF ("/uploads/pets/xxx.jpg"),
+          // MCH el URL el kamla - Image.network ma ye5demch bla el host
+          // (ApiService.mediaBaseUrl). Kanet tekhdem el session el 7aliya
+          // bark (Image.memory ya5ou el priorité 3al bytes), lakin ba3d
+          // restart tel app (bytes yedhi3ou), el crash yban.
+          final String? rawPhotoUrl = pet['photoUrl'] as String?;
+          photoUrl = (rawPhotoUrl != null && rawPhotoUrl.isNotEmpty) ? '${ApiService.mediaBaseUrl}$rawPhotoUrl' : null;
         } else {
           // 🔵 ZID: kan el catch fadhi (silence) - mch nnajmou nchoufou
           // 3lech el upload yefchel (404? 500? multer error?). Tawa
@@ -255,7 +269,13 @@ class _AddPetPhotoScreenState extends State<AddPetPhotoScreen> {
         if (response.statusCode == 200) {
           final Map<String, dynamic> data = jsonDecode(response.body) as Map<String, dynamic>;
           final Map<String, dynamic> pet = data['pet'] as Map<String, dynamic>;
-          photoUrl = pet['photoUrl'] as String?;
+          // 🔴 FIX: el backend yrajja3 path RELATIF ("/uploads/pets/xxx.jpg"),
+          // MCH el URL el kamla - Image.network ma ye5demch bla el host
+          // (ApiService.mediaBaseUrl). Kanet tekhdem el session el 7aliya
+          // bark (Image.memory ya5ou el priorité 3al bytes), lakin ba3d
+          // restart tel app (bytes yedhi3ou), el crash yban.
+          final String? rawPhotoUrl = pet['photoUrl'] as String?;
+          photoUrl = (rawPhotoUrl != null && rawPhotoUrl.isNotEmpty) ? '${ApiService.mediaBaseUrl}$rawPhotoUrl' : null;
         } else {
           debugPrint('⚠️ [uploadPetPhoto] status ${response.statusCode}: ${response.body}');
         }

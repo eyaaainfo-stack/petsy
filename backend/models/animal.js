@@ -4,7 +4,9 @@ const mongoose = require('mongoose');
 // ============================================================================
 // Animal (Pet)
 // ============================================================================
-// Kifma fel diagramme: Animal <>-- Proprietaire (aggregation). Fel Mongoose,
+// Kifma fel diagramme: Animal ◆-- Proprietaire (composition - el pet
+// life-cycle marboutin b'el owner, chrahtha fel models/user.js: cascade
+// delete). Fel Mongoose,
 // nesta3mlou "owner" (ObjectId, ref: 'User') - kol Animal ye3raf chkoun
 // Proprietaire tou3ou.
 // ============================================================================

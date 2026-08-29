@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'constants/app_colors.dart';
+import 'controllers/theme_controller.dart';
 import 'services/power_save_service.dart';
 import 'views/user/splash_decider.dart';
 
@@ -37,6 +38,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _syncThemeWithSystem();
+    // 🔵 ZID (settings.dart -> theme.dart): n7ammlou el préférence
+    // mahfoudha (light/dark/system) mel disque.
+    ThemeController.load();
   }
 
   @override
@@ -51,6 +55,11 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   }
 
   Future<void> _syncThemeWithSystem() async {
+    // 🔵 ZID: ken el user 5tar b yedou (Light/Dark, mel theme.dart) -
+    // ma3andnach niya n-forsiwh l "System" - n-ignore-aw el sync
+    // el automatique kaملha.
+    if (ThemeController.mode.value != null) return;
+
     final bool powerSaveActive = await PowerSaveService.isPowerSaveMode();
     if (powerSaveActive) return; // n-ignore-aw - mch battery eli t9arrar
 
@@ -66,34 +75,43 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'petsy',
+    // 🔵 ZID: ValueListenableBuilder - ki el user ybaddel el theme mel
+    // Settings (theme.dart), el app tetbeddel LIVE (bla restart, bla
+    // Navigator.pop/push zeyed). "ThemeController.mode.value ?? _themeMode"
+    // - override el user (lowkan mawjoud) yرbe7 dima 3al system-tracked.
+    return ValueListenableBuilder<ThemeMode?>(
+      valueListenable: ThemeController.mode,
+      builder: (context, overrideMode, _) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'petsy',
 
-      // Config mta3 Traduction (Easy Localization)
-      localizationsDelegates: context.localizationDelegates,
-      supportedLocales: context.supportedLocales, // declarer dans main
-      locale: context.locale, // declarer dans main
+          // Config mta3 Traduction (Easy Localization)
+          localizationsDelegates: context.localizationDelegates,
+          supportedLocales: context.supportedLocales, // declarer dans main
+          locale: context.locale, // declarer dans main
 
-      theme: ThemeData(
-        brightness: Brightness.light,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.primarySeed,
-          brightness: Brightness.light,
-        ),
-        useMaterial3: true,
-      ),
-      darkTheme: ThemeData(
-        brightness: Brightness.dark,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.primarySeed,
-          brightness: Brightness.dark,
-        ),
-        useMaterial3: true,
-      ),
-      themeMode: _themeMode,
+          theme: ThemeData(
+            brightness: Brightness.light,
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: AppColors.primarySeed,
+              brightness: Brightness.light,
+            ),
+            useMaterial3: true,
+          ),
+          darkTheme: ThemeData(
+            brightness: Brightness.dark,
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: AppColors.primarySeed,
+              brightness: Brightness.dark,
+            ),
+            useMaterial3: true,
+          ),
+          themeMode: overrideMode ?? _themeMode,
 
-      home: const SplashDecider(),
+          home: const SplashDecider(),
+        );
+      },
     );
   }
 }

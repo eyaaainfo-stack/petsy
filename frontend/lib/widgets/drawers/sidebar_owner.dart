@@ -10,6 +10,11 @@ import 'sidebar_item.dart';
 import '../../views/user/account_type.dart';
 import '../../views/user/owner/profile_owner.dart';
 import '../../views/user/owner/my_profile_owner.dart';
+import '../../views/user/notifications_screen.dart';
+import '../../views/user/settings_screen.dart';
+import '../../views/user/owner/my_favourites_screen.dart';
+import '../../views/user/owner/les_reservations.dart';
+import '../../controllers/notification_controller.dart';
 
 // ============================================================================
 // SidebarOwner (Drawer tel owner)
@@ -24,7 +29,7 @@ import '../../views/user/owner/my_profile_owner.dart';
 // fa lezemna njibou el pets mel backend (PetRepository.fetchOwnerPets())
 // 9bal ma nnavigui-w, nafs mant9 splash_decider.dart/user_login.dart.
 // ============================================================================
-class SidebarOwner extends StatelessWidget {
+class SidebarOwner extends StatefulWidget {
   final String ownerName;
   final String ownerCity;
   final Uint8List? ownerPhotoBytes;
@@ -37,6 +42,28 @@ class SidebarOwner extends StatelessWidget {
     this.ownerPhotoBytes,
     this.ownerPhotoUrl,
   });
+
+  @override
+  State<SidebarOwner> createState() => _SidebarOwnerState();
+}
+
+class _SidebarOwnerState extends State<SidebarOwner> {
+  // 🔵 ZID (kifma tlab): "yjiwni les notifications" - badge b ra9m
+  // el notifications ma9rou2ach, 7dha "Notifications" fel sidebar.
+  final NotificationController _notificationController = NotificationController();
+  int _unreadCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUnreadCount();
+  }
+
+  Future<void> _fetchUnreadCount() async {
+    final count = await _notificationController.fetchUnreadCount();
+    if (!mounted) return;
+    setState(() => _unreadCount = count);
+  }
 
   Future<void> _onLogoutPressed(BuildContext context) async {
     await AuthSession.clear();
@@ -58,20 +85,20 @@ class SidebarOwner extends StatelessWidget {
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(
         builder: (_) => ProfileOwnerScreen(
-          ownerName: ownerName,
-          ownerCity: ownerCity,
+          ownerName: widget.ownerName,
+          ownerCity: widget.ownerCity,
           pets: pets,
-          ownerPhotoBytes: ownerPhotoBytes,
-          ownerPhotoUrl: ownerPhotoUrl,
+          ownerPhotoBytes: widget.ownerPhotoBytes,
+          ownerPhotoUrl: widget.ownerPhotoUrl,
         ),
       ),
       (route) => false,
     );
   }
 
-  // 🔵 el screens l'okhrin (Account/Calendar/Notifications/Messages/
-  // About us) mazel ma tsawbouch - TODO bark, ghir yghaleg el
-  // drawer (bla crash "route not found").
+  // 🔵 el screens l'okhrin (Calendar/Messages/About us) mazel ma
+  // tsawbouch - TODO bark, ghir yghaleg el drawer (bla crash "route
+  // not found").
   void _notImplementedYet(BuildContext context) {
     Navigator.of(context).pop();
   }
@@ -80,10 +107,16 @@ class SidebarOwner extends StatelessWidget {
   Widget build(BuildContext context) {
     final sizes = AppSizes.of(context);
     final Color softPink = Color.lerp(AppColors.pinkpetsy, Colors.white, 0.35)!;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Drawer(
       width: sizes.sidebarWidth,
-      backgroundColor: AppColors.vertpetsy,
+      // 🔴 FIX (kifma tlab): "badel el vert bel blanc, w el bordure
+      // mte3ha bel vert" - bdal background KAMEL a5dhar, tawa abyadh
+      // (dark -> surface ghamqa, mch abyadh fa9i3 fel dark mode) +
+      // bordure a5dhar 3al drawer kaملou (shape).
+      backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+      shape: Border(right: BorderSide(color: AppColors.vertpetsy, width: 2)),
       child: SafeArea(
         child: Column(
           children: [
@@ -128,22 +161,27 @@ class SidebarOwner extends StatelessWidget {
                         // kif kif bin owner w sitter, el image kanet
                         // ghir data reference - esm/"Bookings" - mch
                         // design change).
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: Container(
-                            width: sizes.sidebarPhotoSize,
-                            height: sizes.sidebarPhotoSize,
-                            color: Colors.white,
-                            child: ownerPhotoBytes != null
-                                ? Image.memory(ownerPhotoBytes!, fit: BoxFit.cover)
-                                : ownerPhotoUrl != null
-                                    ? Image.network(ownerPhotoUrl!, fit: BoxFit.cover)
-                                    : Icon(Icons.person, color: AppColors.pinkpetsy, size: sizes.sidebarPhotoSize * 0.55),
+                        // 🔵 ZID (kifma tlab): bordure a5dhar 3al pdp zeda.
+                        Container(
+                          padding: const EdgeInsets.all(2.5),
+                          decoration: BoxDecoration(borderRadius: BorderRadius.circular(22), border: Border.all(color: AppColors.vertpetsy, width: 2.5)),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: Container(
+                              width: sizes.sidebarPhotoSize,
+                              height: sizes.sidebarPhotoSize,
+                              color: Colors.white,
+                              child: widget.ownerPhotoBytes != null
+                                  ? Image.memory(widget.ownerPhotoBytes!, fit: BoxFit.cover)
+                                  : widget.ownerPhotoUrl != null
+                                      ? Image.network(widget.ownerPhotoUrl!, fit: BoxFit.cover)
+                                      : Icon(Icons.person, color: AppColors.pinkpetsy, size: sizes.sidebarPhotoSize * 0.55),
+                            ),
                           ),
                         ),
                         SizedBox(height: sizes.screenHeight * 0.014),
                         Text(
-                          ownerName,
+                          widget.ownerName,
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: Colors.white,
@@ -161,8 +199,8 @@ class SidebarOwner extends StatelessWidget {
             SizedBox(height: sizes.screenHeight * 0.01),
 
             // ----------------------------------------------------------
-            // Liste el menu (Account/Home/Calendar/Notifications/
-            // Messages/Log out) - fond teal
+            // Liste el menu (Account/Home/Bookings/Notifications/
+            // Messages/Settings/Log out) - fond teal
             // ----------------------------------------------------------
             Expanded(
               child: SingleChildScrollView(
@@ -192,19 +230,63 @@ class SidebarOwner extends StatelessWidget {
                       icon: Icons.calendar_today_outlined,
                       label: 'bookings_label'.tr(), // 🔴 FIX: "Bookings" mch "Calendar" (mockup el owner)
                       sizes: sizes,
-                      onTap: () => _notImplementedYet(context),
+                      // 🔴 FIX (kifma tlab): kanet TODO - tawa ymchi l
+                      // "Bookings" (les_reservations.dart) - data 7a9i9iya
+                      // (GET /api/bookings/mine).
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const LesReservationsScreen()),
+                        );
+                      },
                     ),
                     SidebarItem(
                       icon: Icons.notifications_outlined,
                       label: 'notifications_label'.tr(),
                       sizes: sizes,
-                      onTap: () => _notImplementedYet(context),
+                      // 🔵 ZID (kifma tlab): badge b ra9m el notifications
+                      // ma9rou2ach.
+                      badgeCount: _unreadCount,
+                      onTap: () async {
+                        Navigator.of(context).pop();
+                        await Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+                        );
+                        // 🔵 ba3d ma el user yerja3 (notifications tawa
+                        // "read"), n3awdou njibou el count (bch el badge
+                        // yeb9a mzabet, mch stale).
+                        _fetchUnreadCount();
+                      },
                     ),
                     SidebarItem(
                       icon: Icons.chat_bubble_outline,
                       label: 'messages_label'.tr(),
                       sizes: sizes,
                       onTap: () => _notImplementedYet(context),
+                    ),
+                    // 🔵 ZID (kifma tlab): "My Favourites"
+                    SidebarItem(
+                      icon: Icons.favorite_outline,
+                      label: 'favourites_label'.tr(),
+                      sizes: sizes,
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const MyFavouritesScreen()),
+                        );
+                      },
+                    ),
+                    // 🔵 ZID (kifma tlab): "Settings" (Theme + Language)
+                    SidebarItem(
+                      icon: Icons.settings_outlined,
+                      label: 'settings_label'.tr(),
+                      sizes: sizes,
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                        );
+                      },
                     ),
                     SidebarItem(
                       icon: Icons.logout,

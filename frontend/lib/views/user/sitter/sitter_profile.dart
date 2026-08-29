@@ -4,6 +4,15 @@ import 'package:easy_localization/easy_localization.dart';
 import '../../../constants/app_colors.dart';
 import '../../../constants/app_sizes.dart';
 import '../../../widgets/drawers/sidebar_sitter.dart';
+import '../notifications_screen.dart';
+import '../../../controllers/notification_controller.dart';
+import '../../../controllers/request_controller.dart';
+import '../../../controllers/sitter_calender_controller.dart';
+import '../../../widgets/pet_avatars_stack.dart';
+import 'request.dart';
+import 'sitter_calender.dart';
+import '../../../controllers/checkout_questionnaire_controller.dart';
+import '../../../widgets/checkout_questionnaire_dialog.dart';
 
 // ============================================================================
 // _TodayPatient / _UrgentServiceRequest
@@ -15,17 +24,15 @@ import '../../../widgets/drawers/sidebar_sitter.dart';
 // w el UI kaملha tetba3 wa7dha (déjà mbeniya lel data).
 // ============================================================================
 class _TodayPatient {
-  final String petName;
-  final String gender;
-  final String? petPhotoUrl;
+  final String bookingId; // 🔵 ZID: bch nnajjmou nvazrou -> request.dart (fromCalendar: true, "Cancel Booking" disponible)
+  final List<SchedulePet> pets; // 🔴 FIX (kifma tlab): "par reservation mch par pet" - kol pets el booking m3a ba3dhom, mch card mnfassla likol wa7ed
   final String serviceType;
   final String date;
   final String time;
 
   const _TodayPatient({
-    required this.petName,
-    required this.gender,
-    this.petPhotoUrl,
+    required this.bookingId,
+    required this.pets,
     required this.serviceType,
     required this.date,
     required this.time,
@@ -33,16 +40,18 @@ class _TodayPatient {
 }
 
 class _UrgentServiceRequest {
-  final String petName;
-  final double distanceKm;
+  final String id; // 🔵 ZID: bookingId - bch ndouzouha l'request.dart ki tdouss 3al card
+  final String petNames; // 🔴 FIX: kanet "petName" wa7ed bark - tawa comma-joined (booking ynajjam ykoun fih ktar men pet wa7ed)
+  final double? distanceKm; // 🔴 FIX: optionnel - null lowkan el 2 (sitter/owner) mazel ma 7attouch location
   final String description;
   final String? photoUrl;
   final String dateRange;
   final String timeRange;
 
   const _UrgentServiceRequest({
-    required this.petName,
-    required this.distanceKm,
+    required this.id,
+    required this.petNames,
+    this.distanceKm,
     required this.description,
     this.photoUrl,
     required this.dateRange,
@@ -73,13 +82,147 @@ class SitterProfileScreen extends StatefulWidget {
 
 class _SitterProfileScreenState extends State<SitterProfileScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  bool _hasUnreadNotifications = true; // 🔴 mock - no9ta 7amra bark (kifha kif profile_owner.dart)
+  // 🔴 FIX: kanet mock (True dima, nafs mochkla profile_owner.dart) -
+  // tawa data 7a9i9iya mel backend.
+  bool _hasUnreadNotifications = false;
+  final NotificationController _notificationController = NotificationController();
+  // 🔴 FIX (kifma tlab: "kol reservation lyoum tji fi patients du jour") -
+  // tawa REAL (GET /api/bookings/my-schedule, mfaltra 3ala "lyoum"),
+  // mch list fadhya statique.
+  final UrgentRequestsController _urgentController = UrgentRequestsController();
+  final SitterCalenderController _calenderController = SitterCalenderController();
 
-  // 🔵 TAWA REAL: listet fadhya (mch mock) - te7taj backend routes mazel
-  // ma tzadouch. TODO: appel API fel initState() (nafs mant9
-  // _fetchSitters() fel profile_owner.dart) ki el backend ykoun jahez.
-  final List<_TodayPatient> _todayPatients = [];
-  final List<_UrgentServiceRequest> _urgentServices = [];
+  List<_TodayPatient> _todayPatients = [];
+  bool _isLoadingTodayPatients = true;
+
+  // 🔴 FIX (kifma tlab): "Need urgent sitting services" - tawa REAL
+  // (GET /api/bookings/urgent), mch list fadhya statique.
+  List<_UrgentServiceRequest> _urgentServices = [];
+  bool _isLoadingUrgent = true;
+
+  static const Map<String, String> _serviceLabelKeys = {
+    'house_sitting': 'sitter_service_house_sitting',
+    'dog_walking': 'sitter_service_dog_walking',
+    'doggy_day_care': 'sitter_service_doggy_day_care',
+    'boarding': 'sitter_service_boarding',
+    'overnight_stays': 'sitter_service_overnight_stays',
+    'home_visits': 'sitter_service_home_visits',
+  };
+
+  static const List<String> _monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUnreadNotificationsCount();
+    _fetchUrgentRequests();
+    _fetchTodayPatients();
+    // 🔵 ZID (kifma tlab): questionnaire ba3d el checkout.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkPendingQuestionnaires());
+  }
+
+  Future<void> _checkPendingQuestionnaires() async {
+    final pending = await CheckoutQuestionnaireController().fetchPending();
+    if (!mounted || pending.isEmpty) return;
+    final completed = await CheckoutQuestionnaireDialog.show(context, pending.first.bookingId);
+    if (completed && mounted) _checkPendingQuestionnaires();
+  }
+
+  Future<void> _fetchUnreadNotificationsCount() async {
+    final count = await _notificationController.fetchUnreadCount();
+    if (!mounted) return;
+    setState(() => _hasUnreadNotifications = count > 0);
+  }
+
+  Future<void> _fetchUrgentRequests() async {
+    setState(() => _isLoadingUrgent = true);
+    final summaries = await _urgentController.fetchUrgentRequests();
+    if (!mounted) return;
+    setState(() {
+      _urgentServices = summaries.map((s) {
+        final String description = s.serviceIds.isEmpty
+            ? '-'
+            : s.serviceIds.map((id) => _serviceLabelKeys[id] != null ? _serviceLabelKeys[id]!.tr() : id).join(' + ');
+        return _UrgentServiceRequest(
+          id: s.id,
+          petNames: s.petNames.isEmpty ? '-' : s.petNames,
+          distanceKm: s.distanceKm,
+          description: description,
+          photoUrl: s.firstPetPhotoUrl,
+          dateRange: _dateRangeLabel(s.checkIn, s.checkOut),
+          timeRange: '${_timeLabel(s.checkIn)} - ${_timeLabel(s.checkOut)}',
+        );
+      }).toList();
+      _isLoadingUrgent = false;
+    });
+  }
+
+  String _dateRangeLabel(DateTime checkIn, DateTime checkOut) {
+    final bool sameDay = checkIn.year == checkOut.year && checkIn.month == checkOut.month && checkIn.day == checkOut.day;
+    if (sameDay) return '${checkIn.day} ${_monthNames[checkIn.month - 1]}';
+    final bool sameMonth = checkIn.year == checkOut.year && checkIn.month == checkOut.month;
+    if (sameMonth) return '${checkIn.day} - ${checkOut.day} ${_monthNames[checkIn.month - 1]}';
+    return '${checkIn.day} ${_monthNames[checkIn.month - 1]} - ${checkOut.day} ${_monthNames[checkOut.month - 1]}';
+  }
+
+  // 🔵 ZID (fix timezone): ".toLocal()" 9bal .hour/.minute.
+  String _timeLabel(DateTime t) {
+    final local = t.toLocal();
+    return '${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
+  }
+
+  // 🔵 ZID (kifma tlab): "eli deja 3malha ma yjich, ghir el todo" -
+  // ZIDNA chart "now.isBefore(checkOut)" (booking déjà 5elset lyoum ->
+  // ma tbanche). "par reservation mch par pet" - card WA7DA per
+  // booking (mch per pet).
+  Future<void> _fetchTodayPatients() async {
+    setState(() => _isLoadingTodayPatients = true);
+    final schedule = await _calenderController.fetchMySchedule();
+    if (!mounted) return;
+
+    debugPrint('🔍 [TODAY-PATIENTS] schedule.length=${schedule.length}');
+
+    final DateTime now = DateTime.now();
+    final DateTime todayOnly = DateTime(now.year, now.month, now.day);
+    // 🔵 ZID (fix timezone): ".toLocal()" 9bal .year/.month/.day - nafs
+    // mochkla sitter_calender.dart (chrahtha houniki).
+    DateTime dateOnly(DateTime d) {
+      final local = d.toLocal();
+      return DateTime(local.year, local.month, local.day);
+    }
+
+    final List<_TodayPatient> patients = [];
+    for (final booking in schedule) {
+      final bool coversToday = !todayOnly.isBefore(dateOnly(booking.checkIn)) && !todayOnly.isAfter(dateOnly(booking.checkOut));
+      // 🔴 FIX: booking "lyoum" lakin déjà 5elset (checkOut 3adda) -
+      // ma tbanche ("eli deja 3malha ma yjich").
+      final bool notFinishedYet = now.isBefore(booking.checkOut);
+      final bool shouldShow = coversToday && notFinishedYet;
+      debugPrint('🔍 [TODAY-PATIENTS] booking id=${booking.id} checkIn=${booking.checkIn} checkOut=${booking.checkOut} coversToday=$coversToday notFinishedYet=$notFinishedYet');
+      if (!shouldShow) continue;
+
+      final String serviceType = booking.serviceIds.isEmpty
+          ? '-'
+          : booking.serviceIds.map((id) => _serviceLabelKeys[id] != null ? _serviceLabelKeys[id]!.tr() : id).join(' + ');
+
+      patients.add(_TodayPatient(
+        bookingId: booking.id,
+        pets: booking.pets,
+        serviceType: serviceType,
+        date: 'today_label'.tr(),
+        time: '${_timeLabel(booking.checkIn)} - ${_timeLabel(booking.checkOut)}',
+      ));
+    }
+
+    debugPrint('🔍 [TODAY-PATIENTS] patients.length (final) = ${patients.length}');
+    setState(() {
+      _todayPatients = patients;
+      _isLoadingTodayPatients = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -167,7 +310,10 @@ class _SitterProfileScreenState extends State<SitterProfileScreen> {
                     showBadge: _hasUnreadNotifications,
                     onTap: () {
                       setState(() => _hasUnreadNotifications = false);
-                      // TODO: navigation lel écran notifications
+                      // 🔴 FIX: kanet TODO - tawa ymchi l "Notifications".
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+                      );
                     },
                   ),
                 ],
@@ -189,12 +335,20 @@ class _SitterProfileScreenState extends State<SitterProfileScreen> {
                     ),
                   ),
                   const Spacer(),
-                  Text(
-                    'see_all_label'.tr(),
-                    style: TextStyle(
-                      fontSize: sizes.screenWidth * 0.032,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.vertpetsy,
+                  // 🔵 ZID (kifma tlab): dass 3al "See all" -> sitter_calender.dart
+                  InkWell(
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const SitterCalenderScreen()),
+                      );
+                    },
+                    child: Text(
+                      'see_all_label'.tr(),
+                      style: TextStyle(
+                        fontSize: sizes.screenWidth * 0.032,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.vertpetsy,
+                      ),
                     ),
                   ),
                 ],
@@ -202,19 +356,23 @@ class _SitterProfileScreenState extends State<SitterProfileScreen> {
 
               SizedBox(height: sizes.sitterProfileSectionTitleListGap),
 
-              // 🔵 "fregha" kifma tlabt - empty state (bla mock data),
-              // nafs mant9 "no_sitters_available_label" fel profile_owner.
-              _todayPatients.isEmpty
-                  ? _emptyState(icon: Icons.pets, label: 'no_patients_today_label'.tr(), sizes: sizes, mutedTextColor: mutedTextColor)
-                  : SizedBox(
-                      height: sizes.sitterProfileTodayCardHeight,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: _todayPatients.length,
-                        separatorBuilder: (_, __) => SizedBox(width: sizes.sitterProfileTodayCardGap),
-                        itemBuilder: (context, index) => _TodayPatientCard(patient: _todayPatients[index], sizes: sizes),
-                      ),
-                    ),
+              // 🔵 3 7alet: loading, fregha (empty state, mch mock), wela data 7a9i9iya.
+              _isLoadingTodayPatients
+                  ? Padding(
+                      padding: EdgeInsets.symmetric(vertical: sizes.sitterProfileEmptyStateVerticalPad),
+                      child: const Center(child: CircularProgressIndicator()),
+                    )
+                  : _todayPatients.isEmpty
+                      ? _emptyState(icon: Icons.pets, label: 'no_patients_today_label'.tr(), sizes: sizes, mutedTextColor: mutedTextColor)
+                      : SizedBox(
+                          height: sizes.sitterProfileTodayCardHeight,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: _todayPatients.length,
+                            separatorBuilder: (_, __) => SizedBox(width: sizes.sitterProfileTodayCardGap),
+                            itemBuilder: (context, index) => _TodayPatientCard(patient: _todayPatients[index], sizes: sizes),
+                          ),
+                        ),
 
               SizedBox(height: sizes.sitterProfileSectionGap),
 
@@ -232,21 +390,38 @@ class _SitterProfileScreenState extends State<SitterProfileScreen> {
 
               SizedBox(height: sizes.sitterProfileSectionTitleListGap),
 
-              // 🔵 "fregha" zeda - empty state bark.
-              _urgentServices.isEmpty
-                  ? _emptyState(icon: Icons.volunteer_activism_outlined, label: 'no_urgent_services_label'.tr(), sizes: sizes, mutedTextColor: mutedTextColor)
-                  : GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: _urgentServices.length,
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: sizes.screenWidth * 0.04,
-                        mainAxisSpacing: sizes.screenHeight * 0.02,
-                        childAspectRatio: 0.72,
-                      ),
-                      itemBuilder: (context, index) => _UrgentServiceCard(request: _urgentServices[index], sizes: sizes),
-                    ),
+              // 🔵 3 7alet: loading, fregha (empty state, mch mock), wela data 7a9i9iya.
+              _isLoadingUrgent
+                  ? Padding(
+                      padding: EdgeInsets.symmetric(vertical: sizes.sitterProfileEmptyStateVerticalPad),
+                      child: const Center(child: CircularProgressIndicator()),
+                    )
+                  : _urgentServices.isEmpty
+                      ? _emptyState(icon: Icons.volunteer_activism_outlined, label: 'no_urgent_services_label'.tr(), sizes: sizes, mutedTextColor: mutedTextColor)
+                      : GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: _urgentServices.length,
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: sizes.screenWidth * 0.04,
+                            mainAxisSpacing: sizes.screenHeight * 0.02,
+                            childAspectRatio: 0.72,
+                          ),
+                          itemBuilder: (context, index) => _UrgentServiceCard(
+                            request: _urgentServices[index],
+                            sizes: sizes,
+                            // 🔵 ZID (kifma tlab): dass 3al card -> request.dart.
+                            // Ki yerja3 (accept/reject), n3awdou njibou el liste
+                            // (el card elli 9bel/rafedh ma te5tefich mel grid).
+                            onTap: () async {
+                              await Navigator.of(context).push(
+                                MaterialPageRoute(builder: (_) => RequestScreen(bookingId: _urgentServices[index].id)),
+                              );
+                              if (mounted) _fetchUrgentRequests();
+                            },
+                          ),
+                        ),
 
               SizedBox(height: sizes.sitterProfileBottomGap),
             ],
@@ -334,7 +509,9 @@ class _HeaderIconButton extends StatelessWidget {
 
 // ============================================================================
 // _TodayPatientCard (border teal, kifha kif el mockup: icon/photo + esm
-// + gender + badge, mba3d "Service Type" / date-time)
+// + badge, mba3d "Service Type" / date-time) - WA7DA per RESERVATION
+// (kifma tlab: "par reservation mch par pet") - PetAvatarsStack lowkan
+// ktar men pet wa7ed.
 // ============================================================================
 class _TodayPatientCard extends StatelessWidget {
   final _TodayPatient patient;
@@ -344,7 +521,14 @@ class _TodayPatientCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return InkWell(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => RequestScreen(bookingId: patient.bookingId, fromCalendar: true)),
+        );
+      },
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
       width: sizes.sitterProfileTodayCardWidth,
       padding: EdgeInsets.all(sizes.screenWidth * 0.03),
       decoration: BoxDecoration(
@@ -357,24 +541,13 @@ class _TodayPatientCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              ClipOval(
-                child: Container(
-                  width: sizes.screenWidth * 0.09,
-                  height: sizes.screenWidth * 0.09,
-                  color: AppColors.pinkpetsy.withOpacity(0.12),
-                  child: patient.petPhotoUrl != null
-                      ? Image.network(patient.petPhotoUrl!, fit: BoxFit.cover)
-                      : Icon(Icons.pets, color: AppColors.pinkpetsy, size: sizes.screenWidth * 0.05),
-                ),
-              ),
+              PetAvatarsStack(photoUrls: patient.pets.map((p) => p.photoUrl).toList(), avatarSize: sizes.screenWidth * 0.09),
               SizedBox(width: sizes.screenWidth * 0.02),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(patient.petName, style: TextStyle(fontWeight: FontWeight.bold, fontSize: sizes.screenWidth * 0.036)),
-                    Text(patient.gender, style: TextStyle(fontSize: sizes.screenWidth * 0.028, color: Colors.grey)),
-                  ],
+                child: Text(
+                  patient.pets.map((p) => p.name).join(', '),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: sizes.screenWidth * 0.036),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               Container(
@@ -419,6 +592,7 @@ class _TodayPatientCard extends StatelessWidget {
           ),
         ],
       ),
+      ),
     );
   }
 }
@@ -430,12 +604,16 @@ class _TodayPatientCard extends StatelessWidget {
 class _UrgentServiceCard extends StatelessWidget {
   final _UrgentServiceRequest request;
   final AppSizes sizes;
+  final VoidCallback onTap;
 
-  const _UrgentServiceCard({required this.request, required this.sizes});
+  const _UrgentServiceCard({required this.request, required this.sizes, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
@@ -457,9 +635,10 @@ class _UrgentServiceCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: Text(request.petName, style: TextStyle(fontWeight: FontWeight.bold, fontSize: sizes.screenWidth * 0.034)),
+                child: Text(request.petNames, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.bold, fontSize: sizes.screenWidth * 0.034)),
               ),
-              Text('${request.distanceKm}km', style: TextStyle(fontSize: sizes.screenWidth * 0.026, color: Colors.grey)),
+              if (request.distanceKm != null)
+                Text('${request.distanceKm}km', style: TextStyle(fontSize: sizes.screenWidth * 0.026, color: Colors.grey)),
             ],
           ),
           Text(request.description, style: TextStyle(fontSize: sizes.screenWidth * 0.028, color: Colors.grey)),
@@ -485,6 +664,7 @@ class _UrgentServiceCard extends StatelessWidget {
             ],
           ),
         ],
+      ),
       ),
     );
   }

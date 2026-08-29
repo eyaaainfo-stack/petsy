@@ -8,7 +8,12 @@ import '../../widgets/paw_widget.dart';
 import 'onboarding.dart';
 
 class LanguageView extends StatefulWidget {
-  const LanguageView({super.key});
+  // 🔵 ZID: "true" ki el écran mawsoul mel Settings (settings_screen.dart)
+  // - "Next" wa9tha ghir yرجّع (pop), mch ymchi l'OnboardingView (elli
+  // mch mant9iya fi context "Settings", el user déjà logué w fel app).
+  final bool fromSettings;
+
+  const LanguageView({super.key, this.fromSettings = false});
 
   @override
   State<LanguageView> createState() => _LanguageViewState();
@@ -32,11 +37,16 @@ class _LanguageViewState extends State<LanguageView> {
   }
 
   void _onNextPressed() {
-    if (mounted) {
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const OnboardingView()),
-      );
+    if (!mounted) return;
+    if (widget.fromSettings) {
+      // 🔵 Settings context - el langue tبdلت déjà LIVE (setLocale
+      // fou9), ghir nرجّعو (pop) l'Settings.
+      Navigator.of(context).pop();
+      return;
     }
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const OnboardingView()),
+    );
   }
 
   @override

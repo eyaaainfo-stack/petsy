@@ -355,6 +355,9 @@ class AppSizes {
   static const double sitterHomeBoxGapRatio = 0.022;
   static const double sitterHomeOptionIconSizeRatio = 0.09;
   static const double sitterHomeBottomGapRatio = 0.03;
+  // 🔵 ZID (kifma tlab): "el card lkol ye5o l'image" (dog/cat, create_
+  // sitter_profile_2.dart) - height fixe (Expanded te7taj hjm mbayyen).
+  static const double sitterPetTypeCardHeightRatio = 0.32;
 
   double get sitterHomePawSize1 => screenWidth * sitterHomePawSize1Ratio;
   double get sitterHomeHorizontalPadding => screenWidth * sitterHomeHorizontalPaddingRatio;
@@ -364,6 +367,7 @@ class AppSizes {
   double get sitterHomeBoxGap => screenHeight * sitterHomeBoxGapRatio;
   double get sitterHomeOptionIconSize => screenWidth * sitterHomeOptionIconSizeRatio;
   double get sitterHomeBottomGap => screenHeight * sitterHomeBottomGapRatio;
+  double get sitterPetTypeCardHeight => screenHeight * sitterPetTypeCardHeightRatio;
 
   // --------------------------------------------------------------------
   // Sitter home screen (views/user/sitter/sitter_profile.dart)
@@ -458,4 +462,162 @@ class AppSizes {
 
   double get updateProfilePhotoSize => screenWidth * updateProfilePhotoSizeRatio;
   double get updateProfileTopGap => screenHeight * updateProfileTopGapRatio;
+
+  // --------------------------------------------------------------------
+  // Update Pet Profile (views/user/owner/update_pet_profile.dart)
+  // --------------------------------------------------------------------
+  static const double updatePetBannerHeightRatio = 0.16;
+  static const double updatePetPhotoSizeRatio = 0.26;
+  static const double updatePetTitleFontRatio = 0.048;
+  static const double updatePetHorizontalPaddingRatio = 0.07;
+  static const double updatePetLabelFontRatio = 0.033;
+  static const double updatePetValueFontRatio = 0.036;
+  static const double updatePetFieldGapRatio = 0.016;
+  static const double updatePetSectionGapRatio = 0.028;
+  static const double updatePetPawSizeRatio = 0.055;
+
+  double get updatePetBannerHeight => screenHeight * updatePetBannerHeightRatio;
+  double get updatePetPhotoSize => screenWidth * updatePetPhotoSizeRatio;
+  double get updatePetTitleFontSize => screenWidth * updatePetTitleFontRatio;
+  double get updatePetHorizontalPadding => screenWidth * updatePetHorizontalPaddingRatio;
+  double get updatePetLabelFontSize => screenWidth * updatePetLabelFontRatio;
+  double get updatePetValueFontSize => screenWidth * updatePetValueFontRatio;
+  double get updatePetFieldGap => screenHeight * updatePetFieldGapRatio;
+  double get updatePetSectionGap => screenHeight * updatePetSectionGapRatio;
+  double get updatePetPawSize => screenWidth * updatePetPawSizeRatio;
+
+  // --------------------------------------------------------------------
+  // Forgot password flow (mdp_oublier_1/2/3.dart) - ratios mchtarkin
+  // bin el 3 écrans (nafs structure: back button + paws + illustration
+  // + titre + soutitre + champs + bouton).
+  // --------------------------------------------------------------------
+  static const double fpHorizontalPaddingRatio = 0.07;
+  static const double fpTopGapRatio = 0.02;
+  static const double fpBackButtonSizeRatio = 0.11;
+  static const double fpPawSizeRatio = 0.07;
+  static const double fpIllustrationSizeRatio = 0.45;
+  static const double fpIllustrationIconRatio = 0.20;
+  static const double fpTitleFontRatio = 0.058;
+  static const double fpSubtitleFontRatio = 0.036;
+  static const double fpSectionGapRatio = 0.03;
+  static const double fpFieldGapRatio = 0.01;
+
+  double get fpHorizontalPadding => screenWidth * fpHorizontalPaddingRatio;
+  double get fpTopGap => screenHeight * fpTopGapRatio;
+  double get fpBackButtonSize => screenWidth * fpBackButtonSizeRatio;
+  double get fpPawSize => screenWidth * fpPawSizeRatio;
+  double get fpIllustrationSize => screenWidth * fpIllustrationSizeRatio;
+  double get fpIllustrationIconSize => screenWidth * fpIllustrationIconRatio;
+  double get fpTitleFontSize => screenWidth * fpTitleFontRatio;
+  double get fpSubtitleFontSize => screenWidth * fpSubtitleFontRatio;
+  double get fpSectionGap => screenHeight * fpSectionGapRatio;
+  double get fpFieldGap => screenHeight * fpFieldGapRatio;
+
+  // --------------------------------------------------------------------
+  // View Profile Sitter (views/user/sitter/view_profile_sitter.dart)
+  // --------------------------------------------------------------------
+  static const double vpsHeaderTopPaddingRatio = 0.025;
+  static const double vpsHeaderBottomPaddingRatio = 0.02;
+  static const double vpsPhotoSizeRatio = 0.24;
+  static const double vpsPhotoPlaceholderIconRatio = 0.08;
+  static const double vpsTabGapRatio = 0.06;
+  static const double vpsTabUnderlineWidthRatio = 0.14;
+  static const double vpsDividerGapRatio = 0.03;
+  static const double vpsRequestButtonHeightRatio = 0.065;
+  static const double vpsEmptyStateIconRatio = 0.12;
+  static const double vpsEmptyStateVerticalPadRatio = 0.05;
+
+  double get vpsHeaderTopPadding => screenHeight * vpsHeaderTopPaddingRatio;
+  double get vpsHeaderBottomPadding => screenHeight * vpsHeaderBottomPaddingRatio;
+  double get vpsPhotoSize => screenWidth * vpsPhotoSizeRatio;
+  double get vpsPhotoPlaceholderIcon => screenWidth * vpsPhotoPlaceholderIconRatio;
+  double get vpsTabGap => screenWidth * vpsTabGapRatio;
+  double get vpsTabUnderlineWidth => screenWidth * vpsTabUnderlineWidthRatio;
+  double get vpsDividerGap => screenHeight * vpsDividerGapRatio;
+  double get vpsRequestButtonHeight => screenHeight * vpsRequestButtonHeightRatio;
+  double get vpsEmptyStateIcon => screenWidth * vpsEmptyStateIconRatio;
+  double get vpsEmptyStateVerticalPad => screenHeight * vpsEmptyStateVerticalPadRatio;
+
+  // --------------------------------------------------------------------
+  // Request a Book (views/user/owner/request_a_book.dart)
+  // --------------------------------------------------------------------
+  static const double rabHorizontalPaddingRatio = 0.06;
+  static const double rabTopGapRatio = 0.02;
+  static const double rabSectionGapRatio = 0.025;
+  static const double rabCalendarDayHeightRatio = 0.1;
+  static const double rabPetTileSizeRatio = 0.16;
+  static const double rabAccommodationIconRatio = 0.09;
+
+  double get rabHorizontalPadding => screenWidth * rabHorizontalPaddingRatio;
+  double get rabTopGap => screenHeight * rabTopGapRatio;
+  double get rabSectionGap => screenHeight * rabSectionGapRatio;
+  double get rabCalendarDayHeight => screenHeight * rabCalendarDayHeightRatio;
+  double get rabPetTileSize => screenWidth * rabPetTileSizeRatio;
+  double get rabAccommodationIcon => screenWidth * rabAccommodationIconRatio;
+
+  // --------------------------------------------------------------------
+  // Notifications (views/user/notifications_screen.dart)
+  // --------------------------------------------------------------------
+  static const double notifHorizontalPaddingRatio = 0.06;
+  static const double notifTopGapRatio = 0.02;
+  static const double notifSectionGapRatio = 0.025;
+  static const double notifIconSizeRatio = 0.09;
+  static const double notifEmptyStateIconRatio = 0.14;
+
+  double get notifHorizontalPadding => screenWidth * notifHorizontalPaddingRatio;
+  double get notifTopGap => screenHeight * notifTopGapRatio;
+  double get notifSectionGap => screenHeight * notifSectionGapRatio;
+  double get notifIconSize => screenWidth * notifIconSizeRatio;
+  double get notifEmptyStateIcon => screenWidth * notifEmptyStateIconRatio;
+
+  // --------------------------------------------------------------------
+  // My Favourites (views/user/owner/my_favourites_screen.dart)
+  // --------------------------------------------------------------------
+  static const double favHorizontalPaddingRatio = 0.06;
+  static const double favTopGapRatio = 0.02;
+  static const double favCardSpacingRatio = 0.03;
+  static const double favPhotoHeightRatio = 0.16;
+  static const double favEmptyStateIconRatio = 0.14;
+
+  double get favHorizontalPadding => screenWidth * favHorizontalPaddingRatio;
+  double get favTopGap => screenHeight * favTopGapRatio;
+  double get favCardSpacing => screenWidth * favCardSpacingRatio;
+  double get favPhotoHeight => screenHeight * favPhotoHeightRatio;
+  double get favEmptyStateIcon => screenWidth * favEmptyStateIconRatio;
+
+  // --------------------------------------------------------------------
+  // My Bookings (views/user/owner/les_reservations.dart)
+  // --------------------------------------------------------------------
+  static const double bookingHorizontalPaddingRatio = 0.06;
+  static const double bookingTopGapRatio = 0.02;
+  static const double bookingSectionGapRatio = 0.025;
+  static const double bookingCardPaddingRatio = 0.04;
+  static const double bookingAvatarSizeRatio = 0.10;
+  static const double bookingPillFontRatio = 0.028;
+  static const double bookingEmptyStateIconRatio = 0.14;
+
+  double get bookingHorizontalPadding => screenWidth * bookingHorizontalPaddingRatio;
+  double get bookingTopGap => screenHeight * bookingTopGapRatio;
+  double get bookingSectionGap => screenHeight * bookingSectionGapRatio;
+  double get bookingCardPadding => screenWidth * bookingCardPaddingRatio;
+  double get bookingAvatarSize => screenWidth * bookingAvatarSizeRatio;
+  double get bookingPillFont => screenWidth * bookingPillFontRatio;
+  double get bookingEmptyStateIcon => screenWidth * bookingEmptyStateIconRatio;
+
+  // --------------------------------------------------------------------
+  // Sitter Calendar (views/user/sitter/sitter_calender.dart)
+  // --------------------------------------------------------------------
+  static const double calendarHorizontalPaddingRatio = 0.05;
+  static const double calendarTopGapRatio = 0.02;
+  static const double calendarSectionGapRatio = 0.022;
+  static const double calendarCellFontRatio = 0.032;
+  static const double calendarDotSizeRatio = 0.012;
+  static const double calendarEventIconSizeRatio = 0.11;
+
+  double get calendarHorizontalPadding => screenWidth * calendarHorizontalPaddingRatio;
+  double get calendarTopGap => screenHeight * calendarTopGapRatio;
+  double get calendarSectionGap => screenHeight * calendarSectionGapRatio;
+  double get calendarCellFont => screenWidth * calendarCellFontRatio;
+  double get calendarDotSize => screenWidth * calendarDotSizeRatio;
+  double get calendarEventIconSize => screenWidth * calendarEventIconSizeRatio;
 }

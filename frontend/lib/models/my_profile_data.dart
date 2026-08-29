@@ -44,6 +44,16 @@ class MyProfileData {
   final bool? hasPetAtHome;
   final List<String> ownedPetTypes;
   final List<SitterServiceEntry> services;
+  // 🔵 ZID (kifma tlab): "el rating ma waletach todhhor" - moyenne
+  // 7a9i9iya (getSitterPublicProfile, backend) - null lowkan mafamech
+  // 7atta review l'hin (mch 0 fake).
+  final double? averageRating;
+  final int reviewsCount;
+  // 🔵 ZID (kifma tlab): "el owner ma yenajjamch ye5tar youm el sitter
+  // mch dispo fih" - request_a_book.dart ye7taj had data bch yebloki
+  // el ayemet el mou7addda.
+  final List<int> recurringDaysOff; // 1=Mon..7=Sun
+  final List<DateTime> specificDatesOff;
 
   const MyProfileData({
     required this.fullName,
@@ -60,9 +70,15 @@ class MyProfileData {
     this.hasPetAtHome,
     this.ownedPetTypes = const [],
     this.services = const [],
+    this.averageRating,
+    this.reviewsCount = 0,
+    this.recurringDaysOff = const [],
+    this.specificDatesOff = const [],
   });
 
   factory MyProfileData.fromJson(Map<String, dynamic> json) {
+    final List<dynamic> recurring = json['recurringDaysOff'] as List<dynamic>? ?? [];
+    final List<dynamic> specific = json['specificDatesOff'] as List<dynamic>? ?? [];
     return MyProfileData(
       fullName: json['fullName'] as String? ?? '',
       city: json['city'] as String? ?? '',
@@ -80,6 +96,10 @@ class MyProfileData {
       services: (json['services'] as List<dynamic>? ?? [])
           .map((e) => SitterServiceEntry.fromJson(e as Map<String, dynamic>))
           .toList(),
+      averageRating: (json['averageRating'] as num?)?.toDouble(),
+      reviewsCount: json['reviewsCount'] as int? ?? 0,
+      recurringDaysOff: recurring.map((e) => (e as num).toInt()).toList(),
+      specificDatesOff: specific.map((e) => DateTime.parse(e as String)).toList(),
     );
   }
 }
