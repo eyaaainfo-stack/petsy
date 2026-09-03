@@ -14,6 +14,7 @@ import '../../../services/api_service.dart';
 import '../../../controllers/auth_session.dart';
 import 'create_pet_profile.dart';
 import 'profile_owner.dart';
+import '../../../widgets/message_dialog.dart';
 
 // ============================================================================
 // AddPetPhotoScreen
@@ -135,9 +136,7 @@ class _AddPetPhotoScreenState extends State<AddPetPhotoScreen> {
       // wala 5ata fel plugin - nwarriw SnackBar bdal ma l'app te-crash
       // wala teskot bla ay rasala.
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('photo_pick_error'.tr())),
-      );
+      showMessageDialog(context, 'photo_pick_error'.tr());
     }
   }
 
@@ -147,9 +146,7 @@ class _AddPetPhotoScreenState extends State<AddPetPhotoScreen> {
     // 🔵 ZID: obligatoire tاوة - ma tنجمch tكمل bla ma tختار photo
     // lel pet (chrahtha: "manejjamch ken ma nkoun 3amalt selection").
     if (_photoBytes == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('pet_photo_required_error'.tr())),
-      );
+      showMessageDialog(context, 'pet_photo_required_error'.tr());
       return;
     }
 
@@ -196,6 +193,16 @@ class _AddPetPhotoScreenState extends State<AddPetPhotoScreen> {
         debugPrint('⚠️ [uploadPetPhoto] exception: $error');
       }
     }
+
+    // 🔵 ZID (kifma tlab: "idha el creation du compte n'esy pas finis
+    // ma yetsajelch el compte") - houni el "vraie fin" tel parcours
+    // owner (mch "add_another_pet") - nzidou el compte "complet" (bch
+    // el cleanup job, server.js, ma yemsa7ouch). Best-effort (mch
+    // bloquant ken l'appel yefchel - el user déjà lawwej el parcours
+    // el kol, ma nwaqqfouhch houni b'appel te9ni mch mheme lel UX).
+    try {
+      await ApiService.patch('/users/me/complete-onboarding', {}, token: AuthSession.token);
+    } catch (_) {}
 
     if (!mounted) return;
     setState(() => _isSubmitting = false);
@@ -246,9 +253,7 @@ class _AddPetPhotoScreenState extends State<AddPetPhotoScreen> {
   Future<void> _onAddAnotherPetPressed() async {
     // 🔵 ZID: obligatoire zeda houni (nafs chart tel "Next").
     if (_photoBytes == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('pet_photo_required_error'.tr())),
-      );
+      showMessageDialog(context, 'pet_photo_required_error'.tr());
       return;
     }
 

@@ -4,6 +4,7 @@ import 'package:easy_localization/easy_localization.dart';
 import '../../../constants/app_colors.dart';
 import '../../../constants/app_sizes.dart';
 import '../../../widgets/drawers/sidebar_sitter.dart';
+import '../../../widgets/verified_badge.dart';
 import '../notifications_screen.dart';
 import '../../../controllers/notification_controller.dart';
 import '../../../controllers/request_controller.dart';
@@ -67,6 +68,12 @@ class SitterProfileScreen extends StatefulWidget {
   final String sitterCity;
   final Uint8List? sitterPhotoBytes; // bytes (mémoire, ba3d signup direct)
   final String? sitterPhotoUrl; // URL (mel backend, ba3d login mel jdid)
+  // 🔵 ZID (kifma tlab: "nhbha el tick todhhor hatta fi profile... fel
+  // home fel pdp mteou") - badge bleu 3al avatar tel header.
+  final bool isVerified;
+  // 🔵 ZID (kifma tlab: "ken el user homme nkhalliwh vert, keno femme
+  // pink") - couleur el sidebar (header) 7asb el gender.
+  final String? gender;
 
   const SitterProfileScreen({
     super.key,
@@ -74,6 +81,8 @@ class SitterProfileScreen extends StatefulWidget {
     required this.sitterCity,
     this.sitterPhotoBytes,
     this.sitterPhotoUrl,
+    this.isVerified = false,
+    this.gender,
   });
 
   @override
@@ -237,6 +246,8 @@ class _SitterProfileScreenState extends State<SitterProfileScreen> {
         sitterCity: widget.sitterCity,
         sitterPhotoBytes: widget.sitterPhotoBytes,
         sitterPhotoUrl: widget.sitterPhotoUrl,
+        isVerified: widget.isVerified,
+        gender: widget.gender,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -249,20 +260,33 @@ class _SitterProfileScreenState extends State<SitterProfileScreen> {
               // ------------------------------------------------------
               // Header: photo (dayra) + esm/blasa + menu + notif
               // (nafs el structure tel ProfileOwnerScreen)
+              // 🔵 ZID (kifma tlab: "el tick... fel home fel pdp
+              // mteou") - Stack+Positioned, clipBehavior none.
               // ------------------------------------------------------
               Row(
                 children: [
-                  ClipOval(
-                    child: Container(
-                      width: sizes.sitterProfileAvatarRadius,
-                      height: sizes.sitterProfileAvatarRadius,
-                      color: AppColors.vertpetsy.withOpacity(0.15),
-                      child: widget.sitterPhotoBytes != null
-                          ? Image.memory(widget.sitterPhotoBytes!, fit: BoxFit.cover)
-                          : widget.sitterPhotoUrl != null
-                              ? Image.network(widget.sitterPhotoUrl!, fit: BoxFit.cover)
-                              : Icon(Icons.person, color: AppColors.vertpetsy, size: sizes.sitterProfileAvatarRadius * 0.6),
-                    ),
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      ClipOval(
+                        child: Container(
+                          width: sizes.sitterProfileAvatarRadius,
+                          height: sizes.sitterProfileAvatarRadius,
+                          color: AppColors.vertpetsy.withOpacity(0.15),
+                          child: widget.sitterPhotoBytes != null
+                              ? Image.memory(widget.sitterPhotoBytes!, fit: BoxFit.cover)
+                              : widget.sitterPhotoUrl != null
+                                  ? Image.network(widget.sitterPhotoUrl!, fit: BoxFit.cover)
+                                  : Icon(Icons.person, color: AppColors.vertpetsy, size: sizes.sitterProfileAvatarRadius * 0.6),
+                        ),
+                      ),
+                      if (widget.isVerified)
+                        Positioned(
+                          right: -3,
+                          bottom: -3,
+                          child: VerifiedBadge(size: sizes.sitterProfileAvatarRadius * 0.3),
+                        ),
+                    ],
                   ),
 
                   SizedBox(width: sizes.screenWidth * 0.03),

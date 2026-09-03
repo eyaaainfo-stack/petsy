@@ -13,6 +13,7 @@ import '../../../controllers/auth_session.dart';
 import '../../../controllers/user_create_profile_controller.dart';
 import '../../../models/my_profile_data.dart';
 import '../../../services/api_service.dart';
+import '../../../widgets/message_dialog.dart';
 
 // ============================================================================
 // UpdateProfileOwnerScreen ("Update My Profile" tel owner)
@@ -177,7 +178,7 @@ class _UpdateProfileOwnerScreenState extends State<UpdateProfileOwnerScreen> {
       setState(() => _newPhotoBytes = bytes);
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('login_generic_error'.tr())));
+      showMessageDialog(context, 'login_generic_error'.tr());
     }
   }
 
@@ -219,7 +220,7 @@ class _UpdateProfileOwnerScreenState extends State<UpdateProfileOwnerScreen> {
     setState(() => _isSubmitting = false);
 
     if (!profileSuccess || !photoSuccess) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('login_generic_error'.tr())));
+      showMessageDialog(context, 'login_generic_error'.tr());
       return;
     }
 

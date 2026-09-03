@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../../constants/app_colors.dart';
 import '../../constants/app_sizes.dart';
 import '../../controllers/auth_session.dart';
@@ -9,8 +10,10 @@ import '../../services/api_service.dart';
 import '../../services/power_save_service.dart';
 import 'language.dart';
 import 'account_type.dart';
+import 'user_create_profile.dart';
 import 'owner/profile_owner.dart';
 import 'sitter/sitter_profile.dart';
+import 'admin/admin_home.dart';
 
 // ============================================================================
 // SplashDecider
@@ -113,6 +116,18 @@ class _SplashDeciderState extends State<SplashDecider> {
       final Map<String, dynamic> user = data['user'] as Map<String, dynamic>;
       final String role = user['role'] as String? ?? '';
 
+      // 🔴 FIX (kifma tlab: "idha el creation du compte mch fini ma
+      // yethallich el home") - ken el profile mazel ma kammelch (el
+      // user 3amel ghir email+password w 5arej/3amel reload), ma
+      // nwarriweh el home (ProfileOwnerScreen b'esm/photo fadhyin) -
+      // nkhalliweh ykammel el parcours (UserCreateProfileScreen) -
+      // "reprise" (el session déjà mahfoudha/sa7i7a, ghir el profile
+      // mch kammel).
+      final bool isProfileComplete = user['isProfileComplete'] as bool? ?? true;
+      if (!isProfileComplete && (role == 'owner' || role == 'sitter' || role == 'courier')) {
+        return UserCreateProfileScreen(role: role);
+      }
+
       if (role == 'owner') {
         final pets = await PetRepository.fetchOwnerPets();
         if (!mounted) return null;
@@ -125,6 +140,11 @@ class _SplashDeciderState extends State<SplashDecider> {
           ownerPhotoUrl: (photoUrl != null && photoUrl.isNotEmpty)
               ? '${ApiService.mediaBaseUrl}$photoUrl'
               : null,
+          // 🔵 ZID (kifma tlab: "el tick... fel home fel pdp mteou").
+          isVerified: user['isVerified'] as bool? ?? false,
+          // 🔵 ZID (kifma tlab: "ken el user homme nkhalliwh vert, keno
+          // femme pink").
+          gender: user['gender'] as String?,
         );
       }
 
@@ -136,12 +156,29 @@ class _SplashDeciderState extends State<SplashDecider> {
           sitterPhotoUrl: (photoUrl != null && photoUrl.isNotEmpty)
               ? '${ApiService.mediaBaseUrl}$photoUrl'
               : null,
+          // 🔵 ZID (kifma tlab: "el tick... fel home fel pdp mteou").
+          isVerified: user['isVerified'] as bool? ?? false,
+          // 🔵 ZID (kifma tlab: "ken el user homme nkhalliwh vert, keno
+          // femme pink").
+          gender: user['gender'] as String?,
         );
       }
 
-      // 🔴 TODO: courier/admin home mazel ma tsawbetch fel front (ghir
-      // el design fel Figma export, mch el code Flutter) - ki tetsawweb,
-      // zid "case" houni (nafs el fikra tel owner/sitter).
+      // 🔵 ZID: Admin home tawa MAWJOUDA (AdminHomeScreen) - nafs mant9
+      // tel owner/sitter fou9, ghir bla "pets" (l'Admin ma3andouch).
+      if (role == 'admin') {
+        final String? photoUrl = user['photoUrl'] as String?;
+        return AdminHomeScreen(
+          adminName: (user['fullName'] as String?)?.isNotEmpty == true ? user['fullName'] as String : 'admin_badge_label'.tr(),
+          adminPhotoUrl: (photoUrl != null && photoUrl.isNotEmpty)
+              ? '${ApiService.mediaBaseUrl}$photoUrl'
+              : null,
+        );
+      }
+
+      // 🔴 TODO: courier home mazel ma tsawbetch fel front (ghir el
+      // design fel Figma export, mch el code Flutter) - ki tetsawweb,
+      // zid "case" houni (nafs el fikra tel owner/sitter/admin).
       return null;
     } catch (_) {
       // ay 5ata (mfamech internet, server twaqqaf, etc.) - n5alliw el

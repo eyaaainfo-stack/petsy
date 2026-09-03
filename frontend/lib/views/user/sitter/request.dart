@@ -6,6 +6,7 @@ import '../../../widgets/back_button.dart';
 import '../../../controllers/request_controller.dart';
 import '../../../controllers/auth_session.dart';
 import '../owner/pet_profile.dart';
+import '../../../widgets/message_dialog.dart';
 
 // ============================================================================
 // RequestScreen ("Bookings Details") - sitter
@@ -156,13 +157,11 @@ class _RequestScreenState extends State<RequestScreen> {
     setState(() => _isResponding = false);
 
     if (!success) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('profile_submit_error'.tr())));
+      showMessageDialog(context, 'profile_submit_error'.tr());
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(accept ? 'request_accepted_toast'.tr() : 'request_rejected_toast'.tr())),
-    );
+    showMessageDialog(context, accept ? 'request_accepted_toast'.tr() : 'request_rejected_toast'.tr());
     Navigator.of(context).pop(true);
   }
 
@@ -174,11 +173,11 @@ class _RequestScreenState extends State<RequestScreen> {
     setState(() => _isResponding = false);
 
     if (!success) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('profile_submit_error'.tr())));
+      showMessageDialog(context, 'profile_submit_error'.tr());
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('booking_cancelled_toast'.tr())));
+    showMessageDialog(context, 'booking_cancelled_toast'.tr());
     Navigator.of(context).pop(true);
   }
 

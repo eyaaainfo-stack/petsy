@@ -61,6 +61,26 @@ const userSchema = new mongoose.Schema(
     // 🔵 ZID: "My Favourites" (my_favourites_screen.dart, owner) - liste
     // el sitters elli el owner 3ajbouh (heart icon 3al card).
     favorites: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+
+    // 🔵 ZID (kifma tlab: "acteur vérifié - checklist tekmel, tji lel
+    // admin proposition bch ywalli valider, w zid CIN") - vérification
+    // d'identité: l'admin ynajjam ye5tar "Valider" ghir ken el checklist
+    // (chraht fel adminController.js/computeChecklist) kaملa.
+    isVerified: { type: Boolean, default: false },
+    // 🔵 ZID (kifma tlab: "idha el creation du compte n'esy pas finis
+    // ma yetsajelch el compte f base de donnes") - false ki el compte
+    // yetkha9 (email+password bark, mel signup), True ghir ki el user
+    // ykammel el parcours el kol (fullName, pet/services...) - chraht
+    // fel userController.js/completeOnboarding + server.js (cleanup
+    // job ye7ذef el comptes elli 9a3dou "false" 3lech mch kammlou).
+    isProfileComplete: { type: Boolean, default: false },
+    verifiedAt: { type: Date, default: null },
+    // 🔵 photo tel CIN (carte d'identité) - RECTO + VERSO (kifma tlab:
+    // "sawae el cin mteek men kodem w men telii" - front + back) - tawa
+    // el USER nafsou yeb3ath biha (mch l'admin, chraht fel
+    // verification_status_screen.dart + userController.js/uploadMyCin).
+    cinFrontPhotoUrl: { type: String, default: '' },
+    cinBackPhotoUrl: { type: String, default: '' },
   },
   {
     discriminatorKey: 'role', // C'est ici que l'héritage se fait (le champ qui indique le type d'acteur)
@@ -105,12 +125,20 @@ userSchema.index(
 //  2. "deleteOne" (document middleware) - covers userInstance.deleteOne()
 //     (ki el document mjabed déjà, w ta7ذefou b rou7ou).
 // ============================================================================
-userSchema.pre('findOneAndDelete', async function (next) {
+// 🔴 FIX ("TypeError: next is not a function" - crash 7a9i9i ki el
+// admin ye7ذef compte, chrahtha kaملa fel error trace): kanou el 2
+// hooks (pre findOneAndDelete + pre deleteOne) declarés "async
+// function(next)" - mzoughin bin 2 styles (async/await W callback
+// next()) - Mongoose/Kareem ki yel9a el fonction "async", ma yeb3ethch
+// "next" 7a9i9i (yestenna el promise tou3ha automatique) - fa "next"
+// jowa el fonction ye39od "undefined", w "next()" y-crashi. El fix:
+// nna77iw "next" mel paramètres W el appel tou3ou (async pur, bla
+// callback - Mongoose yestenna el promise wa7dou).
+userSchema.pre('findOneAndDelete', async function () {
   // n7ottou el _id el document elli bch yetfassa5 (9bal el delete 7a9i9i)
   // bch nnajjmou nesta3mlouh fel "post" (ba3d ma el delete ye9das).
   const docToDelete = await this.model.findOne(this.getFilter());
   this._deletedUserId = docToDelete ? docToDelete._id : null;
-  next();
 });
 
 userSchema.post('findOneAndDelete', async function () {
@@ -121,9 +149,8 @@ userSchema.post('findOneAndDelete', async function () {
   }
 });
 
-userSchema.pre('deleteOne', { document: true, query: false }, async function (next) {
+userSchema.pre('deleteOne', { document: true, query: false }, async function () {
   await mongoose.model('Animal').deleteMany({ owner: this._id });
-  next();
 });
 
 module.exports = mongoose.model('User', userSchema);

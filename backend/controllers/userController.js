@@ -2,6 +2,8 @@
 const User = require('../models/user');
 const Sitter = require('../models/sitter');
 const CheckoutQuestionnaire = require('../models/checkoutQuestionnaire');
+const { computeChecklist } = require('../services/verificationService');
+const bcrypt = require('bcryptjs');
 
 // ============================================================================
 // GET PROFILE (route "protégée" - te7taj token JWT)
@@ -33,6 +35,15 @@ exports.getProfile = async (req, res) => {
       bio: baseUser.bio,
       gender: baseUser.gender,
       locationName: baseUser.locationName,
+      // 🔵 ZID (kifma tlab: "el tick el zarka eli tji fel insta ala el
+      // pdp") - bch el front ynajjam ywarri badge "vérifié" 3al photo
+      // profil (kol blasa el user 3andou l'accès l'el profil tou3ou -
+      // Settings, sidebar...).
+      isVerified: baseUser.isVerified === true,
+      // 🔵 ZID (kifma tlab: "idha el creation du compte mch fini ma
+      // yethallich el home") - splash_decider.dart yestenna 3ala
+      // hedha bch ye5tar el user ymchi lel home wla yerja3 l'signup.
+      isProfileComplete: baseUser.isProfileComplete === true,
     };
 
     // 🔴 FIX: el 7ou9oul el 5assa bel sitter (services/residenceType/...)
@@ -260,6 +271,10 @@ exports.getSitterPublicProfile = async (req, res) => {
         services: sitter.services,
         averageRating,
         reviewsCount,
+        // 🔵 ZID (kifma tlab: "el tick bhdha pdp hta el users lokhrin
+        // yrawha") - el badge bleu ye39od zeda ken 7ad okhor ychouf
+        // had profile (mch ghir "My Profile").
+        isVerified: sitter.isVerified === true,
         // 🔵 ZID (kifma tlab): "el owner ma yenajjamch ye5tar youm el
         // sitter mch dispo fih" - lezmou el owner ychouf had data 9bal
         // ma yekhtar date (request_a_book.dart).
@@ -297,7 +312,7 @@ exports.getSittersByCity = async (req, res) => {
     const favoriteIds = new Set((owner?.favorites || []).map((id) => id.toString()));
 
     const sitters = await User.find({ role: 'sitter', city }).select(
-      'fullName city photoUrl location' // 🔴 FIX: "location" kanet na9sa
+      'fullName city photoUrl location isVerified' // 🔴 FIX: "location" kanet na9sa, tawa "isVerified" zeda
     );
 
     // 🔴 FIX (kifma tlab: "nbr des etoiles ma tbadelch fel cards
@@ -332,6 +347,9 @@ exports.getSittersByCity = async (req, res) => {
         isFavorite: favoriteIds.has(sitter._id.toString()),
         rating: ratingInfo?.avg ?? 0,
         reviewsCount: ratingInfo?.count ?? 0,
+        // 🔵 ZID (kifma tlab: "el tick... hta el users lokhrin yrawha") -
+        // badge bleu 3al card zeda (mch ghir el profile complet).
+        isVerified: sitter.isVerified === true,
       };
     });
 
@@ -446,7 +464,7 @@ exports.getMyFavorites = async (req, res) => {
     const ownerLng = owner.location?.lng;
 
     const sitters = await Sitter.find({ _id: { $in: owner.favorites } }).select(
-      'fullName city photoUrl location services'
+      'fullName city photoUrl location services isVerified'
     );
 
     const favoritesWithDetails = sitters.map((sitter) => {
@@ -467,6 +485,8 @@ exports.getMyFavorites = async (req, res) => {
         photoUrl: sitter.photoUrl,
         distanceKm,
         startingPrice,
+        // 🔵 ZID (kifma tlab): "el tick... hta el users lokhrin yrawha").
+        isVerified: sitter.isVerified === true,
       };
     });
 
@@ -531,7 +551,7 @@ exports.checkNameAvailability = async (req, res) => {
 // ============================================================================
 exports.searchSitters = async (req, res) => {
   try {
-    const { q, gender, city, residenceType, maxDistanceKm, minMemberMonths } = req.query;
+    const { q, gender, city, residenceType, maxDistanceKm, minMemberMonths, minRating } = req.query;
 
     const owner = await User.findById(req.userId).select('location favorites');
     const ownerLat = owner?.location?.lat;
@@ -561,8 +581,21 @@ exports.searchSitters = async (req, res) => {
     }
 
     const sitters = await User.find(filter)
-      .select('fullName city photoUrl location gender residenceType createdAt')
+      .select('fullName city photoUrl location gender residenceType createdAt isVerified')
       .limit(30);
+
+    // 🔴 FIX (kifma tlab: "les note mch deja dispo?") - el rating
+    // 7a9i9i (averageRating mel questionnaires "completed") KANOU
+    // MAWJOUDIN déjà (getSittersByCity, CheckoutQuestionnaire) - ghir
+    // el filtre "Note" hedha (search.dart) kan ma yesta3malhomch, w
+    // ywarri "not available" b'ghalta. Tawa: nafs l'aggregation
+    // (wa7da lel sitters el kol, mch N+1 query).
+    const sitterIds = sitters.map((s) => s._id);
+    const ratingAgg = await CheckoutQuestionnaire.aggregate([
+      { $match: { reviewee: { $in: sitterIds }, averageRating: { $ne: null } } },
+      { $group: { _id: '$reviewee', avg: { $avg: '$averageRating' }, count: { $sum: 1 } } },
+    ]);
+    const ratingMap = new Map(ratingAgg.map((r) => [r._id.toString(), { avg: Math.round(r.avg * 10) / 10, count: r.count }]));
 
     let results = sitters.map((sitter) => {
       let distanceKm = null;
@@ -571,6 +604,8 @@ exports.searchSitters = async (req, res) => {
       if (ownerLat != null && ownerLng != null && sitterLat != null && sitterLng != null) {
         distanceKm = haversineDistanceKm(ownerLat, ownerLng, sitterLat, sitterLng);
       }
+
+      const ratingInfo = ratingMap.get(sitter._id.toString());
 
       return {
         _id: sitter._id,
@@ -582,6 +617,10 @@ exports.searchSitters = async (req, res) => {
         memberSince: sitter.createdAt,
         distanceKm,
         isFavorite: favoriteIds.has(sitter._id.toString()),
+        // 🔵 ZID (kifma tlab): "el tick... hta el users lokhrin yrawha").
+        isVerified: sitter.isVerified === true,
+        rating: ratingInfo?.avg ?? 0,
+        reviewsCount: ratingInfo?.count ?? 0,
       };
     });
 
@@ -589,6 +628,16 @@ exports.searchSitters = async (req, res) => {
       const maxKm = Number(maxDistanceKm);
       if (!Number.isNaN(maxKm) && maxKm > 0) {
         results = results.filter((s) => s.distanceKm == null || s.distanceKm <= maxKm);
+      }
+    }
+
+    // 🔵 ZID (kifma tlab: "les note mch deja dispo?") - filtre "Note"
+    // 7a9i9i tawa - sitters bla avis (rating=0) ma yban-ouch ken el
+    // admin ye5tar "≥ X njoum" (nafs mant9 el filtre distance fou9).
+    if (minRating) {
+      const minR = Number(minRating);
+      if (!Number.isNaN(minR) && minR > 0) {
+        results = results.filter((s) => s.rating >= minR);
       }
     }
 
@@ -642,6 +691,191 @@ exports.getUserReviews = async (req, res) => {
       totalCount: reviews.length,
     });
   } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// ==========================================
+// GET MY VERIFICATION STATUS ("Vérification" - sidebar owner/sitter)
+// ==========================================
+// 🔵 ZID (kifma tlab: "and el acteurs hotha fi interface jdida
+// todkhlelha kif tenzel ala bouton verification fel side bar w kol ma
+// conditions tsiir tetaamlelha tick automatiquement") - el user
+// ychouf checklist + progress (kadeh 3andou/kadeh lezmou) mte3ou
+// nafsou - reuse el mant9 el markazi (verificationService.js), NAFS
+// el logique el Admin ychouf fel écran "Validation".
+// ==========================================
+exports.getMyVerificationStatus = async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const { items, metrics, isComplete } = await computeChecklist(user);
+
+    res.status(200).json({
+      checklist: items,
+      metrics,
+      isComplete,
+      isVerified: user.isVerified === true,
+      verifiedAt: user.verifiedAt,
+    });
+  } catch (error) {
+    console.error('❌ GET-MY-VERIFICATION-STATUS ERROR:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// ==========================================
+// UPLOAD MY CIN (recto + verso) - "Vérification" (sidebar -> Settings)
+// ==========================================
+// 🔴 FIX (kifma tlab: "fazet el cin... tjih fenetre tkollou sawae el
+// cin mteek men kodem w men telii") - tawa el USER nafsou yeb3ath biha
+// (mch l'admin - na77ina POST /admin/users/:id/cin) - popup tjih ki
+// ykammel el conditions l'okhrin el kol (chraht fel
+// verification_status_screen.dart, front) - houni ghir el appel API
+// (2 fichiers, "front" w "back", multipart/fields).
+// ==========================================
+exports.uploadMyCin = async (req, res) => {
+  try {
+    const frontFile = req.files?.front?.[0];
+    const backFile = req.files?.back?.[0];
+
+    if (!frontFile || !backFile) {
+      return res.status(400).json({ message: 'Both front and back CIN photos are required' });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.userId,
+      {
+        cinFrontPhotoUrl: `/uploads/cin/${frontFile.filename}`,
+        cinBackPhotoUrl: `/uploads/cin/${backFile.filename}`,
+      },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.status(200).json({
+      cinFrontPhotoUrl: user.cinFrontPhotoUrl,
+      cinBackPhotoUrl: user.cinBackPhotoUrl,
+    });
+  } catch (error) {
+    console.error('❌ UPLOAD-MY-CIN ERROR:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// ==========================================
+// CHANGE MY PASSWORD ("Paramètres" -> "Confidentialité et sécurité")
+// ==========================================
+// 🔵 ZID (kifma tlab: "el users tetzedelhom fel parametre changer el
+// mdp... kima el confidentialite mtaa el fb") - el user (role el kol,
+// 7ata l'admin) yeb3ath password 9dim + password jdid - nchekkou el
+// 9dim sa7i7 9bal ma nbeddlouh (mch reset-password b'email/code, hedha
+// mode "mazel me3aya el password el 9dim").
+// ==========================================
+exports.changeMyPassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'currentPassword et newPassword obligatoires' });
+    }
+    if (newPassword.length < 8) {
+      return res.status(400).json({ message: 'Le nouveau mot de passe doit avoir au moins 8 caractères' });
+    }
+
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Current password is incorrect' });
+    }
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+
+    res.status(200).json({ message: 'Password changed successfully' });
+  } catch (error) {
+    console.error('❌ CHANGE-MY-PASSWORD ERROR:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// ==========================================
+// DELETE MY ACCOUNT ("Paramètres" -> "Confidentialité et sécurité" ->
+// "Supprimer mon compte")
+// ==========================================
+// 🔵 ZID (kifma tlab): "supprimer le compte" (kima el fb) - el owner/
+// sitter/courier ynajjam ye7ذef compte tou3ou NAFSOU (mch ghir l'admin
+// mel "Gestion des comptes") - password lezmou l'confirmation (action
+// destructive, mch ghir 1 clic).
+//
+// 🔴 GUARD: l'admin ma ynajjamch yesta3mel el endpoint hedha (ye7ذef
+// compte admin GHIR mel "Gestion des comptes", bel protections
+// l'okhrin - principal admin etc. - chraht fel adminController.js).
+// ==========================================
+exports.deleteMyAccount = async (req, res) => {
+  try {
+    const { password } = req.body;
+    if (!password) {
+      return res.status(400).json({ message: 'Password required to confirm deletion' });
+    }
+
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.role === 'admin') {
+      return res.status(403).json({ message: 'Admins cannot delete their own account here' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Incorrect password' });
+    }
+
+    // 🔵 User.findByIdAndDelete() = findOneAndDelete taht - ye39ad el
+    // hooks mawjoudin déjà (cascade delete Animal ken owner - chraht
+    // fel models/user.js).
+    await User.findByIdAndDelete(req.userId);
+
+    res.status(200).json({ message: 'Account deleted' });
+  } catch (error) {
+    console.error('❌ DELETE-MY-ACCOUNT ERROR:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// ==========================================
+// COMPLETE ONBOARDING (dernière étape tel parcours d'inscription -
+// add_pet_photo.dart "Terminer" pour owner, create_sitter_profile_2.dart
+// "Terminer" pour sitter)
+// ==========================================
+// 🔵 ZID (kifma tlab: "idha el creation du compte n'esy pas finis ma
+// yetsajelch el compte f base de donnes") - el compte ye39od
+// "isProfileComplete: false" mel signup (email+password bark) - ghir
+// ki el user ykammel el parcours el kol (fullName, pet/services...)
+// hedha l'endpoint ye5tar True. El cleanup job (server.js) ye7ذef el
+// comptes elli 9a3dou "false" ba3d chwiya (mch kammlou el parcours).
+// ==========================================
+exports.completeOnboarding = async (req, res) => {
+  try {
+    const user = await User.findByIdAndUpdate(req.userId, { isProfileComplete: true }, { new: true });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.status(200).json({ message: 'Onboarding completed' });
+  } catch (error) {
+    console.error('❌ COMPLETE-ONBOARDING ERROR:', error);
     res.status(500).json({ error: error.message });
   }
 };

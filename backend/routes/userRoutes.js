@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router();
 
 const userController = require('../controllers/userController');
-const { userUpload } = require('../middleware/upload');
+const { userUpload, cinUpload } = require('../middleware/upload');
 const { protect } = require('../middleware/auth');
 
 // 🔵 "protect" 9bal el controller: ychek el token JWT (Authorization
@@ -11,6 +11,32 @@ const { protect } = require('../middleware/auth');
 // controller 7ata ma ye5demch (protect twaqqaf el request).
 router.get('/profile', protect, userController.getProfile);
 router.patch('/profile', protect, userController.updateProfile);
+
+// 🔵 ZID (kifma tlab: "el users tetzedelhom fel parametre changer el
+// mdp... kima el confidentialite mtaa el fb") - Changer mot de passe
+// (role el kol, 7ata l'admin) + Supprimer mon compte (owner/sitter/
+// courier bark - l'admin ye7ذef mel "Gestion des comptes").
+router.patch('/me/password', protect, userController.changeMyPassword);
+router.delete('/me', protect, userController.deleteMyAccount);
+router.patch('/me/complete-onboarding', protect, userController.completeOnboarding);
+
+// 🔵 ZID (kifma tlab: "interface jdida... bouton verification fel
+// side bar") - el user (owner/sitter/courier) ychouf checklist +
+// progress mte3ou nafsou (bch ye39od "vérifié").
+router.get('/me/verification', protect, userController.getMyVerificationStatus);
+
+// 🔴 FIX (kifma tlab: "fazet el cin... tjih fenetre... sawae el cin
+// mteek men kodem w men telii") - el USER nafsou yeb3ath el CIN (recto
+// + verso, 2 fichiers f nefs el appel - "front"/"back") - mch l'admin.
+router.post(
+  '/me/cin',
+  protect,
+  cinUpload.fields([
+    { name: 'front', maxCount: 1 },
+    { name: 'back', maxCount: 1 },
+  ]),
+  userController.uploadMyCin
+);
 
 // 🔵 ZID (kifma tlab): "el esm unique kima el insta" - live check
 // (user_create_profile.dart, update_profile_owner.dart/update_profile_

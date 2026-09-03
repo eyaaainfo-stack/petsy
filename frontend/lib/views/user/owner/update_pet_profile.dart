@@ -9,6 +9,7 @@ import '../../../models/pet_summary.dart';
 import '../../../controllers/update_pet_profile_controller.dart';
 import '../../../controllers/auth_session.dart';
 import '../../../services/api_service.dart';
+import '../../../widgets/message_dialog.dart';
 
 // ============================================================================
 // UpdatePetProfileScreen ("Update Pet Profile")
@@ -132,7 +133,7 @@ class _UpdatePetProfileScreenState extends State<UpdatePetProfileScreen> {
       setState(() => _newPhotoBytes = bytes);
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('photo_pick_error'.tr())));
+      showMessageDialog(context, 'photo_pick_error'.tr());
     }
   }
 
@@ -174,7 +175,7 @@ class _UpdatePetProfileScreenState extends State<UpdatePetProfileScreen> {
     setState(() => _isSubmitting = false);
 
     if (!success || !photoSuccess) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('login_generic_error'.tr())));
+      showMessageDialog(context, 'login_generic_error'.tr());
       return;
     }
 

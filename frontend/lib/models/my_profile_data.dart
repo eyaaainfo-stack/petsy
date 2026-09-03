@@ -54,6 +54,10 @@ class MyProfileData {
   // el ayemet el mou7addda.
   final List<int> recurringDaysOff; // 1=Mon..7=Sun
   final List<DateTime> specificDatesOff;
+  // 🔵 ZID (kifma tlab: "el tick el zarka eli tji fel insta ala el
+  // pdp") - bch VerifiedBadge (widget) ye39od dima cohérent (mch
+  // besoin appel API zeyd bark bch nna7iw hedha).
+  final bool isVerified;
 
   const MyProfileData({
     required this.fullName,
@@ -74,6 +78,7 @@ class MyProfileData {
     this.reviewsCount = 0,
     this.recurringDaysOff = const [],
     this.specificDatesOff = const [],
+    this.isVerified = false,
   });
 
   factory MyProfileData.fromJson(Map<String, dynamic> json) {
@@ -100,6 +105,7 @@ class MyProfileData {
       reviewsCount: json['reviewsCount'] as int? ?? 0,
       recurringDaysOff: recurring.map((e) => (e as num).toInt()).toList(),
       specificDatesOff: specific.map((e) => DateTime.parse(e as String)).toList(),
+      isVerified: json['isVerified'] as bool? ?? false,
     );
   }
 }

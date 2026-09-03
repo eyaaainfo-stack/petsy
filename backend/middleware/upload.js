@@ -56,4 +56,8 @@ function createUploader(subfolder) {
 module.exports = {
   petUpload: createUploader('pets'),
   userUpload: createUploader('users'),
+  // 🔵 ZID (kifma tlab: "ajoute l'upload CIN au système") - folder
+  // mnfassel ('uploads/cin/') - documents identité, mch photos profil
+  // 3adiya, a7sen tab9a mfarza mn jihet l'organisation.
+  cinUpload: createUploader('cin'),
 };

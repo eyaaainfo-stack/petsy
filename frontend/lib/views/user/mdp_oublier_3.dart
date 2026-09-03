@@ -5,6 +5,7 @@ import '../../constants/app_sizes.dart';
 import '../../controllers/forgot_password_controller.dart';
 import '../../controllers/validators.dart';
 import '../../widgets/button.dart';
+import '../../widgets/message_dialog.dart';
 
 // ============================================================================
 // MdpOublier3Screen ("Enter New Password")
@@ -55,16 +56,12 @@ class _MdpOublier3ScreenState extends State<MdpOublier3Screen> {
     setState(() => _isSubmitting = false);
 
     if (!result.success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result.errorMessage ?? 'login_generic_error'.tr())),
-      );
+      showMessageDialog(context, result.errorMessage ?? 'login_generic_error'.tr());
       return;
     }
 
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('password_reset_success_label'.tr())),
-    );
+    showMessageDialog(context, 'password_reset_success_label'.tr());
 
     // 🔵 nerja3ou l "user_login.dart" (elli bda mennou el flow kaملou) -
     // 3 écrans etzadou fel stack (1/2/3), fa 3 pops bch nerja3ou l'lil

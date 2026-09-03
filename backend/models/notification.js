@@ -20,9 +20,12 @@ const notificationSchema = new mongoose.Schema(
     // 🔵 ZID (kifma tlab): 'new_review' - ki 7ad ykemmel el questionnaire
     // (rating 4 catégories + avis), notification l'reviewee ("X left
     // you a review!").
+    // 🔵 ZID (kifma tlab: "ywalli el compte verifiee nhb tji lel user
+    // ntf") - 'account_verified' - ki l'admin ye5tar "Valider" (écran
+    // Validation), notification l'user (badge bleu tawa yban lel kol).
     type: {
       type: String,
-      enum: ['booking_sent', 'booking_received', 'booking_accepted', 'booking_rejected', 'candidate_accepted', 'candidate_declined', 'new_review', 'message', 'other'],
+      enum: ['booking_sent', 'booking_received', 'booking_accepted', 'booking_rejected', 'candidate_accepted', 'candidate_declined', 'new_review', 'message', 'other', 'account_verified'],
       default: 'other',
     },
     isRead: { type: Boolean, default: false },

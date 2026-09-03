@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../constants/app_colors.dart';
 import '../../constants/app_sizes.dart';
+import '../../controllers/auth_session.dart';
 import '../../widgets/back_button.dart';
 import 'theme.dart';
 import 'language.dart';
+import 'verification_status_screen.dart';
+import 'security_settings_screen.dart';
 
 // ============================================================================
 // SettingsScreen ("settings_screen.dart") - mchtarek bin owner w sitter
@@ -66,6 +69,45 @@ class SettingsScreen extends StatelessWidget {
                     },
                   ),
                   Divider(color: AppColors.pinkpetsy.withOpacity(0.15)),
+                  // 🔴 FIX (kifma tlab: "fel sid bar admin nahili el
+                  // verification khtro ma yesthakech w hoyyo epinglee
+                  // fi gerer les profils") - "Vérification" (checklist
+                  // personnelle: CIN, bio, services...) ma3nahach 7aja
+                  // lel Admin - houwa mch el elli yetverifi, HOUWA elli
+                  // yverifi el b39dh (via "Gestion des comptes" ->
+                  // "Validation"). SettingsScreen mchtarek (owner/
+                  // sitter/admin el 3), fa n5abbiw el ligne hedhi ghir
+                  // ken el role != 'admin'.
+                  if (AuthSession.userRole != 'admin') ...[
+                    _settingsRow(
+                      context: context,
+                      sizes: sizes,
+                      icon: Icons.verified_outlined,
+                      label: 'verification_menu_label'.tr(),
+                      mutedTextColor: mutedTextColor,
+                      onTap: () {
+                        Navigator.of(context).push(MaterialPageRoute(builder: (_) => const VerificationStatusScreen()));
+                      },
+                    ),
+                    Divider(color: AppColors.pinkpetsy.withOpacity(0.15)),
+                  ],
+
+                  // 🔵 ZID (kifma tlab: "el users tetzedelhom fel
+                  // parametre changer el mdp wle faza kima el
+                  // confidentialite mtaa el fb") - role el kol (7ata
+                  // l'admin - houwa yechouf "Changer le mot de passe"
+                  // bark jowa, "Supprimer mon compte" mfaya fel écran
+                  // hedha nafsou, chraht fel security_settings_screen.dart).
+                  _settingsRow(
+                    context: context,
+                    sizes: sizes,
+                    icon: Icons.security_outlined,
+                    label: 'security_settings_title'.tr(),
+                    mutedTextColor: mutedTextColor,
+                    onTap: () {
+                      Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SecuritySettingsScreen()));
+                    },
+                  ),
                 ],
               ),
             ),

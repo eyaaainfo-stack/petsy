@@ -11,6 +11,8 @@ class FavoriteSitter {
   final String? photoUrl;
   final double? distanceKm;
   final double? startingPrice;
+  // 🔵 ZID (kifma tlab: "el tick bhdha pdp hta el users lokhrin yrawha").
+  final bool isVerified;
 
   const FavoriteSitter({
     required this.id,
@@ -18,6 +20,7 @@ class FavoriteSitter {
     this.photoUrl,
     this.distanceKm,
     this.startingPrice,
+    this.isVerified = false,
   });
 
   factory FavoriteSitter.fromJson(Map<String, dynamic> json) {
@@ -28,6 +31,7 @@ class FavoriteSitter {
       photoUrl: (rawPhotoUrl != null && rawPhotoUrl.isNotEmpty) ? '${ApiService.mediaBaseUrl}$rawPhotoUrl' : null,
       distanceKm: (json['distanceKm'] as num?)?.toDouble(),
       startingPrice: (json['startingPrice'] as num?)?.toDouble(),
+      isVerified: json['isVerified'] as bool? ?? false,
     );
   }
 }

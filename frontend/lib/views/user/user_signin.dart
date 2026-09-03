@@ -8,6 +8,7 @@ import '../../widgets/paw_widget.dart';
 import '../../controllers/validators.dart';
 import '../../controllers/auth_controller.dart';
 import 'user_create_profile.dart';
+import '../../widgets/message_dialog.dart';
 
 // ============================================================================
 // UserSignInScreen ("Sign up" - 7sab jdid)
@@ -29,28 +30,50 @@ class _UserSignInScreenState extends State<UserSignInScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  // 🔵 ZID (kifma tlab: "el mdp nektbou matrin w ken el marra el 2
+  // mch kima lola tjini message d'erreur fi fenetre") - confirmation
+  // password - chek fel _onSubmitPressed (popup, mch inline - kifma
+  // tlab exactement).
+  final TextEditingController _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   final AuthController _authController = AuthController();
   bool _isSubmitting = false;
+  // 🔴 FIX (kifma tlab: "les message d'erreur eli kenou yjiw en rouge
+  // rajaahom lkol") - "email déjà utilisé" kanet popup - tawa red
+  // INLINE ta7t el 7a9el email (nafs mant9 admin_account_form.dart).
+  String? _emailServerError;
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
   // 🔵 signupPassword (mch loginPassword): rules 9awiya - 8 caractères,
   // 1 majuscule, 1 chiffre (chrahtha fel validators.dart)
-  String? _validateEmail(String? value) => Validators.email(value);
+  // 🔴 FIX: el email validator tawa yechek zeda _emailServerError (el
+  // backend 9allou "email mawjoud déjà") - bch el message yban red
+  // ta7t el 7a9el, mch popup.
+  String? _validateEmail(String? value) {
+    final String? formatError = Validators.email(value);
+    if (formatError != null) return formatError;
+    return _emailServerError;
+  }
+
   String? _validatePassword(String? value) => Validators.signupPassword(value);
 
   Future<void> _onSubmitPressed() async {
     if (_isSubmitting) return;
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isSubmitting = true);
+    setState(() {
+      _isSubmitting = true;
+      _emailServerError = null;
+    });
 
     final result = await _authController.signUp(
       email: _emailController.text,
@@ -67,14 +90,18 @@ class _UserSignInScreenState extends State<UserSignInScreen> {
       Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => UserCreateProfileScreen(role: widget.role)),
       );
+    } else if (result.errorMessage == 'signup_email_exists_error'.tr()) {
+      // 🔴 FIX: red INLINE ta7t el 7a9el email (mch popup) - setState
+      // ye5alli el field yerebuild, w _formKey.currentState!.validate()
+      // yeb3ath el error message el jdid l'user (kifha kif el field
+      // ye5tar "touché"/dirty, el error yban automatique).
+      setState(() => _emailServerError = result.errorMessage);
+      _formKey.currentState!.validate();
     } else {
-      // 🔵 ZID: 9bal, kif el signup yefchel, ma kanech yban 7ata 7aja
-      // (el user ma3rafch 3lech el bouton "ma yemchich"). Tاوة
-      // nwarriwlou el message el sa7i7 (email mawjoud déjà, mafamech
-      // connexion m3a el server, etc.)
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result.errorMessage ?? 'login_generic_error'.tr())),
-      );
+      // 🔵 ZID: el errors l'okhrin (connexion, générique) - mabetnach
+      // b'7a9el mu3ayan, tab9aou popup (nafs mant9 el b39dhin - CIN,
+      // etc.).
+      showMessageDialog(context, result.errorMessage ?? 'login_generic_error'.tr());
     }
   }
 
@@ -206,6 +233,39 @@ class _UserSignInScreenState extends State<UserSignInScreen> {
                             color: AppColors.pinkpetsy.withOpacity(0.7),
                           ),
                           onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                        ),
+                      ),
+                    ),
+
+                    SizedBox(height: sizes.authFieldsGap),
+
+                    // 🔒 Confirmer le mot de passe (kifma tlab: "el mdp
+                    // nektbou matrin")
+                    _fieldLabel('confirm_new_password_hint'.tr(), sizes),
+                    SizedBox(height: sizes.authLabelFieldGap),
+                    TextFormField(
+                      controller: _confirmPasswordController,
+                      obscureText: _obscureConfirmPassword,
+                      // 🔴 FIX (kifma tlab: "khalliha message erreur en
+                      // rouge tht el case mch fi fenetre") - kanet popup
+                      // (showMessageDialog) fel _onSubmitPressed - tawa
+                      // validator 3adi (nafs mant9 email/password) -
+                      // text a7mar TA7T el case direct, kifha kif el
+                      // validation errors l'okhrin el kol.
+                      validator: (value) {
+                        if (value == null || value.isEmpty) return 'password_required_error'.tr();
+                        if (value != _passwordController.text) return 'password_mismatch_error'.tr();
+                        return null;
+                      },
+                      decoration: _fieldDecoration(
+                        context: context,
+                        hintText: '••••••••',
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscureConfirmPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                            color: AppColors.pinkpetsy.withOpacity(0.7),
+                          ),
+                          onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
                         ),
                       ),
                     ),

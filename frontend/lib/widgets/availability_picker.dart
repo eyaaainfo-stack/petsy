@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_sizes.dart';
+import 'message_dialog.dart';
 
 // ============================================================================
 // AvailabilityPicker
@@ -105,7 +106,7 @@ class _AvailabilityPickerState extends State<AvailabilityPicker> {
       }
     });
     _notify();
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('public_holidays_marked_toast'.tr())));
+    showMessageDialog(context, 'public_holidays_marked_toast'.tr());
   }
 
   void _changeMonth(int delta) {

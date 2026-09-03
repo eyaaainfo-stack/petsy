@@ -4,6 +4,8 @@ import 'package:easy_localization/easy_localization.dart';
 import '../../../constants/app_colors.dart';
 import '../../../constants/app_sizes.dart';
 import '../../../widgets/back_button.dart';
+import '../../../services/api_service.dart';
+import '../../../controllers/auth_session.dart';
 import 'sitter_availability_setup.dart';
 import 'sitter_profile.dart';
 
@@ -27,7 +29,15 @@ class SitterAvailabilityQuestionScreen extends StatelessWidget {
     this.sitterPhotoBytes,
   });
 
-  void _goToHome(BuildContext context) {
+  Future<void> _goToHome(BuildContext context) async {
+    // 🔵 ZID (kifma tlab: "idha el creation du compte n'esy pas finis
+    // ma yetsajelch el compte") - houni "vraie fin" tel parcours sitter
+    // (branche "No, mch tawa") - best-effort (mch bloquant).
+    try {
+      await ApiService.patch('/users/me/complete-onboarding', {}, token: AuthSession.token);
+    } catch (_) {}
+
+    if (!context.mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(
         builder: (_) => SitterProfileScreen(sitterName: sitterName, sitterCity: sitterCity, sitterPhotoBytes: sitterPhotoBytes),

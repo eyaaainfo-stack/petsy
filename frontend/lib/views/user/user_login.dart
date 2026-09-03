@@ -11,6 +11,7 @@ import '../../controllers/auth_controller.dart';
 import '../../repositories/pet_repository.dart';
 import '../../services/api_service.dart';
 import 'user_signin.dart';
+import 'user_create_profile.dart';
 import 'owner/profile_owner.dart';
 import 'sitter/sitter_profile.dart';
 import 'mdp_oublier_1.dart';
@@ -103,6 +104,20 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
     });
 
     if (result.success) {
+      // 🔴 FIX (kifma tlab: "idha el creation du compte mch fini ma
+      // yethallich el home") - ken el profile mazel ma kammelch
+      // (isProfileComplete: false - el user 3amel ghir email+password
+      // w 5arej), ma nwarriweh el home l'ay role - nkhalliweh ykammel
+      // el parcours (UserCreateProfileScreen) - "reprise" mch "à zéro"
+      // (email/password déjà 7a9i9iyin, el session déjà mahfoudha).
+      if (!result.isProfileComplete) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => UserCreateProfileScreen(role: widget.role)),
+          (route) => false,
+        );
+        return;
+      }
+
       // 🔵 sa77e7t: tاوة njibou el pets el 7a9i9iyin mel backend (GET
       // /api/pets, protégée, ta3raf el owner mel token) - mch [] fadhya.
       if (result.role == 'owner') {
@@ -120,6 +135,11 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
               ownerPhotoUrl: (result.photoUrl != null && result.photoUrl!.isNotEmpty)
                   ? '${ApiService.mediaBaseUrl}${result.photoUrl}'
                   : null,
+              // 🔵 ZID (kifma tlab: "el tick... fel home fel pdp mteou").
+              isVerified: result.isVerified,
+              // 🔵 ZID (kifma tlab: "ken el user homme nkhalliwh vert,
+              // keno femme pink").
+              gender: result.gender,
             ),
           ),
           (route) => false,
@@ -134,6 +154,11 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
               sitterPhotoUrl: (result.photoUrl != null && result.photoUrl!.isNotEmpty)
                   ? '${ApiService.mediaBaseUrl}${result.photoUrl}'
                   : null,
+              // 🔵 ZID (kifma tlab: "el tick... fel home fel pdp mteou").
+              isVerified: result.isVerified,
+              // 🔵 ZID (kifma tlab: "ken el user homme nkhalliwh vert,
+              // keno femme pink").
+              gender: result.gender,
             ),
           ),
           (route) => false,

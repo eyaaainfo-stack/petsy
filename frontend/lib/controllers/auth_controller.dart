@@ -21,11 +21,32 @@ class LoginResult {
   // "/uploads/users/xxx.jpg") ma kanetch tetba3ath l'ProfileOwnerScreen
   // ba3d login (kanet tban ghir ba3d signup direct, mel mémoire).
   final String? photoUrl;
+  // 🔵 ZID (kifma tlab: "el tick... fel home fel pdp mteou") - bch
+  // ProfileOwnerScreen/SitterProfileScreen ynajjmou ywarrou el badge
+  // direct ba3d login (mch ghir ba3d restart/session-restore).
+  final bool isVerified;
+  // 🔵 ZID (kifma tlab: "ken el user homme nkhalliwh vert, keno femme
+  // pink") - couleur el sidebar 7asb el gender ('male'/'female'/'').
+  final String? gender;
+  // 🔵 ZID (kifma tlab: "idha el creation du compte mch fini ma
+  // yethallich el home") - user_login.dart yestenna 3ala hedha bch
+  // ye5tar ykhalliه ykammel el signup (UserCreateProfileScreen), mch
+  // home direct.
+  final bool isProfileComplete;
 
-  const LoginResult._(this.success, this.errorType, [this.token, this.fullName, this.city, this.role, this.photoUrl]);
+  const LoginResult._(this.success, this.errorType, [this.token, this.fullName, this.city, this.role, this.photoUrl, this.isVerified = false, this.gender, this.isProfileComplete = true]);
 
-  factory LoginResult.success(String token, {String? fullName, String? city, String? role, String? photoUrl}) =>
-      LoginResult._(true, LoginErrorType.none, token, fullName, city, role, photoUrl);
+  factory LoginResult.success(
+    String token, {
+    String? fullName,
+    String? city,
+    String? role,
+    String? photoUrl,
+    bool isVerified = false,
+    String? gender,
+    bool isProfileComplete = true,
+  }) =>
+      LoginResult._(true, LoginErrorType.none, token, fullName, city, role, photoUrl, isVerified, gender, isProfileComplete);
   factory LoginResult.emailNotFound() => const LoginResult._(false, LoginErrorType.invalidEmail);
   factory LoginResult.wrongPassword() => const LoginResult._(false, LoginErrorType.invalidPassword);
   factory LoginResult.genericError() => const LoginResult._(false, LoginErrorType.generic);
@@ -94,6 +115,9 @@ class AuthController {
           city: user['city'] as String?,
           role: user['role'] as String?,
           photoUrl: user['photoUrl'] as String?,
+          isVerified: user['isVerified'] as bool? ?? false,
+          gender: user['gender'] as String?,
+          isProfileComplete: user['isProfileComplete'] as bool? ?? true,
         );
       } else if (response.statusCode == 404) {
         // el backend yrajja3 404 kif el email mch mawjoud

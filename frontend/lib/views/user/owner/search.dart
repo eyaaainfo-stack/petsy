@@ -4,6 +4,7 @@ import 'package:easy_localization/easy_localization.dart';
 import '../../../constants/app_colors.dart';
 import '../../../constants/app_sizes.dart';
 import '../../../widgets/back_button.dart';
+import '../../../widgets/verified_badge.dart';
 import '../../../controllers/sitter_search_controller.dart';
 import '../../../controllers/favorites_controller.dart';
 import '../../../controllers/user_create_profile_controller.dart' show tunisiaGovernorates;
@@ -49,6 +50,10 @@ class _SearchScreenState extends State<SearchScreen> {
   };
   static const List<double> _distanceOptions = [5, 10, 20, 50];
   static const List<int> _memberSinceOptions = [3, 6, 12];
+  // 🔴 FIX (kifma tlab: "les note mch deja dispo?") - filtre "Note"
+  // 7a9i9i tawa (kan désactivé b'ghalta - el data el 7a9i9iya déjà
+  // mawjouda mel backend, chraht fel userController.js/searchSitters).
+  static const List<double> _ratingOptions = [4.5, 4.0, 3.5, 3.0];
 
   @override
   void initState() {
@@ -124,6 +129,13 @@ class _SearchScreenState extends State<SearchScreen> {
   // Bottom sheet générique: liste d'options b single-select (radio-style),
   // terja3 el option el mkhtara (wela null lowkan el user 3andel "Any").
   // --------------------------------------------------------------------
+  // 🔴 FIX (kifma tlab: "Mazelet el ville tjini fiha barre" - el bande
+  // jaune/noire "BOTTOM OVERFLOWED") - el Column kanet bla ay scroll
+  // (mafamech ListView/ScrollView) - m3a liste twila (24 gouvernorat
+  // lel "Ville") el Column te7ذef 3ala l'espace disponible fel bottom
+  // sheet w overflow. Tawa: DraggableScrollableSheet (nafs pattern
+  // el CIN popup/détail avis - déjà mjarreb, mch overflow ay wa9t,
+  // el user ynajjam ye5tar el liste tkabber wla y-scroll fiha).
   Future<void> _showFilterSheet<T>({
     required String title,
     required List<_FilterOption<T>> options,
@@ -133,72 +145,65 @@ class _SearchScreenState extends State<SearchScreen> {
     final sizes = AppSizes.of(context);
     await showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (sheetContext) {
-        return SafeArea(
-          child: Padding(
-            padding: EdgeInsets.symmetric(vertical: sizes.screenHeight * 0.02, horizontal: sizes.bookingHorizontalPadding),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: sizes.myProfileBodyFontSize)),
-                SizedBox(height: sizes.screenHeight * 0.012),
-                for (final option in options)
-                  InkWell(
-                    onTap: () {
-                      onSelected(option.value);
-                      Navigator.of(sheetContext).pop();
-                    },
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: sizes.screenHeight * 0.012),
-                      child: Row(
-                        children: [
-                          Icon(
-                            option.value == selected ? Icons.radio_button_checked : Icons.radio_button_off,
-                            color: option.value == selected ? AppColors.pinkpetsy : Colors.grey,
-                            size: sizes.myProfileBodyFontSize,
-                          ),
-                          SizedBox(width: sizes.screenWidth * 0.03),
-                          Expanded(child: Text(option.label, style: TextStyle(fontSize: sizes.myProfileBodyFontSize * 0.9))),
-                        ],
-                      ),
+        return DraggableScrollableSheet(
+          initialChildSize: 0.55,
+          minChildSize: 0.3,
+          maxChildSize: 0.9,
+          expand: false,
+          builder: (context, scrollController) {
+            return SafeArea(
+              child: ListView(
+                controller: scrollController,
+                padding: EdgeInsets.symmetric(vertical: sizes.screenHeight * 0.02, horizontal: sizes.bookingHorizontalPadding),
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      margin: EdgeInsets.only(bottom: sizes.screenHeight * 0.015),
+                      decoration: BoxDecoration(color: Colors.grey.withOpacity(0.4), borderRadius: BorderRadius.circular(2)),
                     ),
                   ),
-              ],
-            ),
-          ),
+                  Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: sizes.myProfileBodyFontSize)),
+                  SizedBox(height: sizes.screenHeight * 0.012),
+                  for (final option in options)
+                    InkWell(
+                      onTap: () {
+                        onSelected(option.value);
+                        Navigator.of(sheetContext).pop();
+                      },
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: sizes.screenHeight * 0.012),
+                        child: Row(
+                          children: [
+                            Icon(
+                              option.value == selected ? Icons.radio_button_checked : Icons.radio_button_off,
+                              color: option.value == selected ? AppColors.pinkpetsy : Colors.grey,
+                              size: sizes.myProfileBodyFontSize,
+                            ),
+                            SizedBox(width: sizes.screenWidth * 0.03),
+                            Expanded(child: Text(option.label, style: TextStyle(fontSize: sizes.myProfileBodyFontSize * 0.9))),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            );
+          },
         );
       },
     );
   }
 
-  // 🔵 "les etoiles" - mafamech data (chrahtha fou9), ghir n3allmou el
-  // user (bla ma nwarriweh chips "meakhoud" b'ghalta).
-  void _showRatingNotAvailable() {
-    final sizes = AppSizes.of(context);
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => SafeArea(
-        child: Padding(
-          padding: EdgeInsets.all(sizes.bookingHorizontalPadding),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(Icons.star_border, color: AppColors.pinkpetsy, size: sizes.screenWidth * 0.1),
-              SizedBox(height: sizes.screenHeight * 0.01),
-              Text('rating_filter_unavailable_label'.tr(), style: TextStyle(fontSize: sizes.myProfileBodyFontSize * 0.9)),
-              SizedBox(height: sizes.screenHeight * 0.02),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  // 🔴 FIX (kifma tlab: "les note mch deja dispo?") -
+  // _showRatingNotAvailable etna77et - el filtre "Note" tawa 7a9i9i
+  // (chouf el chip fel build(), yesta3mel _showFilterSheet<double>
+  // nafs mant9 el filtres l'okhrin el kol).
 
   @override
   Widget build(BuildContext context) {
@@ -249,11 +254,18 @@ class _SearchScreenState extends State<SearchScreen> {
                 // ----------------------------------------------------
                 // Filtres (chips - kol wa7ed yeftah bottom sheet)
                 // ----------------------------------------------------
-                SizedBox(
-                  height: sizes.screenHeight * 0.045,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    padding: EdgeInsets.symmetric(horizontal: sizes.bookingHorizontalPadding),
+                // 🔴 FIX (kifma tlab: "ma hbhomch hakk bel ordh... nhbhom
+                // fi blasa okhra bhya w en meme temps ypdhhrou lkol") -
+                // kanet ListView horizontal (scroll, fadhel wa7ed
+                // ma7chouch/ma yban ghir b'scroll) - tawa Wrap: kol
+                // el filtres el 6 ybanou fi nefs el wa9t, ydourou
+                // 3ala satrin (wrap) ken el 3ard ma yosa3homch f'satr
+                // wa7ed - mafamech scroll, mafamech 7aja tetfa9ad.
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: sizes.bookingHorizontalPadding),
+                  child: Wrap(
+                    spacing: sizes.screenWidth * 0.02,
+                    runSpacing: sizes.screenHeight * 0.01,
                     children: [
                       _filterChip(
                         sizes: sizes,
@@ -270,7 +282,6 @@ class _SearchScreenState extends State<SearchScreen> {
                           onSelected: (value) => _updateFilters(_filters.copyWith(gender: value, clearGender: value == null)),
                         ),
                       ),
-                      SizedBox(width: sizes.screenWidth * 0.02),
                       _filterChip(
                         sizes: sizes,
                         label: _filters.city ?? 'city_filter_label'.tr(),
@@ -285,7 +296,6 @@ class _SearchScreenState extends State<SearchScreen> {
                           onSelected: (value) => _updateFilters(_filters.copyWith(city: value, clearCity: value == null)),
                         ),
                       ),
-                      SizedBox(width: sizes.screenWidth * 0.02),
                       _filterChip(
                         sizes: sizes,
                         label: _filters.maxDistanceKm == null ? 'distance_filter_label'.tr() : '≤ ${_filters.maxDistanceKm!.toStringAsFixed(0)} km',
@@ -300,14 +310,20 @@ class _SearchScreenState extends State<SearchScreen> {
                           onSelected: (value) => _updateFilters(_filters.copyWith(maxDistanceKm: value, clearMaxDistanceKm: value == null)),
                         ),
                       ),
-                      SizedBox(width: sizes.screenWidth * 0.02),
                       _filterChip(
                         sizes: sizes,
-                        label: 'rating_filter_label'.tr(),
-                        active: false,
-                        onTap: _showRatingNotAvailable,
+                        label: _filters.minRating == null ? 'rating_filter_label'.tr() : '≥ ${_filters.minRating!.toStringAsFixed(1)} ★',
+                        active: _filters.minRating != null,
+                        onTap: () => _showFilterSheet<double>(
+                          title: 'rating_filter_label'.tr(),
+                          selected: _filters.minRating,
+                          options: [
+                            _FilterOption(null, 'filter_any_label'.tr()),
+                            for (final r in _ratingOptions) _FilterOption(r, '≥ ${r.toStringAsFixed(1)} ★'),
+                          ],
+                          onSelected: (value) => _updateFilters(_filters.copyWith(minRating: value, clearMinRating: value == null)),
+                        ),
                       ),
-                      SizedBox(width: sizes.screenWidth * 0.02),
                       _filterChip(
                         sizes: sizes,
                         label: _filters.residenceType == null ? 'residence_filter_label'.tr() : _residenceLabelKeys[_filters.residenceType]!.tr(),
@@ -322,7 +338,6 @@ class _SearchScreenState extends State<SearchScreen> {
                           onSelected: (value) => _updateFilters(_filters.copyWith(residenceType: value, clearResidenceType: value == null)),
                         ),
                       ),
-                      SizedBox(width: sizes.screenWidth * 0.02),
                       _filterChip(
                         sizes: sizes,
                         label: _filters.minMemberMonths == null ? 'member_since_filter_label'.tr() : 'member_since_months_value'.tr(namedArgs: {'months': _filters.minMemberMonths.toString()}),
@@ -394,21 +409,36 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
+  // 🔴 FIX (kifma tlab: "el filtre mahomch lisible lkoll") - kanet text
+  // rose 3ala background rose b'opacity 0.10 (contraste WCAG ~2.9:1,
+  // ta7t el 4.5:1 el minimum) - tawa: fond theme-aware (gris/blanc
+  // transparent, mch rose fadhi) + bordure rose ahfef (accent bark) +
+  // text b'loun el thème (dark/light) - contraste behi fi mode sombre
+  // W light el 2.
+  //
+  // 🔴 FIX (kifma tlab: "ma hbhomch hakk bel ordh... nhbhom yban lkol
+  // fi nefs el wa9t") - el liste kanet ListView horizontal (scroll) -
+  // tawa Wrap (chouf fou9, fel build()) - el filtres el kol ybanou
+  // direct, mafamech scroll wla 7aja tetfa9ad.
   Widget _filterChip({required AppSizes sizes, required String label, required bool active, required VoidCallback onTap}) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color inactiveTextColor = Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black87;
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: sizes.screenWidth * 0.032, vertical: sizes.screenHeight * 0.008),
         decoration: BoxDecoration(
-          color: active ? AppColors.pinkpetsy : AppColors.pinkpetsy.withOpacity(0.10),
+          color: active ? AppColors.pinkpetsy : (isDark ? Colors.white.withOpacity(0.08) : Colors.grey.shade100),
           borderRadius: BorderRadius.circular(20),
+          border: active ? null : Border.all(color: AppColors.pinkpetsy.withOpacity(0.35), width: 1.2),
         ),
         alignment: Alignment.center,
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(label, style: TextStyle(color: active ? Colors.white : AppColors.pinkpetsy, fontSize: sizes.bookingPillFont, fontWeight: FontWeight.w600)),
+            Text(label, style: TextStyle(color: active ? Colors.white : inactiveTextColor, fontSize: sizes.bookingPillFont, fontWeight: FontWeight.w600)),
             SizedBox(width: sizes.screenWidth * 0.01),
             Icon(Icons.keyboard_arrow_down, color: active ? Colors.white : AppColors.pinkpetsy, size: sizes.bookingPillFont * 1.3),
           ],
@@ -429,16 +459,30 @@ class _SearchScreenState extends State<SearchScreen> {
         padding: EdgeInsets.symmetric(vertical: sizes.screenHeight * 0.008),
         child: Row(
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(sizes.bookingAvatarSize * 1.1 / 2),
-              child: Container(
-                width: sizes.bookingAvatarSize * 1.1,
-                height: sizes.bookingAvatarSize * 1.1,
-                color: AppColors.vertpetsy.withOpacity(0.18),
-                child: sitter.photoUrl != null
-                    ? Image.network(sitter.photoUrl!, fit: BoxFit.cover)
-                    : Icon(Icons.person, color: AppColors.vertpetsy, size: sizes.bookingAvatarSize * 0.6),
-              ),
+            // 🔵 ZID (kifma tlab: "el tick bhdha pdp hta el users
+            // lokhrin yrawha") - Stack barra el ClipRRect bch el badge
+            // ma yet9assch (clipBehavior: none).
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(sizes.bookingAvatarSize * 1.1 / 2),
+                  child: Container(
+                    width: sizes.bookingAvatarSize * 1.1,
+                    height: sizes.bookingAvatarSize * 1.1,
+                    color: AppColors.vertpetsy.withOpacity(0.18),
+                    child: sitter.photoUrl != null
+                        ? Image.network(sitter.photoUrl!, fit: BoxFit.cover)
+                        : Icon(Icons.person, color: AppColors.vertpetsy, size: sizes.bookingAvatarSize * 0.6),
+                  ),
+                ),
+                if (sitter.isVerified)
+                  Positioned(
+                    right: -2,
+                    bottom: -2,
+                    child: VerifiedBadge(size: sizes.bookingAvatarSize * 0.3),
+                  ),
+              ],
             ),
             SizedBox(width: sizes.screenWidth * 0.03),
             Expanded(
@@ -455,6 +499,19 @@ class _SearchScreenState extends State<SearchScreen> {
                         sitter.distanceKm != null ? '${sitter.city} · ${sitter.distanceKm}km' : sitter.city,
                         style: TextStyle(fontSize: sizes.myProfileBodyFontSize * 0.75, color: mutedTextColor),
                       ),
+                      // 🔴 FIX (kifma tlab: "les note mch deja dispo?") -
+                      // note twarri houni (ken 3andou avis 3ala l'a9al
+                      // wa7ed - reviewsCount > 0) - bch el filtre "Note"
+                      // ykoun mfahhem 3al résultats.
+                      if (sitter.reviewsCount > 0) ...[
+                        SizedBox(width: sizes.screenWidth * 0.02),
+                        Icon(Icons.star_rounded, size: sizes.myProfileBodyFontSize * 0.75, color: Colors.amber),
+                        SizedBox(width: sizes.screenWidth * 0.004),
+                        Text(
+                          sitter.rating.toStringAsFixed(1),
+                          style: TextStyle(fontSize: sizes.myProfileBodyFontSize * 0.75, color: mutedTextColor, fontWeight: FontWeight.w600),
+                        ),
+                      ],
                     ],
                   ),
                 ],

@@ -7,6 +7,7 @@ import '../../../models/pet_summary.dart';
 import '../../../services/api_service.dart';
 import '../../../controllers/auth_session.dart';
 import '../../../widgets/pet_tile.dart';
+import '../../../widgets/verified_badge.dart';
 import '../../../widgets/drawers/sidebar_owner.dart';
 import 'create_pet_profile.dart';
 import 'see_all_pets.dart';
@@ -37,6 +38,8 @@ class _SitterSummary {
   // photo, ghir icon generic.
   final String? photoUrl;
   bool isFavorite;
+  // 🔵 ZID (kifma tlab: "el tick bhdha pdp hta el users lokhrin yrawha").
+  final bool isVerified;
 
   _SitterSummary({
     this.id,
@@ -46,6 +49,7 @@ class _SitterSummary {
     required this.city,
     this.photoUrl,
     this.isFavorite = false,
+    this.isVerified = false,
   });
 }
 
@@ -63,6 +67,13 @@ class ProfileOwnerScreen extends StatefulWidget {
   // photo tel owner kanet dima tban icon ba3d login (7atta lowkan
   // 3andou photo mzouda fel base) - nafs el mant9 tel pet (pet_tile.dart).
   final String? ownerPhotoUrl;
+  // 🔵 ZID (kifma tlab: "nhbha el tick todhhor hatta fi profile...
+  // fel home fel pdp mteou") - badge bleu 3al avatar tel header (home
+  // screen), mch ghir "My Profile".
+  final bool isVerified;
+  // 🔵 ZID (kifma tlab: "ken el user homme nkhalliwh vert, keno femme
+  // pink") - couleur el sidebar (header) 7asb el gender.
+  final String? gender;
 
   const ProfileOwnerScreen({
     super.key,
@@ -71,6 +82,8 @@ class ProfileOwnerScreen extends StatefulWidget {
     required this.pets,
     this.ownerPhotoBytes,
     this.ownerPhotoUrl,
+    this.isVerified = false,
+    this.gender,
   });
 
   @override
@@ -150,6 +163,7 @@ class _ProfileOwnerScreenState extends State<ProfileOwnerScreen> {
               // 🔵 ZID (kifma tlab): "My Favourites" - el heart mel
               // bidaya sa7i7 (mfilé lowkan déjà favori mel backend).
               isFavorite: json['isFavorite'] as bool? ?? false,
+              isVerified: json['isVerified'] as bool? ?? false,
             );
           }).toList();
           _isLoadingSitters = false;
@@ -193,6 +207,8 @@ class _ProfileOwnerScreenState extends State<ProfileOwnerScreen> {
         ownerCity: widget.ownerCity,
         ownerPhotoBytes: widget.ownerPhotoBytes,
         ownerPhotoUrl: widget.ownerPhotoUrl,
+        isVerified: widget.isVerified,
+        gender: widget.gender,
       ),
       body: SafeArea(
         // 🔵 kolchi jowa SingleChildScrollView wa7da - hedhi elli
@@ -212,23 +228,37 @@ class _ProfileOwnerScreenState extends State<ProfileOwnerScreen> {
                 children: [
                   // 🔵 photo mrabba3a (mch dayra) - nafs el mant9 elli
                   // t9arret fi add_pet_photo.dart
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(14),
-                    child: Container(
-                      width: screenSize.width * 0.13,
-                      height: screenSize.width * 0.13,
-                      color: AppColors.vertpetsy.withOpacity(0.15),
-                      // 🔵 ZID: el photo el 7a9i9iya - bytes (mémoire,
-                      // ba3d signup direct) awalan, wala URL (mel
-                      // backend, Image.network, ba3d login mel jdid) -
-                      // wala icon placeholder. Nafs mant9 el pet
-                      // (widgets/pet_tile.dart).
-                      child: widget.ownerPhotoBytes != null
-                          ? Image.memory(widget.ownerPhotoBytes!, fit: BoxFit.cover)
-                          : widget.ownerPhotoUrl != null
-                              ? Image.network(widget.ownerPhotoUrl!, fit: BoxFit.cover)
-                              : Icon(Icons.person, color: AppColors.vertpetsy, size: screenSize.width * 0.08),
-                    ),
+                  // 🔵 ZID (kifma tlab: "el tick... fel home fel pdp
+                  // mteou") - Stack+Positioned, clipBehavior none bch
+                  // el badge ma yet9assch mel ClipRRect.
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(14),
+                        child: Container(
+                          width: screenSize.width * 0.13,
+                          height: screenSize.width * 0.13,
+                          color: AppColors.vertpetsy.withOpacity(0.15),
+                          // 🔵 ZID: el photo el 7a9i9iya - bytes (mémoire,
+                          // ba3d signup direct) awalan, wala URL (mel
+                          // backend, Image.network, ba3d login mel jdid) -
+                          // wala icon placeholder. Nafs mant9 el pet
+                          // (widgets/pet_tile.dart).
+                          child: widget.ownerPhotoBytes != null
+                              ? Image.memory(widget.ownerPhotoBytes!, fit: BoxFit.cover)
+                              : widget.ownerPhotoUrl != null
+                                  ? Image.network(widget.ownerPhotoUrl!, fit: BoxFit.cover)
+                                  : Icon(Icons.person, color: AppColors.vertpetsy, size: screenSize.width * 0.08),
+                        ),
+                      ),
+                      if (widget.isVerified)
+                        Positioned(
+                          right: -3,
+                          bottom: -3,
+                          child: VerifiedBadge(size: screenSize.width * 0.038),
+                        ),
+                    ],
                   ),
 
                   SizedBox(width: screenSize.width * 0.03),
@@ -582,18 +612,33 @@ class _SitterCard extends StatelessWidget {
           children: [
             // 🔵 photo mrabba3a (mch rectangle) - AspectRatio 1:1, bla
             // 9alb fou9ha tawa (nzelnah taht, chrahtha fou9)
+            // 🔵 ZID (kifma tlab: "el tick bhdha pdp hta el users
+            // lokhrin yrawha") - Stack barra el ClipRRect (bch el badge
+            // ma yet9assch, Positioned lezmou "clipBehavior: none").
             Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                // 🔴 FIX: kanet TODO (icon generic bark, 7atta lowkan el
-                // sitter 3andou photo mzouda).
-                child: Container(
-                  width: double.infinity,
-                  color: AppColors.vertpetsy.withOpacity(0.18),
-                  child: sitter.photoUrl != null
-                      ? Image.network(sitter.photoUrl!, fit: BoxFit.cover)
-                      : Icon(Icons.person, color: AppColors.vertpetsy, size: screenWidth * 0.12),
-                ),
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    // 🔴 FIX: kanet TODO (icon generic bark, 7atta lowkan el
+                    // sitter 3andou photo mzouda).
+                    child: Container(
+                      width: double.infinity,
+                      height: double.infinity,
+                      color: AppColors.vertpetsy.withOpacity(0.18),
+                      child: sitter.photoUrl != null
+                          ? Image.network(sitter.photoUrl!, fit: BoxFit.cover)
+                          : Icon(Icons.person, color: AppColors.vertpetsy, size: screenWidth * 0.12),
+                    ),
+                  ),
+                  if (sitter.isVerified)
+                    Positioned(
+                      right: -2,
+                      bottom: -2,
+                      child: VerifiedBadge(size: screenWidth * 0.05),
+                    ),
+                ],
               ),
             ),
           SizedBox(height: screenWidth * 0.015),

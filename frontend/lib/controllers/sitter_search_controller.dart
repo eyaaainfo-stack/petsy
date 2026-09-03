@@ -15,6 +15,12 @@ class SitterSearchResult {
   final DateTime? memberSince;
   final double? distanceKm;
   final bool isFavorite;
+  final bool isVerified;
+  // 🔴 FIX (kifma tlab: "les note mch deja dispo?") - kanet mafamech
+  // (filtre "Note" désactivé b'ghalta) - el data el 7a9i9iya déjà
+  // mawjouda mel backend (CheckoutQuestionnaire) - houni ghir n-parsiha.
+  final double rating;
+  final int reviewsCount;
 
   const SitterSearchResult({
     required this.id,
@@ -26,6 +32,9 @@ class SitterSearchResult {
     this.memberSince,
     this.distanceKm,
     this.isFavorite = false,
+    this.isVerified = false,
+    this.rating = 0,
+    this.reviewsCount = 0,
   });
 
   factory SitterSearchResult.fromJson(Map<String, dynamic> json) {
@@ -41,6 +50,9 @@ class SitterSearchResult {
       memberSince: rawMemberSince != null ? DateTime.tryParse(rawMemberSince) : null,
       distanceKm: (json['distanceKm'] as num?)?.toDouble(),
       isFavorite: json['isFavorite'] as bool? ?? false,
+      isVerified: json['isVerified'] as bool? ?? false,
+      rating: (json['rating'] as num?)?.toDouble() ?? 0,
+      reviewsCount: json['reviewsCount'] as int? ?? 0,
     );
   }
 }
@@ -57,6 +69,9 @@ class SitterSearchFilters {
   final String? residenceType; // 'apartment' / 'house' / 'countryHouse'
   final double? maxDistanceKm;
   final int? minMemberMonths;
+  // 🔴 FIX (kifma tlab: "les note mch deja dispo?") - filtre "Note"
+  // 7a9i9i tawa (kan désactivé b'ghalta).
+  final double? minRating;
 
   const SitterSearchFilters({
     this.gender,
@@ -64,9 +79,10 @@ class SitterSearchFilters {
     this.residenceType,
     this.maxDistanceKm,
     this.minMemberMonths,
+    this.minRating,
   });
 
-  bool get isEmpty => gender == null && city == null && residenceType == null && maxDistanceKm == null && minMemberMonths == null;
+  bool get isEmpty => gender == null && city == null && residenceType == null && maxDistanceKm == null && minMemberMonths == null && minRating == null;
 
   SitterSearchFilters copyWith({
     String? gender,
@@ -79,6 +95,8 @@ class SitterSearchFilters {
     bool clearMaxDistanceKm = false,
     int? minMemberMonths,
     bool clearMinMemberMonths = false,
+    double? minRating,
+    bool clearMinRating = false,
   }) {
     return SitterSearchFilters(
       gender: clearGender ? null : (gender ?? this.gender),
@@ -86,6 +104,7 @@ class SitterSearchFilters {
       residenceType: clearResidenceType ? null : (residenceType ?? this.residenceType),
       maxDistanceKm: clearMaxDistanceKm ? null : (maxDistanceKm ?? this.maxDistanceKm),
       minMemberMonths: clearMinMemberMonths ? null : (minMemberMonths ?? this.minMemberMonths),
+      minRating: clearMinRating ? null : (minRating ?? this.minRating),
     );
   }
 }
@@ -100,6 +119,7 @@ class SitterSearchController {
       if (filters.residenceType != null) params['residenceType'] = filters.residenceType!;
       if (filters.maxDistanceKm != null) params['maxDistanceKm'] = filters.maxDistanceKm!.toString();
       if (filters.minMemberMonths != null) params['minMemberMonths'] = filters.minMemberMonths!.toString();
+      if (filters.minRating != null) params['minRating'] = filters.minRating!.toString();
 
       final String queryString = params.entries.map((e) => '${Uri.encodeQueryComponent(e.key)}=${Uri.encodeQueryComponent(e.value)}').join('&');
       final String path = '/users/sitters/search${queryString.isNotEmpty ? '?$queryString' : ''}';

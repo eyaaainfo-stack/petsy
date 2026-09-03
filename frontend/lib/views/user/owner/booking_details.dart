@@ -7,6 +7,7 @@ import '../../../controllers/les_reservations_controller.dart';
 import '../../../controllers/request_controller.dart';
 import '../../../widgets/pet_avatars_stack.dart';
 import '../sitter/view_profile_sitter.dart';
+import '../../../widgets/message_dialog.dart';
 
 // ============================================================================
 // BookingDetailsScreen ("Bookings Details") - owner
@@ -137,13 +138,11 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
     setState(() => _isResponding = false);
 
     if (!success) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('profile_submit_error'.tr())));
+      showMessageDialog(context, 'profile_submit_error'.tr());
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(accept ? 'candidate_confirmed_toast'.tr() : 'candidate_declined_toast'.tr())),
-    );
+    showMessageDialog(context, accept ? 'candidate_confirmed_toast'.tr() : 'candidate_declined_toast'.tr());
     Navigator.of(context).pop(true);
   }
 

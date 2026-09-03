@@ -5,8 +5,8 @@ import '../../constants/app_colors.dart';
 import '../../constants/app_sizes.dart';
 import '../../controllers/auth_session.dart';
 import '../../repositories/pet_repository.dart';
-import '../paw_widget.dart';
-import 'sidebar_item.dart';
+import '../verified_badge.dart';
+import 'sidebar_pill_item.dart';
 import '../../views/user/account_type.dart';
 import '../../views/user/owner/profile_owner.dart';
 import '../../views/user/owner/my_profile_owner.dart';
@@ -17,23 +17,27 @@ import '../../views/user/owner/les_reservations.dart';
 import '../../controllers/notification_controller.dart';
 
 // ============================================================================
-// SidebarOwner (Drawer tel owner)
+// SidebarOwner (Drawer tel owner) - redesign "moderne"
 // ============================================================================
-// 🔵 "kif kif" (kifma tlabt) - NAFS design/mant9 SidebarSitter (widgets/
-// drawers/sidebar_sitter.dart) b7ذافيرha (rose ahfef, photo mrabb3a
-// akbar fel west, shape melouta, mafamech VetBot) - ghir el esm/navigation
-// mbadlin lel "owner".
+// 🔴 FIX (kifma tlab: "nhb hatta el sitter wel owner [nafs redesign
+// tel SidebarAdmin]") - kanet: header rose "block" + liste satr/satr
+// b'dividers + background dark hardcodé.
 //
-// 🔴 Farq WA7ED 3an SidebarSitter: "Home" houni ASYNC - 7it
-// ProfileOwnerScreen yestenna "pets" (obligatoire, List<PetSummary>) -
-// fa lezemna njibou el pets mel backend (PetRepository.fetchOwnerPets())
-// 9bal ma nnavigui-w, nafs mant9 splash_decider.dart/user_login.dart.
+// Tawa: header b'gradient rose ahfef (mch color wa7da flat), avatar
+// dayer (mch mrabb3) + VerifiedBadge (kifma tlab 9bal, "el tick...
+// fel home fel pdp mteou" - tawa fel sidebar zeda), badge "chip"
+// moderne. El menu: "pilules" (SidebarPillItem, widget PARTAGÉ m3a
+// SidebarAdmin/SidebarSitter) - background theme-aware.
 // ============================================================================
 class SidebarOwner extends StatefulWidget {
   final String ownerName;
   final String ownerCity;
   final Uint8List? ownerPhotoBytes;
   final String? ownerPhotoUrl;
+  final bool isVerified;
+  // 🔵 ZID (kifma tlab: "ken el user homme nkhalliwh vert, keno femme
+  // pink") - couleur el header + bouton "About us" 7asb el gender.
+  final String? gender;
 
   const SidebarOwner({
     super.key,
@@ -41,6 +45,8 @@ class SidebarOwner extends StatefulWidget {
     required this.ownerCity,
     this.ownerPhotoBytes,
     this.ownerPhotoUrl,
+    this.isVerified = false,
+    this.gender,
   });
 
   @override
@@ -90,39 +96,41 @@ class _SidebarOwnerState extends State<SidebarOwner> {
           pets: pets,
           ownerPhotoBytes: widget.ownerPhotoBytes,
           ownerPhotoUrl: widget.ownerPhotoUrl,
+          isVerified: widget.isVerified,
+          gender: widget.gender,
         ),
       ),
       (route) => false,
     );
   }
 
-  // 🔵 el screens l'okhrin (Calendar/Messages/About us) mazel ma
-  // tsawbouch - TODO bark, ghir yghaleg el drawer (bla crash "route
-  // not found").
+  // 🔵 el screens l'okhrin (Messages/About us) mazel ma tsawbouch -
+  // TODO bark, ghir yghaleg el drawer (bla crash "route not found").
   void _notImplementedYet(BuildContext context) {
     Navigator.of(context).pop();
   }
 
+  // 🔵 ZID (kifma tlab: "ken el user homme nkhalliwh vert, keno femme
+  // pink") - couleur el header (+ "About us") 7asb el gender - homme
+  // -> vertpetsy, femme (wla mch renseigné) -> pinkpetsy (el couleur
+  // "par défaut" tel app déjà - kifma kanet 9bal el feature hedhi).
+  Color get _accentColor => widget.gender == 'male' ? AppColors.vertpetsy : AppColors.pinkpetsy;
+
   @override
   Widget build(BuildContext context) {
     final sizes = AppSizes.of(context);
-    final Color softPink = Color.lerp(AppColors.pinkpetsy, Colors.white, 0.35)!;
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Drawer(
       width: sizes.sidebarWidth,
-      // 🔴 FIX (kifma tlab): "badel el vert bel blanc, w el bordure
-      // mte3ha bel vert" - bdal background KAMEL a5dhar, tawa abyadh
-      // (dark -> surface ghamqa, mch abyadh fa9i3 fel dark mode) +
-      // bordure a5dhar 3al drawer kaملou (shape).
-      backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-      shape: Border(right: BorderSide(color: AppColors.vertpetsy, width: 2)),
+      // 🔴 FIX: kanet #1E1E1E hardcodé (dark) - tawa scaffoldBackgroundColor
+      // (el theme el 7a9i9i tel app, yet3addel automatique).
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       child: SafeArea(
         child: Column(
           children: [
             // ----------------------------------------------------------
-            // Header: background rose ahfef, paws, photo mrabb3a akbar
-            // fel west + esm
+            // Header: gradient rose + avatar dayer + VerifiedBadge +
+            // badge "chip" moderne.
             // ----------------------------------------------------------
             Container(
               width: double.infinity,
@@ -131,64 +139,86 @@ class _SidebarOwnerState extends State<SidebarOwner> {
                 vertical: sizes.sidebarHeaderPadding,
               ),
               decoration: BoxDecoration(
-                color: softPink,
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [_accentColor, Color.lerp(_accentColor, Colors.white, 0.3)!],
+                ),
                 borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(36),
-                  bottomRight: Radius.circular(36),
+                  bottomLeft: Radius.circular(32),
+                  bottomRight: Radius.circular(32),
                 ),
               ),
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
                   Positioned(
-                    top: 0,
-                    right: sizes.screenWidth * 0.02,
-                    child: Icon(Icons.pets, color: Colors.white.withOpacity(0.5), size: sizes.sidebarPawSize1),
-                  ),
-                  Positioned(
-                    top: sizes.screenHeight * 0.035,
-                    right: -sizes.screenWidth * 0.01,
-                    child: Icon(Icons.pets, color: Colors.white.withOpacity(0.35), size: sizes.sidebarPawSize2),
+                    top: -4,
+                    right: sizes.screenWidth * 0.01,
+                    child: Icon(Icons.pets, color: Colors.white.withOpacity(0.18), size: sizes.sidebarPawSize1),
                   ),
                   SizedBox(
                     width: double.infinity,
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        SizedBox(height: sizes.screenHeight * 0.015),
-                        // 🔴 FIX: rja3t l mrabb3a (ClipRRect) - "meme
-                        // design" kifma tlabt (design/shape LEZEM ykoun
-                        // kif kif bin owner w sitter, el image kanet
-                        // ghir data reference - esm/"Bookings" - mch
-                        // design change).
-                        // 🔵 ZID (kifma tlab): bordure a5dhar 3al pdp zeda.
-                        Container(
-                          padding: const EdgeInsets.all(2.5),
-                          decoration: BoxDecoration(borderRadius: BorderRadius.circular(22), border: Border.all(color: AppColors.vertpetsy, width: 2.5)),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
-                            child: Container(
-                              width: sizes.sidebarPhotoSize,
-                              height: sizes.sidebarPhotoSize,
-                              color: Colors.white,
-                              child: widget.ownerPhotoBytes != null
-                                  ? Image.memory(widget.ownerPhotoBytes!, fit: BoxFit.cover)
-                                  : widget.ownerPhotoUrl != null
-                                      ? Image.network(widget.ownerPhotoUrl!, fit: BoxFit.cover)
-                                      : Icon(Icons.person, color: AppColors.pinkpetsy, size: sizes.sidebarPhotoSize * 0.55),
+                        SizedBox(height: sizes.screenHeight * 0.01),
+                        // 🔵 avatar dayer (mch mrabb3) - ring blanche
+                        // + VerifiedBadge (kifma tlab 9bal, tawa fel
+                        // sidebar zeda, mch ghir home/my profile).
+                        Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(3),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white.withOpacity(0.85), width: 2.5),
+                              ),
+                              child: ClipOval(
+                                child: Container(
+                                  width: sizes.sidebarPhotoSize,
+                                  height: sizes.sidebarPhotoSize,
+                                  color: Colors.white,
+                                  child: widget.ownerPhotoBytes != null
+                                      ? Image.memory(widget.ownerPhotoBytes!, fit: BoxFit.cover)
+                                      : widget.ownerPhotoUrl != null
+                                          ? Image.network(widget.ownerPhotoUrl!, fit: BoxFit.cover)
+                                          : Icon(Icons.person, color: _accentColor, size: sizes.sidebarPhotoSize * 0.55),
+                                ),
+                              ),
                             ),
-                          ),
+                            if (widget.isVerified)
+                              Positioned(
+                                right: -2,
+                                bottom: -2,
+                                child: VerifiedBadge(size: sizes.sidebarVerifiedBadgeSize),
+                              ),
+                          ],
                         ),
                         SizedBox(height: sizes.screenHeight * 0.014),
                         Text(
                           widget.ownerName,
                           textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                             fontSize: sizes.sidebarNameFontSize,
                           ),
                         ),
+                        if (widget.ownerCity.isNotEmpty) ...[
+                          SizedBox(height: sizes.screenHeight * 0.004),
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: sizes.screenWidth * 0.03, vertical: sizes.screenWidth * 0.012),
+                            decoration: BoxDecoration(color: Colors.white.withOpacity(0.22), borderRadius: BorderRadius.circular(20)),
+                            child: Text(
+                              widget.ownerCity,
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: sizes.sidebarNameFontSize * 0.5),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -196,43 +226,40 @@ class _SidebarOwnerState extends State<SidebarOwner> {
               ),
             ),
 
-            SizedBox(height: sizes.screenHeight * 0.01),
+            SizedBox(height: sizes.screenHeight * 0.016),
 
             // ----------------------------------------------------------
-            // Liste el menu (Account/Home/Bookings/Notifications/
-            // Messages/Settings/Log out) - fond teal
+            // Liste el menu - "pilules" (SidebarPillItem, mch satr/satr
+            // b'dividers kifma 9bal).
             // ----------------------------------------------------------
             Expanded(
               child: SingleChildScrollView(
                 padding: EdgeInsets.symmetric(horizontal: sizes.sidebarHeaderPadding),
                 child: Column(
                   children: [
-                    SidebarItem(
+                    SidebarPillItem(
                       icon: Icons.person_outline,
                       label: 'account_label'.tr(),
-                      sizes: sizes,
+                      color: AppColors.vertpetsy,
                       onTap: () {
-                        // 🔴 FIX: kanet TODO - tawa ymchi l "My Profile"
-                        // (my_profile_owner.dart).
                         Navigator.of(context).pop();
                         Navigator.of(context).push(
                           MaterialPageRoute(builder: (_) => const MyProfileOwnerScreen()),
                         );
                       },
                     ),
-                    SidebarItem(
+                    SizedBox(height: sizes.sidebarPillGap),
+                    SidebarPillItem(
                       icon: Icons.home_outlined,
                       label: 'home_label'.tr(),
-                      sizes: sizes,
+                      color: AppColors.pinkpetsy,
                       onTap: () => _onHomePressed(context),
                     ),
-                    SidebarItem(
+                    SizedBox(height: sizes.sidebarPillGap),
+                    SidebarPillItem(
                       icon: Icons.calendar_today_outlined,
-                      label: 'bookings_label'.tr(), // 🔴 FIX: "Bookings" mch "Calendar" (mockup el owner)
-                      sizes: sizes,
-                      // 🔴 FIX (kifma tlab): kanet TODO - tawa ymchi l
-                      // "Bookings" (les_reservations.dart) - data 7a9i9iya
-                      // (GET /api/bookings/mine).
+                      label: 'bookings_label'.tr(),
+                      color: AppColors.vertpetsy,
                       onTap: () {
                         Navigator.of(context).pop();
                         Navigator.of(context).push(
@@ -240,10 +267,11 @@ class _SidebarOwnerState extends State<SidebarOwner> {
                         );
                       },
                     ),
-                    SidebarItem(
+                    SizedBox(height: sizes.sidebarPillGap),
+                    SidebarPillItem(
                       icon: Icons.notifications_outlined,
                       label: 'notifications_label'.tr(),
-                      sizes: sizes,
+                      color: AppColors.pinkpetsy,
                       // 🔵 ZID (kifma tlab): badge b ra9m el notifications
                       // ma9rou2ach.
                       badgeCount: _unreadCount,
@@ -253,22 +281,23 @@ class _SidebarOwnerState extends State<SidebarOwner> {
                           MaterialPageRoute(builder: (_) => const NotificationsScreen()),
                         );
                         // 🔵 ba3d ma el user yerja3 (notifications tawa
-                        // "read"), n3awdou njibou el count (bch el badge
-                        // yeb9a mzabet, mch stale).
+                        // "read"), n3awdou njibou el count.
                         _fetchUnreadCount();
                       },
                     ),
-                    SidebarItem(
+                    SizedBox(height: sizes.sidebarPillGap),
+                    SidebarPillItem(
                       icon: Icons.chat_bubble_outline,
                       label: 'messages_label'.tr(),
-                      sizes: sizes,
+                      color: AppColors.vertpetsy,
                       onTap: () => _notImplementedYet(context),
                     ),
+                    SizedBox(height: sizes.sidebarPillGap),
                     // 🔵 ZID (kifma tlab): "My Favourites"
-                    SidebarItem(
+                    SidebarPillItem(
                       icon: Icons.favorite_outline,
                       label: 'favourites_label'.tr(),
-                      sizes: sizes,
+                      color: AppColors.pinkpetsy,
                       onTap: () {
                         Navigator.of(context).pop();
                         Navigator.of(context).push(
@@ -276,11 +305,13 @@ class _SidebarOwnerState extends State<SidebarOwner> {
                         );
                       },
                     ),
-                    // 🔵 ZID (kifma tlab): "Settings" (Theme + Language)
-                    SidebarItem(
+                    SizedBox(height: sizes.sidebarPillGap),
+                    // 🔵 ZID (kifma tlab): "Settings" (Theme + Language +
+                    // Vérification).
+                    SidebarPillItem(
                       icon: Icons.settings_outlined,
                       label: 'settings_label'.tr(),
-                      sizes: sizes,
+                      color: AppColors.vertpetsy,
                       onTap: () {
                         Navigator.of(context).pop();
                         Navigator.of(context).push(
@@ -288,13 +319,16 @@ class _SidebarOwnerState extends State<SidebarOwner> {
                         );
                       },
                     ),
-                    SidebarItem(
+                    SizedBox(height: sizes.adminSidebarLogoutGap),
+                    // 🔵 Déconnexion: accent rouge, mfaraz b'gap akbar -
+                    // action "destructive" (nafs convention SidebarAdmin).
+                    SidebarPillItem(
                       icon: Icons.logout,
                       label: 'log_out_label'.tr(),
-                      sizes: sizes,
-                      showDivider: false,
+                      color: AppColors.error,
                       onTap: () => _onLogoutPressed(context),
                     ),
+                    SizedBox(height: sizes.sidebarPillGap),
                   ],
                 ),
               ),
@@ -310,9 +344,9 @@ class _SidebarOwnerState extends State<SidebarOwner> {
                 height: sizes.sidebarAboutButtonHeight,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: softPink,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
-                    elevation: 2,
+                    backgroundColor: _accentColor,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                    elevation: 0,
                   ),
                   onPressed: () => _notImplementedYet(context),
                   child: Text(

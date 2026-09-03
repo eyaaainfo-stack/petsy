@@ -9,6 +9,7 @@ import '../../../widgets/paw_widget.dart';
 import '../../../controllers/create_pet_profile_2_controller.dart';
 import '../../../models/pet_summary.dart';
 import 'add_pet_photo.dart';
+import '../../../widgets/message_dialog.dart';
 
 // ============================================================================
 // CreatePetProfile2Screen ("Pet's behavior and care")
@@ -98,9 +99,7 @@ class _CreatePetProfile2ScreenState extends State<CreatePetProfile2Screen> {
     // 🔵 el behaviors mch TextFormField (Set, mch controller), fa
     // nchekkouha b'el yed - "obligatoire GHIR el vétérinaire optionnel".
     if (_selectedBehaviors.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('behavior_required_error'.tr())),
-      );
+      showMessageDialog(context, 'behavior_required_error'.tr());
       return;
     }
 
@@ -125,9 +124,7 @@ class _CreatePetProfile2ScreenState extends State<CreatePetProfile2Screen> {
     setState(() => _isSubmitting = false);
 
     if (petId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('pet_save_error'.tr())),
-      );
+      showMessageDialog(context, 'pet_save_error'.tr());
       return;
     }
 

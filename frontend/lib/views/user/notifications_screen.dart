@@ -10,6 +10,7 @@ import '../../controllers/les_reservations_controller.dart';
 import '../../controllers/auth_session.dart';
 import 'sitter/request.dart';
 import 'owner/booking_details.dart';
+import '../../widgets/message_dialog.dart';
 
 // ============================================================================
 // NotificationsScreen ("Notifications")
@@ -71,6 +72,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         return Icons.info_outline;
       case 'message':
         return Icons.chat_bubble_outline;
+      case 'account_verified':
+        return Icons.verified;
       default:
         return Icons.notifications_none;
     }
@@ -108,7 +111,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     if (!mounted) return;
     if (!ok) {
       setState(() => _processingIds.remove(item.id));
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('profile_submit_error'.tr())));
+      showMessageDialog(context, 'profile_submit_error'.tr());
       return;
     }
     _markActioned(item.id);
@@ -121,7 +124,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     if (!mounted) return;
     if (!ok) {
       setState(() => _processingIds.remove(item.id));
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('profile_submit_error'.tr())));
+      showMessageDialog(context, 'profile_submit_error'.tr());
       return;
     }
     _markActioned(item.id);
@@ -172,7 +175,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     Navigator.of(context, rootNavigator: true).pop(); // yghaleg el loading dialog
 
     if (booking == null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('profile_submit_error'.tr())));
+      showMessageDialog(context, 'profile_submit_error'.tr());
       return;
     }
     Navigator.of(context).push(

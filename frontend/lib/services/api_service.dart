@@ -33,7 +33,7 @@ class ApiService {
   //     (el IP tel PC: ipconfig fi terminal, w el PC w el téléphone
   //     lezmin fi nefs el WiFi)
   // --------------------------------------------------------------------
-  static const String baseUrl = 'http://192.168.1.201:5000/api';
+  static const String baseUrl = 'http://localhost:5000/api';
 
   // 🔵 ZID: lel photos (pets/users, mathalan "/uploads/pets/xxx.jpg")
   // - hedhi el routes TAHT el root (mch taht "/api"), fa lezemna base
@@ -97,6 +97,38 @@ class ApiService {
     return http.Response.fromStream(streamedResponse);
   }
 
+  // 🔵 ZID (kifma tlab: "sawae el cin mteek men kodem w men telii") -
+  // 2 fichiers (front+back) fi NEFS el appel (multipart/fields, mch 2
+  // appels mnfaslin) - testa3mel fel CIN (recto+verso f'nefs el popup).
+  static Future<http.Response> uploadTwoPhotos(
+    String path, {
+    required Uint8List firstBytes,
+    required String firstFieldName,
+    required Uint8List secondBytes,
+    required String secondFieldName,
+    String? token,
+  }) async {
+    final request = http.MultipartRequest('POST', Uri.parse('$baseUrl$path'));
+    if (token != null) {
+      request.headers['Authorization'] = 'Bearer $token';
+    }
+    request.files.add(http.MultipartFile.fromBytes(
+      firstFieldName,
+      firstBytes,
+      filename: '$firstFieldName.jpg',
+      contentType: MediaType('image', 'jpeg'),
+    ));
+    request.files.add(http.MultipartFile.fromBytes(
+      secondFieldName,
+      secondBytes,
+      filename: '$secondFieldName.jpg',
+      contentType: MediaType('image', 'jpeg'),
+    ));
+
+    final streamedResponse = await request.send().timeout(_uploadTimeout);
+    return http.Response.fromStream(streamedResponse);
+  }
+
   static Future<http.Response> get(String path, {String? token}) {
     return http.get(
       Uri.parse('$baseUrl$path'),
@@ -119,6 +151,37 @@ class ApiService {
   }
 
   // 🔵 ZID: patch (el backend yesta3mel PATCH lel update profile, mch PUT)
+  // 🔵 ZID: delete (mafamech 9bal - lezمha lel "Gestion des comptes",
+  // supprimer un compte).
+  static Future<http.Response> delete(String path, {String? token}) {
+    return http.delete(
+      Uri.parse('$baseUrl$path'),
+      headers: {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      },
+    ).timeout(_timeout);
+  }
+
+  // 🔵 ZID (kifma tlab: "supprimer le compte kima el confidentialite
+  // mtaa el fb") - DELETE m3a body (password l'confirmation) - http's
+  // http.delete() 3adi ma yesta3malch body, fa houni http.Request
+  // manuel (bch nnajjmou nzidou jsonEncode(body)).
+  static Future<http.Response> deleteWithBody(String path, Map<String, dynamic> body, {String? token}) async {
+    final request = http.Request('DELETE', Uri.parse('$baseUrl$path'));
+    request.headers['Content-Type'] = 'application/json';
+    if (token != null) request.headers['Authorization'] = 'Bearer $token';
+    request.body = jsonEncode(body);
+
+    final streamedResponse = await request.send().timeout(_timeout);
+    return http.Response.fromStream(streamedResponse);
+  }
+
+  // 🔵 patch (el backend yesta3mel PATCH lel update profile, mch PUT)
+  // 🔴 FIX: t7ذفet par erreur ki zdet delete() (round ta3 "Gestion des
+  // comptes") - kol el controllers l'okhrin (availability, favorites,
+  // notifications, request, update_pet_profile, user_create_profile...)
+  // yesta3malouha - "undefined_method 'patch'" partout. Rej3itha.
   static Future<http.Response> patch(String path, Map<String, dynamic> body, {String? token}) {
     return http.patch(
       Uri.parse('$baseUrl$path'),

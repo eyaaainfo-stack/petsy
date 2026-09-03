@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:easy_localization/easy_localization.dart';
 import '../constants/app_colors.dart';
 import 'button.dart';
+import 'message_dialog.dart';
 
 // ============================================================================
 // LocationResult: el "value" elli LocationPickerScreen tarja3ha ba3d
@@ -94,7 +95,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
 
   void _showSnack(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    showMessageDialog(context, message);
   }
 
   void _setLocation(LatLng latLng, {double zoom = 15.0}) {

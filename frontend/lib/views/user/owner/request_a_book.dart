@@ -10,6 +10,7 @@ import '../../../controllers/my_profile_controller.dart';
 import '../../../models/pet_summary.dart';
 import '../../../models/my_profile_data.dart';
 import '../../../repositories/pet_repository.dart';
+import '../../../widgets/message_dialog.dart';
 
 // ============================================================================
 // RequestABookScreen ("Request a Book")
@@ -137,22 +138,22 @@ class _RequestABookScreenState extends State<RequestABookScreen> {
     if (_isSubmitting) return;
 
     if (_selectedDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('select_date_error'.tr())));
+      showMessageDialog(context, 'select_date_error'.tr());
       return;
     }
     // 🔵 ZID (filet de sécurité): lowkan el data tel disponibilité
     // weslet METAKHRA (async, ba3d ma el user déjà 5tar el date) - nre-
     // chekkou houni zeda 9bal el ib3ath.
     if (_isDateUnavailable(_selectedDate!)) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('sitter_unavailable_this_day_error'.tr())));
+      showMessageDialog(context, 'sitter_unavailable_this_day_error'.tr());
       return;
     }
     if (_selectedPetIds.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('select_pet_error'.tr())));
+      showMessageDialog(context, 'select_pet_error'.tr());
       return;
     }
     if (_selectedServiceIds.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('select_service_error'.tr())));
+      showMessageDialog(context, 'select_service_error'.tr());
       return;
     }
     final checkIn = DateTime(_selectedDate!.year, _selectedDate!.month, _selectedDate!.day, _checkInTime.hour, _checkInTime.minute);
@@ -160,13 +161,13 @@ class _RequestABookScreenState extends State<RequestABookScreen> {
 
     // 🔴 FIX (kifma tlab): checkout lezmou ykoun BA3D checkin.
     if (!checkOut.isAfter(checkIn)) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('checkout_before_checkin_error'.tr())));
+      showMessageDialog(context, 'checkout_before_checkin_error'.tr());
       return;
     }
     // 🔴 FIX (kifma tlab): checkin lezmou ykoun 3al a9al SA3A wa7da
     // mel wa9t el 7ali.
     if (checkIn.isBefore(DateTime.now().add(const Duration(hours: 1)))) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('checkin_too_soon_error'.tr())));
+      showMessageDialog(context, 'checkin_too_soon_error'.tr());
       return;
     }
 
@@ -190,7 +191,7 @@ class _RequestABookScreenState extends State<RequestABookScreen> {
     setState(() => _isSubmitting = false);
 
     if (!result.success) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result.errorMessage ?? 'login_generic_error'.tr())));
+      showMessageDialog(context, result.errorMessage ?? 'login_generic_error'.tr());
       return;
     }
 
@@ -400,7 +401,7 @@ class _RequestABookScreenState extends State<RequestABookScreen> {
                   onTap: isPast
                       ? null
                       : isUnavailable
-                          ? () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('sitter_unavailable_this_day_error'.tr())))
+                          ? () => showMessageDialog(context, 'sitter_unavailable_this_day_error'.tr())
                           : () => setState(() => _selectedDate = date),
                   borderRadius: BorderRadius.circular(10),
                   child: Container(

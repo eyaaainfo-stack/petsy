@@ -32,3 +32,19 @@ exports.protect = (req, res, next) => {
     return res.status(401).json({ message: 'Invalid or expired token' });
   }
 };
+
+// ============================================================================
+// isAdmin (middleware)
+// ============================================================================
+// 🔵 ZID: lezمها tji BA3D "protect" (fel route: protect, isAdmin, controller)
+// - "protect" houwa elli y7ott "req.userRole" mel token. Houni ghir
+// nchekkou belli el role == 'admin', ken mch heka -> 403 (Forbidden,
+// mch 401 - el user connecté sa7i7 lakin ma3andouch el 7a9 le hedhi
+// el route bالضبط).
+// ============================================================================
+exports.isAdmin = (req, res, next) => {
+  if (req.userRole !== 'admin') {
+    return res.status(403).json({ message: 'Admin access only' });
+  }
+  next();
+};

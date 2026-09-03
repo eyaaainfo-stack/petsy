@@ -3,6 +3,7 @@ import 'package:easy_localization/easy_localization.dart';
 import '../../../constants/app_colors.dart';
 import '../../../constants/app_sizes.dart';
 import '../../../widgets/back_button.dart';
+import '../../../widgets/verified_badge.dart';
 import '../../../controllers/my_profile_controller.dart';
 import '../../../models/my_profile_data.dart';
 import '../../../models/pet_summary.dart';
@@ -202,16 +203,31 @@ class _OwnerProfileContent extends StatelessWidget {
         // ---------------------------------------------------------
         Row(
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(14),
-              child: Container(
-                width: sizes.myProfilePhotoSize,
-                height: sizes.myProfilePhotoSize,
-                color: AppColors.vertpetsy.withOpacity(0.15),
-                child: profile.photoUrl != null && profile.photoUrl!.isNotEmpty
-                    ? Image.network('${ApiService.mediaBaseUrl}${profile.photoUrl}', fit: BoxFit.cover)
-                    : Icon(Icons.person, color: AppColors.vertpetsy, size: sizes.myProfilePhotoSize * 0.5),
-              ),
+            // 🔵 ZID (kifma tlab: "el validation eli noksod biha hia
+            // kima el tick el zarka eli tji fel insta ala el pdp") -
+            // Stack + Positioned (bottom-right, kifha kif Instagram) -
+            // VerifiedBadge ghir ken profile.isVerified true.
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: Container(
+                    width: sizes.myProfilePhotoSize,
+                    height: sizes.myProfilePhotoSize,
+                    color: AppColors.vertpetsy.withOpacity(0.15),
+                    child: profile.photoUrl != null && profile.photoUrl!.isNotEmpty
+                        ? Image.network('${ApiService.mediaBaseUrl}${profile.photoUrl}', fit: BoxFit.cover)
+                        : Icon(Icons.person, color: AppColors.vertpetsy, size: sizes.myProfilePhotoSize * 0.5),
+                  ),
+                ),
+                if (profile.isVerified)
+                  Positioned(
+                    right: -4,
+                    bottom: -4,
+                    child: VerifiedBadge(size: sizes.myProfilePhotoSize * 0.28),
+                  ),
+              ],
             ),
             SizedBox(width: sizes.screenWidth * 0.04),
             Expanded(

@@ -5,10 +5,12 @@ const path = require('path');
 require('dotenv').config();
 
 const connectDB = require('./config/db');
+const User = require('./models/user');
 const authRoutes = require('./routes/authRoutes');
 const petRoutes = require('./routes/petRoutes');
 const userRoutes = require('./routes/userRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 const app = express();
 
@@ -35,8 +37,46 @@ app.use('/api/auth', authRoutes);
 app.use('/api/pets', petRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/bookings', bookingRoutes);
+app.use('/api/admin', adminRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
+
+// ==========================================
+// CLEANUP: comptes incomplets (kifma tlab: "idha el creation du compte
+// n'esy pas finis ma yetsajelch el compte f base de donnes")
+// ==========================================
+// 🔵 el compte ye5la9 mel signup (email+password bark, "isProfileComplete:
+// false") - ken el user ma kammelch el parcours el kol (fullName, pet/
+// services...) fi 9adr 2 sa3at, ye7ذef rou7ou automatique - "grace
+// period" behya bch el user elli ghir 3andou lag/réseau ما3andouch
+// khsara, lakin el comptes el "fantômes" (email+password bla 7aja
+// okhra, l'admin 5arjou 3ammadan - createUser/createAdmin.js) ma
+// yeb9awch mkadsin l'lel abad.
+//
+// 🔵 deleteMany() (mch findByIdAndDelete lel kol wa7ed wa7ed) - el
+// hooks cascade-delete (models/user.js) ma yetsajlouch m3a deleteMany
+// (Mongoose limitation loji9iya) - lakin compte "incomplet" (ma
+// kammelch el parcours) mel awel MA3ANDOUCH Animal/Booking mrtabtin
+// bih (el pets ytzadou GHIR ba3d el parcours), fa mafamech data
+// "orphelina" tetrek mn wara.
+const CLEANUP_INTERVAL_MS = 30 * 60 * 1000; // kol 30 minute
+const INCOMPLETE_ACCOUNT_GRACE_PERIOD_MS = 2 * 60 * 60 * 1000; // 2 sa3at
+
+setInterval(async () => {
+  try {
+    const cutoff = new Date(Date.now() - INCOMPLETE_ACCOUNT_GRACE_PERIOD_MS);
+    const result = await User.deleteMany({
+      isProfileComplete: false,
+      role: { $ne: 'admin' },
+      createdAt: { $lt: cutoff },
+    });
+    if (result.deletedCount > 0) {
+      console.log(`🧹 Cleanup: ${result.deletedCount} compte(s) incomplet(s) supprimé(s) (parcours d'inscription jamais terminé).`);
+    }
+  } catch (error) {
+    console.error('❌ CLEANUP-INCOMPLETE-ACCOUNTS ERROR:', error);
+  }
+}, CLEANUP_INTERVAL_MS);

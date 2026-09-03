@@ -6,6 +6,7 @@ import '../../controllers/forgot_password_controller.dart';
 import '../../controllers/validators.dart';
 import '../../widgets/button.dart';
 import 'mdp_oublier_2.dart';
+import '../../widgets/message_dialog.dart';
 
 // ============================================================================
 // MdpOublier1Screen ("Reset Your Password")
@@ -54,9 +55,7 @@ class _MdpOublier1ScreenState extends State<MdpOublier1Screen> {
       // 🔵 message mel backend direct (déjà bel 7arf mfahoum, mathalan
       // "No account found with this email for this account type") -
       // hedhi bidhabt el 2 chart elli tlab (mzoud + mawjoud + nefs role).
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result.errorMessage ?? 'login_generic_error'.tr())),
-      );
+      showMessageDialog(context, result.errorMessage ?? 'login_generic_error'.tr());
       return;
     }
 

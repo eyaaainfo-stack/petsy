@@ -62,6 +62,13 @@ class Validators {
     if (!RegExp(r'[0-9]').hasMatch(value)) {
       return 'password_digit_error'.tr();
     }
+    // 🔵 ZID (kifma tlab: "nhb 8 car min w 1 maj w 1 chif w 1 sambole
+    // min") - symbole = 7arf mch alphanumeric (mch A-Z/a-z/0-9) -
+    // regex négative (kol 7arf elli mch letter/digit ynajjam yeb9a
+    // "symbole": !@#$%^&*()_+-=... etc.)
+    if (!RegExp(r'[^A-Za-z0-9]').hasMatch(value)) {
+      return 'password_symbol_error'.tr();
+    }
     return null;
   }
 }

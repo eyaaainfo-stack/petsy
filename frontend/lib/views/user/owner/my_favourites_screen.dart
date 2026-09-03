@@ -3,6 +3,7 @@ import 'package:easy_localization/easy_localization.dart';
 import '../../../constants/app_colors.dart';
 import '../../../constants/app_sizes.dart';
 import '../../../widgets/back_button.dart';
+import '../../../widgets/verified_badge.dart';
 import '../../../controllers/favorites_controller.dart';
 import '../sitter/view_profile_sitter.dart';
 
@@ -141,16 +142,31 @@ class _MyFavouritesScreenState extends State<MyFavouritesScreen> {
           children: [
             // 🔵 photo taakhod l'espace elli fadhel (Expanded), 9alb el
             // favoris tawa ma3moulch fou9ha - houwa jem el esm (taht).
+            // 🔵 ZID (kifma tlab: "el tick bhdha pdp hta el users
+            // lokhrin yrawha") - Stack barra el ClipRRect (clipBehavior
+            // none bch el badge ma yet9assch).
             Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  width: double.infinity,
-                  color: AppColors.vertpetsy.withOpacity(0.18),
-                  child: sitter.photoUrl != null
-                      ? Image.network(sitter.photoUrl!, fit: BoxFit.cover)
-                      : Icon(Icons.person, color: AppColors.vertpetsy, size: sizes.screenWidth * 0.12),
-                ),
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      width: double.infinity,
+                      height: double.infinity,
+                      color: AppColors.vertpetsy.withOpacity(0.18),
+                      child: sitter.photoUrl != null
+                          ? Image.network(sitter.photoUrl!, fit: BoxFit.cover)
+                          : Icon(Icons.person, color: AppColors.vertpetsy, size: sizes.screenWidth * 0.12),
+                    ),
+                  ),
+                  if (sitter.isVerified)
+                    Positioned(
+                      right: -2,
+                      bottom: -2,
+                      child: VerifiedBadge(size: sizes.screenWidth * 0.05),
+                    ),
+                ],
               ),
             ),
             SizedBox(height: sizes.screenWidth * 0.015),

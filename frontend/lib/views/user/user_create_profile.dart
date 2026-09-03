@@ -16,6 +16,7 @@ import '../../controllers/auth_session.dart';
 import '../../services/api_service.dart';
 import 'owner/create_pet_profile.dart';
 import 'sitter/create_sitter_profile.dart';
+import '../../widgets/message_dialog.dart';
 
 // ============================================================================
 // UserCreateProfileScreen
@@ -197,9 +198,7 @@ class _UserCreateProfileScreenState extends State<UserCreateProfileScreen> {
       // wala 5ata fel plugin - nwarriw SnackBar bdal ma l'app te-crash
       // wala teskot bla ay rasala.
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('photo_pick_error'.tr())),
-      );
+      showMessageDialog(context, 'photo_pick_error'.tr());
     }
   }
 
@@ -359,9 +358,7 @@ class _UserCreateProfileScreenState extends State<UserCreateProfileScreen> {
       // (mathalan submit sri3 barcha) w el backend rafedh (esm meakhoud
       // entre temps), n3allmou el user (mch ne5liwha silence kifma
       // kanet 9bal).
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('profile_submit_error'.tr())),
-      );
+      showMessageDialog(context, 'profile_submit_error'.tr());
       return;
     }
 

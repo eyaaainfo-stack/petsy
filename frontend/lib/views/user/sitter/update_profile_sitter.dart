@@ -13,6 +13,7 @@ import '../../../controllers/user_create_profile_controller.dart';
 import '../../../controllers/create_sitter_profile_controller.dart';
 import '../../../models/my_profile_data.dart';
 import '../../../services/api_service.dart';
+import '../../../widgets/message_dialog.dart';
 
 // 🔵 nafs el liste tel services (create_sitter_profile.dart) - class
 // sghira, kopyitha houni bch UpdateProfileSitterScreen yeb9a standalone
@@ -165,9 +166,7 @@ class _UpdateProfileSitterScreenState extends State<UpdateProfileSitterScreen> {
       setState(() => _newPhotoBytes = bytes);
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('login_generic_error'.tr())),
-      );
+      showMessageDialog(context, 'login_generic_error'.tr());
     }
   }
 
@@ -193,16 +192,12 @@ class _UpdateProfileSitterScreenState extends State<UpdateProfileSitterScreen> {
         _selectedServices[s.id] == true &&
         (_servicePriceControllers[s.id]!.text.trim().isEmpty || double.tryParse(_servicePriceControllers[s.id]!.text.trim()) == null));
     if (missingPrice) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('sitter_price_required_error'.tr())),
-      );
+      showMessageDialog(context, 'sitter_price_required_error'.tr());
       return;
     }
     final missingPetType = _services.any((s) => _selectedServices[s.id] == true && _servicePetTypes[s.id] == null);
     if (missingPetType) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('sitter_pet_type_required_error'.tr())),
-      );
+      showMessageDialog(context, 'sitter_pet_type_required_error'.tr());
       return;
     }
 
@@ -251,9 +246,7 @@ class _UpdateProfileSitterScreenState extends State<UpdateProfileSitterScreen> {
     setState(() => _isSubmitting = false);
 
     if (!profileSuccess || !servicesSuccess || !photoSuccess) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('login_generic_error'.tr())),
-      );
+      showMessageDialog(context, 'login_generic_error'.tr());
       return;
     }
 

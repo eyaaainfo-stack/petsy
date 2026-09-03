@@ -6,7 +6,10 @@ import '../../../constants/app_sizes.dart';
 import '../../../widgets/back_button.dart';
 import '../../../widgets/availability_picker.dart';
 import '../../../controllers/availability_controller.dart';
+import '../../../services/api_service.dart';
+import '../../../controllers/auth_session.dart';
 import 'sitter_profile.dart';
+import '../../../widgets/message_dialog.dart';
 
 // ============================================================================
 // SitterAvailabilitySetupScreen (signup - "Yes" mel étape 9bal)
@@ -46,10 +49,18 @@ class _SitterAvailabilitySetupScreenState extends State<SitterAvailabilitySetupS
     setState(() => _isSubmitting = false);
 
     if (!success) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('profile_submit_error'.tr())));
+      showMessageDialog(context, 'profile_submit_error'.tr());
       return;
     }
 
+    // 🔵 ZID (kifma tlab: "idha el creation du compte n'esy pas finis
+    // ma yetsajelch el compte") - houni "vraie fin" tel parcours sitter
+    // (branche "Yes, n7ott el disponibilité tawa") - best-effort.
+    try {
+      await ApiService.patch('/users/me/complete-onboarding', {}, token: AuthSession.token);
+    } catch (_) {}
+
+    if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(
         builder: (_) => SitterProfileScreen(sitterName: widget.sitterName, sitterCity: widget.sitterCity, sitterPhotoBytes: widget.sitterPhotoBytes),

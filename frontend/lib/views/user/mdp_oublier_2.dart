@@ -7,6 +7,7 @@ import '../../constants/app_sizes.dart';
 import '../../controllers/forgot_password_controller.dart';
 import '../../widgets/button.dart';
 import 'mdp_oublier_3.dart';
+import '../../widgets/message_dialog.dart';
 
 // ============================================================================
 // MdpOublier2Screen ("Confirm Your Email")
@@ -75,18 +76,14 @@ class _MdpOublier2ScreenState extends State<MdpOublier2Screen> {
     if (result.success) {
       _startTimer();
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result.errorMessage ?? 'login_generic_error'.tr())),
-      );
+      showMessageDialog(context, result.errorMessage ?? 'login_generic_error'.tr());
     }
   }
 
   Future<void> _onVerifyPressed() async {
     if (_isSubmitting) return;
     if (_codeController.text.trim().length != 5) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('enter_verification_code_label'.tr())),
-      );
+      showMessageDialog(context, 'enter_verification_code_label'.tr());
       return;
     }
 
@@ -98,9 +95,7 @@ class _MdpOublier2ScreenState extends State<MdpOublier2Screen> {
     setState(() => _isSubmitting = false);
 
     if (!result.success || result.resetToken == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result.errorMessage ?? 'login_generic_error'.tr())),
-      );
+      showMessageDialog(context, result.errorMessage ?? 'login_generic_error'.tr());
       return;
     }
 

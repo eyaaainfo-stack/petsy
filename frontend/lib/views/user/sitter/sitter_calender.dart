@@ -7,6 +7,7 @@ import '../../../controllers/sitter_calender_controller.dart';
 import '../../../controllers/availability_controller.dart';
 import '../../../widgets/availability_picker.dart';
 import 'request.dart';
+import '../../../widgets/message_dialog.dart';
 
 // ============================================================================
 // SitterCalenderScreen ("Calender") - sitter
@@ -95,9 +96,7 @@ class _SitterCalenderScreenState extends State<SitterCalenderScreen> {
     );
     if (!mounted) return;
     setState(() => _isSavingAvailability = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(success ? 'availability_saved_toast'.tr() : 'profile_submit_error'.tr())),
-    );
+    showMessageDialog(context, success ? 'availability_saved_toast'.tr() : 'profile_submit_error'.tr());
   }
 
   @override

@@ -5,6 +5,7 @@ import '../constants/app_colors.dart';
 import '../constants/app_sizes.dart';
 import '../controllers/checkout_questionnaire_controller.dart';
 import 'success_confirmation_dialog.dart';
+import 'message_dialog.dart';
 
 // ============================================================================
 // CheckoutQuestionnaireDialog
@@ -203,7 +204,7 @@ class _CheckoutQuestionnaireDialogState extends State<CheckoutQuestionnaireDialo
       if (newState != null) _state = newState;
     });
     if (newState == null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('profile_submit_error'.tr())));
+      showMessageDialog(context, 'profile_submit_error'.tr());
       return false;
     }
     return true;

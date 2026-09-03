@@ -4,6 +4,9 @@ import '../../../constants/app_colors.dart';
 import '../../../widgets/button.dart';
 import '../../../widgets/back_button.dart';
 import '../../../widgets/paw_widget.dart';
+import '../../../controllers/auth_controller.dart';
+import '../../../services/api_service.dart';
+import 'admin_home.dart';
 
 // ============================================================================
 // AdminLoginView
@@ -35,6 +38,16 @@ class _AdminLoginViewState extends State<AdminLoginView> {
   // true = el password mkhabbi (••••), false = bayen b'a7rouf
   bool _obscurePassword = true;
 
+  // 🔵 ZID: el "controller" el 7a9i9i (nafs mant9 user_login.dart) - fih
+  // el appel API, mch el widget.
+  final AuthController _authController = AuthController();
+  bool _isSubmitting = false;
+
+  // 🔵 ZID: nafs mant9 user_login.dart - message el 5ata mel "server"
+  // (mch format check) yban TAHT el 7a9el el sa7i7 (email wala password).
+  String? _emailServerError;
+  String? _passwordServerError;
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -65,12 +78,71 @@ class _AdminLoginViewState extends State<AdminLoginView> {
     return null;
   }
 
-  void _onLoginPressed() {
+  Future<void> _onLoginPressed() async {
+    if (_isSubmitting) return;
+
     // validate() yrawe7 true/false w yobbayen automatique el messages
-    // el 5ata ta7t kol 7a9el ghalet.
-    if (_formKey.currentState!.validate()) {
-      // TODO: authentification 7a9i9iya (API call) + navigation lel
-      // Admin Dashboard (elli yesta3mel admin_drawer.dart mawjoud déjà)
+    // el 5ata ta7t kol 7a9el ghalet (format - 9bal ma na3malou appel API).
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isSubmitting = true;
+      _emailServerError = null;
+      _passwordServerError = null;
+    });
+
+    // 🔴 FIX: kanet TODO - tawa appel 7a9i9i (POST /auth/login, nafs
+    // endpoint mowa77ad lel acteurs el kol - el backend ye3raf el role
+    // mel document nafsou).
+    final result = await _authController.login(
+      email: _emailController.text,
+      password: _passwordController.text,
+      role: 'admin',
+    );
+
+    if (!mounted) return;
+
+    // 🔵 ZID: el email mumkin ykoun sa7i7 W el password sa7i7 - lakin
+    // el compte MCH admin (owner/sitter 3adiyin) - hedhi écran khassa
+    // bel Admin bark, fa nerfudouha houni (mch nel backend, el login
+    // el backend mowa77ad lel acteurs el kol 3ammadan).
+    if (result.success && result.role != 'admin') {
+      setState(() {
+        _isSubmitting = false;
+        _emailServerError = 'admin_login_not_admin_error'.tr();
+      });
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = false;
+      switch (result.errorType) {
+        case LoginErrorType.invalidEmail:
+          _emailServerError = 'login_email_not_found_error'.tr();
+          break;
+        case LoginErrorType.invalidPassword:
+          _passwordServerError = 'login_wrong_password_error'.tr();
+          break;
+        case LoginErrorType.generic:
+          _emailServerError = 'login_generic_error'.tr();
+          break;
+        case LoginErrorType.none:
+          break;
+      }
+    });
+
+    if (result.success && result.role == 'admin') {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => AdminHomeScreen(
+            adminName: result.fullName?.isNotEmpty == true ? result.fullName! : 'admin_badge_label'.tr(),
+            adminPhotoUrl: (result.photoUrl != null && result.photoUrl!.isNotEmpty)
+                ? '${ApiService.mediaBaseUrl}${result.photoUrl}'
+                : null,
+          ),
+        ),
+        (route) => false,
+      );
     }
   }
 
@@ -85,11 +157,15 @@ class _AdminLoginViewState extends State<AdminLoginView> {
     required String hintText,
     required IconData icon,
     Widget? suffixIcon,
+    // 🔵 ZID: message el 5ata "mel server" (email mch mawjoud, password
+    // ghalet...) - null = mafamech, el 7a9el ye39od normal.
+    String? errorText,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return InputDecoration(
       hintText: hintText,
+      errorText: errorText,
       prefixIcon: Icon(icon, color: AppColors.vertpetsy),
       suffixIcon: suffixIcon,
       filled: true,
@@ -217,10 +293,19 @@ class _AdminLoginViewState extends State<AdminLoginView> {
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       validator: _validateEmail,
+                      // kol ma el user yebda yekteb, nmasso7 el 5ata
+                      // el "server" (mch loji9i tab9a t8ban ba3d ma
+                      // bda ybadel el email).
+                      onChanged: (_) {
+                        if (_emailServerError != null) {
+                          setState(() => _emailServerError = null);
+                        }
+                      },
                       decoration: _fieldDecoration(
                         context: context,
                         hintText: 'email_hint'.tr(),
                         icon: Icons.email_outlined,
+                        errorText: _emailServerError,
                       ),
                     ),
 
@@ -231,10 +316,16 @@ class _AdminLoginViewState extends State<AdminLoginView> {
                       controller: _passwordController,
                       obscureText: _obscurePassword,
                       validator: _validatePassword,
+                      onChanged: (_) {
+                        if (_passwordServerError != null) {
+                          setState(() => _passwordServerError = null);
+                        }
+                      },
                       decoration: _fieldDecoration(
                         context: context,
                         hintText: 'password_hint'.tr(),
                         icon: Icons.lock_outline,
+                        errorText: _passwordServerError,
                         // Icon "3in" bch tewarri/t5abbi el password
                         suffixIcon: IconButton(
                           icon: Icon(
@@ -274,11 +365,12 @@ class _AdminLoginViewState extends State<AdminLoginView> {
                     // 🔘 Bouton Login (CustomButton mawjoud, bla icon/subtitle)
                     Center(
                       child: CustomButton(
-                        text: 'login_button'.tr(),
+                        text: _isSubmitting ? 'loading_label'.tr() : 'login_button'.tr(),
                         color: AppColors.pinkpetsy,
                         widthFactor: 0.85,
                         heightFactor: 0.07,
                         fontFactor: 0.40,
+                        enabled: !_isSubmitting,
                         onPressed: _onLoginPressed,
                       ),
                     ),

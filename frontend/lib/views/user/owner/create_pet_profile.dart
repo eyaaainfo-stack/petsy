@@ -8,6 +8,7 @@ import '../../../widgets/button.dart';
 import '../../../controllers/create_pet_profile_controller.dart';
 import '../../../models/pet_summary.dart';
 import 'create_pet_profile_2.dart';
+import '../../../widgets/message_dialog.dart';
 
 // ============================================================================
 // CreatePetProfileScreen
@@ -67,9 +68,7 @@ class _CreatePetProfileScreenState extends State<CreatePetProfileScreen> {
     if (_isSubmitting) return;
 
     if (_selectedPetType == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('pet_type_required_error'.tr())),
-      );
+      showMessageDialog(context, 'pet_type_required_error'.tr());
       return;
     }
 

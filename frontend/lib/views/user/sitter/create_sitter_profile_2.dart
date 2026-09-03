@@ -7,6 +7,7 @@ import '../../../widgets/back_button.dart';
 import '../../../widgets/button.dart';
 import '../../../controllers/create_sitter_profile_2_controller.dart';
 import 'sitter_availability_question.dart';
+import '../../../widgets/message_dialog.dart';
 
 // 🔵 el 3 khiyarat "win ta3mor" - single select (wa7ed bark mel 3).
 enum ResidenceType { apartment, house, countryHouse }
@@ -60,27 +61,19 @@ class _CreateSitterProfile2ScreenState extends State<CreateSitterProfile2Screen>
     setState(() => _triedSubmit = true);
 
     if (_residence == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('sitter_residence_required_error'.tr())),
-      );
+      showMessageDialog(context, 'sitter_residence_required_error'.tr());
       return;
     }
     if (_hasTransportation == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('sitter_transportation_required_error'.tr())),
-      );
+      showMessageDialog(context, 'sitter_transportation_required_error'.tr());
       return;
     }
     if (_hasPet == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('sitter_has_pet_required_error'.tr())),
-      );
+      showMessageDialog(context, 'sitter_has_pet_required_error'.tr());
       return;
     }
     if (_hasPet == true && _ownedPetTypes.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('sitter_own_pet_type_required_error'.tr())),
-      );
+      showMessageDialog(context, 'sitter_own_pet_type_required_error'.tr());
       return;
     }
 
@@ -99,9 +92,7 @@ class _CreateSitterProfile2ScreenState extends State<CreateSitterProfile2Screen>
     setState(() => _isSubmitting = false);
 
     if (!success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('login_generic_error'.tr())),
-      );
+      showMessageDialog(context, 'login_generic_error'.tr());
       return;
     }
 

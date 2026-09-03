@@ -6,6 +6,7 @@ import '../../../controllers/my_profile_controller.dart';
 import '../../../controllers/reviews_controller.dart';
 import '../../../models/my_profile_data.dart';
 import '../../../services/api_service.dart';
+import '../../../widgets/verified_badge.dart';
 import '../owner/request_a_book.dart';
 
 // ============================================================================
@@ -357,16 +358,29 @@ class _SitterHeader extends StatelessWidget {
 
           // 🔴 FIX (kifma tlab): photo AKBAR (mrabb3a, nafs convention
           // tel sitter), bحدا el back button مباشرة.
-          ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: Container(
-              width: sizes.vpsPhotoSize,
-              height: sizes.vpsPhotoSize,
-              color: AppColors.vertpetsy.withOpacity(0.15),
-              child: profile.photoUrl != null && profile.photoUrl!.isNotEmpty
-                  ? Image.network('${ApiService.mediaBaseUrl}${profile.photoUrl}', fit: BoxFit.cover)
-                  : Icon(Icons.person, color: AppColors.vertpetsy, size: sizes.vpsPhotoPlaceholderIcon),
-            ),
+          // 🔵 ZID (kifma tlab: "el tick bhdha pdp hta el users lokhrin
+          // yrawha") - Stack+Positioned (bottom-right, kifha kif Instagram).
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  width: sizes.vpsPhotoSize,
+                  height: sizes.vpsPhotoSize,
+                  color: AppColors.vertpetsy.withOpacity(0.15),
+                  child: profile.photoUrl != null && profile.photoUrl!.isNotEmpty
+                      ? Image.network('${ApiService.mediaBaseUrl}${profile.photoUrl}', fit: BoxFit.cover)
+                      : Icon(Icons.person, color: AppColors.vertpetsy, size: sizes.vpsPhotoPlaceholderIcon),
+                ),
+              ),
+              if (profile.isVerified)
+                Positioned(
+                  right: -4,
+                  bottom: -4,
+                  child: VerifiedBadge(size: sizes.vpsPhotoSize * 0.24),
+                ),
+            ],
           ),
           SizedBox(width: sizes.screenWidth * 0.04),
           Expanded(

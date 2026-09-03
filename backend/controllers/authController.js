@@ -54,6 +54,17 @@ exports.login = async (req, res) => {
         // mzouda fel base.
         city: user.city,
         photoUrl: user.photoUrl,
+        // 🔵 ZID (kifma tlab: "el tick... fel home fel pdp mteou") -
+        // bch el badge yban direct ba3d login (mch ghir ba3d
+        // session-restore mel splash_decider.dart).
+        isVerified: user.isVerified === true,
+        // 🔵 ZID (kifma tlab: "ken el user homme nkhalliwh vert, keno
+        // femme pink") - couleur el sidebar 7asb el gender.
+        gender: user.gender,
+        // 🔵 ZID (kifma tlab: "idha el creation du compte mch fini ma
+        // yethallich el home") - el front (user_login.dart) yestenna
+        // 3ala hedha bch ye5tar ykhalliه ykammel el signup, mch home.
+        isProfileComplete: user.isProfileComplete === true,
       },
     });
   } catch (error) {

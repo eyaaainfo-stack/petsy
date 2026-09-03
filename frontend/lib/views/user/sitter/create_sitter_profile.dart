@@ -10,6 +10,7 @@ import '../../../widgets/outlined_button.dart';
 import '../../../widgets/paw_widget.dart';
 import '../../../controllers/create_sitter_profile_controller.dart';
 import 'create_sitter_profile_2.dart';
+import '../../../widgets/message_dialog.dart';
 
 // ============================================================================
 // _SitterService: 7ou9oul teswira (id + translation key) - LIST fadhya
@@ -111,9 +112,7 @@ class _CreateSitterProfileScreenState extends State<CreateSitterProfileScreen> {
     setState(() => _triedSubmit = true);
 
     if (!_hasAtLeastOneService) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('sitter_service_required_error'.tr())),
-      );
+      showMessageDialog(context, 'sitter_service_required_error'.tr());
       return;
     }
 
@@ -121,17 +120,13 @@ class _CreateSitterProfileScreenState extends State<CreateSitterProfileScreen> {
         _selected[s.id] == true &&
         (_priceControllers[s.id]!.text.trim().isEmpty || double.tryParse(_priceControllers[s.id]!.text.trim()) == null));
     if (missingPrice) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('sitter_price_required_error'.tr())),
-      );
+      showMessageDialog(context, 'sitter_price_required_error'.tr());
       return;
     }
 
     final missingPetType = _services.any((s) => _selected[s.id] == true && _petTypes[s.id] == null);
     if (missingPetType) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('sitter_pet_type_required_error'.tr())),
-      );
+      showMessageDialog(context, 'sitter_pet_type_required_error'.tr());
       return;
     }
 
@@ -157,9 +152,7 @@ class _CreateSitterProfileScreenState extends State<CreateSitterProfileScreen> {
     setState(() => _isSubmitting = false);
 
     if (!success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('login_generic_error'.tr())), // 🔵 réutilisation: rasala generic "connexion/server" déjà mawjouda
-      );
+      showMessageDialog(context, 'login_generic_error'.tr());
       return;
     }
 
