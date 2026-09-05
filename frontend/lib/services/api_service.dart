@@ -70,11 +70,16 @@ class ApiService {
     String? token,
     String fieldName = 'photo',
     String filename = 'photo.jpg',
+    // 🔴 FIX (kifma tlab: "awl mra bch nhkiw el msg" - "create-on-
+    // demand", el image tetba3eth m3a "userId" f'nefs l'appel) - champs
+    // zeyda (text) fel multipart, mch ghir el image (optionnel).
+    Map<String, String>? fields,
   }) async {
     final request = http.MultipartRequest('POST', Uri.parse('$baseUrl$path'));
     if (token != null) {
       request.headers['Authorization'] = 'Bearer $token';
     }
+    if (fields != null) request.fields.addAll(fields);
     request.files.add(http.MultipartFile.fromBytes(
       fieldName,
       photoBytes,

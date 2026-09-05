@@ -11,6 +11,8 @@ const petRoutes = require('./routes/petRoutes');
 const userRoutes = require('./routes/userRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+// 🔵 ZID (messagerie - kifma tlab: interface kima Messenger)
+const conversationRoutes = require('./routes/conversationRoutes');
 
 const app = express();
 
@@ -38,6 +40,8 @@ app.use('/api/pets', petRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/admin', adminRoutes);
+// 🔵 ZID (messagerie - kifma tlab: interface kima Messenger)
+app.use('/api/conversations', conversationRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

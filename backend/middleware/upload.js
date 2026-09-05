@@ -60,4 +60,8 @@ module.exports = {
   // mnfassel ('uploads/cin/') - documents identité, mch photos profil
   // 3adiya, a7sen tab9a mfarza mn jihet l'organisation.
   cinUpload: createUploader('cin'),
+  // 🔵 ZID (messagerie - kifma tlab: "camera ki tenzel aliha tkhtr ya
+  // mel gal ya mel apareil photo") - folder mnfassel ('uploads/messages/')
+  // lel photos elli yetba3thou fel conversations (chat).
+  messageUpload: createUploader('messages'),
 };

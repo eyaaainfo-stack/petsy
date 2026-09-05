@@ -3,6 +3,9 @@ const User = require('../models/user');
 const Sitter = require('../models/sitter');
 const CheckoutQuestionnaire = require('../models/checkoutQuestionnaire');
 const { computeChecklist } = require('../services/verificationService');
+// 🔴 FIX (bug: "compte déjà mawjoud yerja3 lel UserCreateProfileScreen
+// bدal ProfileOwnerScreen") - chraht kaملa fel services/onboardingService.js.
+const { ensureProfileComplete } = require('../services/onboardingService');
 const bcrypt = require('bcryptjs');
 
 // ============================================================================
@@ -43,7 +46,11 @@ exports.getProfile = async (req, res) => {
       // 🔵 ZID (kifma tlab: "idha el creation du compte mch fini ma
       // yethallich el home") - splash_decider.dart yestenna 3ala
       // hedha bch ye5tar el user ymchi lel home wla yerja3 l'signup.
-      isProfileComplete: baseUser.isProfileComplete === true,
+      // 🔴 FIX (bug: "compte déjà mawjoud yerja3 lel UserCreateProfileScreen")
+      // - ensureProfileComplete() (self-heal, chraht fel onboardingService.js)
+      // bدal el flag el 5am (elli ynajjam yeb9a "false" ghalat lowkan
+      // l'appel PATCH /complete-onboarding fechel marra).
+      isProfileComplete: await ensureProfileComplete(baseUser),
     };
 
     // 🔴 FIX: el 7ou9oul el 5assa bel sitter (services/residenceType/...)

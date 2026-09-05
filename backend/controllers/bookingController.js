@@ -198,17 +198,6 @@ exports.getMySchedule = async (req, res) => {
       .sort({ checkIn: 1 })
       .populate('pets', 'name photoUrl gender');
 
-    // 🔵 ZID (debug): "Patients du jour" fadhya rghm el booking mawjouda -
-    // n7ebbou nchoufou: (1) kadeh booking "accepted" 3andou el sitter
-    // el 7ali 7a9i9atan, (2) checkIn/checkOut b'dhabt (UTC, kifha kif
-    // mo5zana fel DB) bch n9arnouhom m3a "el lyoum" (server local time).
-    console.log(`\n🔍 [MY-SCHEDULE] sitterId="${req.userId}" - server "lyoum" (local): ${new Date().toString()}`);
-    console.log(`🔍 [MY-SCHEDULE] server "lyoum" (UTC): ${new Date().toISOString()}`);
-    console.log(`🔍 [MY-SCHEDULE] la9a ${bookings.length} booking(s) "accepted":`);
-    bookings.forEach((b) => {
-      console.log(`   - _id=${b._id} checkIn=${b.checkIn.toISOString()} checkOut=${b.checkOut.toISOString()} pets=${b.pets.map((p) => p.name).join(',')}`);
-    });
-
     res.status(200).json({ bookings });
   } catch (error) {
     res.status(500).json({ error: error.message });

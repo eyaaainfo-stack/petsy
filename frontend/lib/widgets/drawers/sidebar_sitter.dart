@@ -13,6 +13,8 @@ import '../../views/user/sitter/sitter_calender.dart';
 import '../../views/user/notifications_screen.dart';
 import '../../views/user/settings_screen.dart';
 import '../../controllers/notification_controller.dart';
+import '../../views/user/messages_list_screen.dart';
+import '../../views/user/about_us_screen.dart';
 
 // ============================================================================
 // SidebarSitter (Drawer tel sitter) - redesign "moderne"
@@ -276,7 +278,12 @@ class _SidebarSitterState extends State<SidebarSitter> {
                       icon: Icons.chat_bubble_outline,
                       label: 'messages_label'.tr(),
                       color: AppColors.vertpetsy,
-                      onTap: () => _notImplementedYet(context),
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const MessagesListScreen()),
+                        );
+                      },
                     ),
                     SizedBox(height: sizes.sidebarPillGap),
                     // 🔵 ZID (kifma tlab): "Settings" (Theme + Language +
@@ -321,7 +328,12 @@ class _SidebarSitterState extends State<SidebarSitter> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                     elevation: 0,
                   ),
-                  onPressed: () => _notImplementedYet(context),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const AboutUsScreen()),
+                    );
+                  },
                   child: Text(
                     'about_us_label'.tr(),
                     style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: sizes.sidebarItemFontSize),

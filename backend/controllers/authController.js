@@ -6,6 +6,9 @@ const Courier = require('../models/courier');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+// 🔴 FIX (bug: "compte déjà mawjoud yerja3 lel UserCreateProfileScreen
+// bدal ProfileOwnerScreen") - chraht kaملa fel services/onboardingService.js.
+const { ensureProfileComplete } = require('../services/onboardingService');
 
 // ==========================================
 // 1. LOGIN (Mo-waḥḥad lil-acteurs el-koll)
@@ -38,6 +41,11 @@ exports.login = async (req, res) => {
       { expiresIn: '7d' }
     );
 
+    // 🔴 FIX (bug: "compte déjà mawjoud yerja3 lel UserCreateProfileScreen"):
+    // nchekkou/nsalliw el flag 9bal ma nab3thouh l'el front (self-heal,
+    // chraht fel onboardingService.js).
+    const isProfileComplete = await ensureProfileComplete(user);
+
     // 4. Trajjaʿ el-data lil-Front
     res.status(200).json({
       message: 'Login successful',
@@ -64,7 +72,7 @@ exports.login = async (req, res) => {
         // 🔵 ZID (kifma tlab: "idha el creation du compte mch fini ma
         // yethallich el home") - el front (user_login.dart) yestenna
         // 3ala hedha bch ye5tar ykhalliه ykammel el signup, mch home.
-        isProfileComplete: user.isProfileComplete === true,
+        isProfileComplete,
       },
     });
   } catch (error) {

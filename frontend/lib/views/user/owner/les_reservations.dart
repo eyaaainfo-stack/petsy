@@ -6,6 +6,7 @@ import '../../../widgets/back_button.dart';
 import '../../../controllers/les_reservations_controller.dart';
 import '../../../widgets/pet_avatars_stack.dart';
 import 'booking_details.dart';
+import '../../../models/sitter_service_catalog.dart';
 
 // ============================================================================
 // LesReservationsScreen ("Bookings") - owner
@@ -34,14 +35,9 @@ class _LesReservationsScreenState extends State<LesReservationsScreen> {
     'July', 'August', 'September', 'October', 'November', 'December',
   ];
 
-  static const Map<String, String> _serviceLabelKeys = {
-    'house_sitting': 'sitter_service_house_sitting',
-    'dog_walking': 'sitter_service_dog_walking',
-    'doggy_day_care': 'sitter_service_doggy_day_care',
-    'boarding': 'sitter_service_boarding',
-    'overnight_stays': 'sitter_service_overnight_stays',
-    'home_visits': 'sitter_service_home_visits',
-  };
+  // 🔴 FIX (kifma tlab: "les services nhbhom fi des titre...") -
+  // sitterServiceLabelKeys mel catalogue partagé (bدal liste mkarrra).
+  static Map<String, String> get _serviceLabelKeys => sitterServiceLabelKeys;
 
   @override
   void initState() {
@@ -96,6 +92,12 @@ class _LesReservationsScreenState extends State<LesReservationsScreen> {
     switch (status) {
       case OwnerBookingStatus.pending:
         return 'booking_status_pending'.tr();
+      // 🔴 FIX (bug: sitter details "yetfeskho" - kanet mkhaltha m3a
+      // "pending", tawa 3andha badge 5ass, mch mkhalltin m3a "pending").
+      case OwnerBookingStatus.searching:
+        return 'booking_status_searching'.tr();
+      case OwnerBookingStatus.awaitingConfirmation:
+        return 'booking_status_awaiting_confirmation'.tr();
       case OwnerBookingStatus.confirmed:
         return 'booking_status_confirmed'.tr();
       case OwnerBookingStatus.completed:
@@ -109,6 +111,10 @@ class _LesReservationsScreenState extends State<LesReservationsScreen> {
     switch (status) {
       case OwnerBookingStatus.pending:
         return const Color(0xFFFFA726); // orange
+      case OwnerBookingStatus.searching:
+        return const Color(0xFF29B6F6); // bleu (recherche en cours)
+      case OwnerBookingStatus.awaitingConfirmation:
+        return const Color(0xFF9575CD); // violet (action requise)
       case OwnerBookingStatus.confirmed:
         return AppColors.vertpetsy; // vert
       case OwnerBookingStatus.completed:

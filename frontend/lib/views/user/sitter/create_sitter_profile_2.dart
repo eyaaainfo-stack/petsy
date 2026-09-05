@@ -25,20 +25,12 @@ class CreateSitterProfile2Screen extends StatefulWidget {
   final String sitterName;
   final String sitterCity;
   final Uint8List? sitterPhotoBytes;
-  // 🔵 el data mel écran el 9bali (create_sitter_profile.dart) - nab3thouha
-  // TODO ki ykoun el appel API el a5ir (POST el profile tel sitter kaملou).
-  final Map<String, bool> selectedServices;
-  final Map<String, String> servicesPrices;
-  final Map<String, String?> servicesPetTypes;
 
   const CreateSitterProfile2Screen({
     super.key,
     required this.sitterName,
     required this.sitterCity,
     this.sitterPhotoBytes,
-    this.selectedServices = const {},
-    this.servicesPrices = const {},
-    this.servicesPetTypes = const {},
   });
 
   @override

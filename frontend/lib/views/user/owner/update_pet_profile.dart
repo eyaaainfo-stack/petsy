@@ -51,13 +51,18 @@ class _UpdatePetProfileScreenState extends State<UpdatePetProfileScreen> {
   final UpdatePetProfileController _controller = UpdatePetProfileController();
   bool _isSubmitting = false;
 
+  // 🔴 FIX (kifma tlab: "el behaviors mtaa el pet badelhom b hedhom") -
+  // liste jdida (7 behaviors, mbadlin l'9dima) - nafs liste create_pet_
+  // profile_2.dart (LEZEM tab9a IDENTICAL - pets mzoudin mel 9bal
+  // yesta3malou nafs el keys, w Wrap houni ma yerbotch b'3adad m3ayen).
   static const List<String> _behaviorKeys = [
-    'behavior_scared_new_people',
-    'behavior_calm',
-    'behavior_scared_animals',
-    'behavior_active',
-    'behavior_friendly',
-    'behavior_angry',
+    'behavior_playful_energetic',
+    'behavior_calm_relaxed',
+    'behavior_curious_exploratory',
+    'behavior_affectionate',
+    'behavior_protective_territorial',
+    'behavior_anxious_stressed',
+    'behavior_food_motivated',
   ];
 
   @override

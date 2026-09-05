@@ -11,6 +11,7 @@ import '../../../models/pet_summary.dart';
 import '../../../models/my_profile_data.dart';
 import '../../../repositories/pet_repository.dart';
 import '../../../widgets/message_dialog.dart';
+import '../../../models/sitter_service_catalog.dart';
 
 // ============================================================================
 // RequestABookScreen ("Request a Book")
@@ -70,18 +71,16 @@ class _RequestABookScreenState extends State<RequestABookScreen> {
   List<int> _recurringDaysOff = [];
   List<DateTime> _specificDatesOff = [];
 
-  static const Map<String, String> _serviceLabelKeys = {
-    'house_sitting': 'sitter_service_house_sitting',
-    'dog_walking': 'sitter_service_dog_walking',
-    'doggy_day_care': 'sitter_service_doggy_day_care',
-    'boarding': 'sitter_service_boarding',
-    'overnight_stays': 'sitter_service_overnight_stays',
-    'home_visits': 'sitter_service_home_visits',
-  };
-
-  String _serviceLabel(String serviceId) {
-    final key = _serviceLabelKeys[serviceId];
-    return key != null ? key.tr() : serviceId;
+  // 🔴 FIX (kifma tlab: "les services nhbhom fi des titre... ken yhb
+  // yzid service ekher") - sitterServiceLabelKeys mel catalogue partagé
+  // - "custom" (Autre, el sitter zad service b ydik) yesta3mel "customLabel"
+  // (mawjouda houni, 3andna el entry el KAMLA - mch ghir el id).
+  String _serviceLabel(SitterServiceEntry service) {
+    if (isCustomServiceId(service.serviceId)) {
+      return (service.customLabel != null && service.customLabel!.isNotEmpty) ? service.customLabel! : service.serviceId;
+    }
+    final key = sitterServiceLabelKeys[service.serviceId];
+    return key != null ? key.tr() : service.serviceId;
   }
 
   @override
@@ -115,13 +114,20 @@ class _RequestABookScreenState extends State<RequestABookScreen> {
     });
   }
 
-  double get _total {
+  // 🔴 FIX (kifma tlab: "el totale des service yethseb nb pets * service
+  // selectionnees") - kan el total ghir sum el services (bla ma
+  // ya54ou b3in el 3adad tel pets) - tawa: sum el services (prix
+  // wa7ed, mch b7sab kol pet) * 3adad el pets el mkhtarin (2 pets +
+  // nafs el service = 2x el prix, 7it el sitter ye5dem 3al 2 mch wa7ed).
+  double get _servicesSum {
     double sum = 0;
     for (final service in widget.sitterServices) {
       if (_selectedServiceIds.contains(service.serviceId)) sum += service.price;
     }
     return sum;
   }
+
+  double get _total => _servicesSum * _selectedPetIds.length;
 
   void _changeMonth(int delta) {
     setState(() {
@@ -309,6 +315,18 @@ class _RequestABookScreenState extends State<RequestABookScreen> {
                       Text('${_total.toStringAsFixed(0)} DT', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.pinkpetsy, fontSize: sizes.myProfileNameFontSize * 0.7)),
                     ],
                   ),
+                  // 🔵 ZID: breakdown ("150 DT x 2 animaux") - bch el
+                  // owner yefham 3lech el total twalla b hedh el 9ima
+                  // (mch bark ra9m yban mnfajet lowkan 3andou ktar men
+                  // pet wa7ed).
+                  if (_selectedPetIds.length > 1 && _servicesSum > 0)
+                    Padding(
+                      padding: EdgeInsets.only(top: sizes.rabSectionGap * 0.15),
+                      child: Text(
+                        '${_servicesSum.toStringAsFixed(0)} DT × ${_selectedPetIds.length} ${'pets_owned_label'.tr()}',
+                        style: TextStyle(color: Colors.grey.shade600, fontSize: sizes.myProfileBodyFontSize * 0.75),
+                      ),
+                    ),
 
                   // 🔴 FIX (kifma tlab): "el fazet el accommodation"
                   // tna77at KAMLA (mafamech Apartment/House/Country
@@ -551,7 +569,7 @@ class _RequestABookScreenState extends State<RequestABookScreen> {
                 if (!_selectedServiceIds.remove(service.serviceId)) _selectedServiceIds.add(service.serviceId);
               }),
             ),
-            Expanded(child: Text(_serviceLabel(service.serviceId))),
+            Expanded(child: Text(_serviceLabel(service))),
             Text('${service.price.toStringAsFixed(0)} DT', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.pinkpetsy)),
           ],
         ),

@@ -8,6 +8,16 @@ import '../../../models/my_profile_data.dart';
 import '../../../services/api_service.dart';
 import '../../../widgets/verified_badge.dart';
 import '../owner/request_a_book.dart';
+// 🔵 ZID (kifma tlab: "wkt naaml recherche ala esl user ma tkounech
+// binetna reservation w nhb nebaathlo message... kima invitation par
+// message") - bouton "Message" (MessagesController.startConversation()
+// + ChatScreen, kifha kif booking_details.dart).
+import '../../../controllers/messages_controller.dart';
+import '../chat_screen.dart';
+// 🔴 FIX (kifma tlab: "les services nhbhom fi des titre... ken yhb yzid
+// service ekher") - _serviceLabelKeys tawa mchtou9a mel catalogue
+// partagé (bla duplication - single source of truth).
+import '../../../models/sitter_service_catalog.dart';
 
 // ============================================================================
 // ViewProfileSitterScreen ("Pet Sitter Profile") - READ-ONLY
@@ -50,9 +60,13 @@ class ViewProfileSitterScreen extends StatefulWidget {
 class _ViewProfileSitterScreenState extends State<ViewProfileSitterScreen> {
   final MyProfileController _controller = MyProfileController();
   final ReviewsController _reviewsController = ReviewsController();
+  final MessagesController _messagesController = MessagesController();
   MyProfileData? _profile;
   bool _isLoading = true;
   bool _hasError = false;
+  // 🔵 ZID (kifma tlab: bouton "Message") - loading state ki n7awlou
+  // nefta7ou/n5al9ou el conversation m3a hedha el sitter.
+  bool _isOpeningChat = false;
   late bool _showDetailsTab; // 🔵 true = "Details", false = "Reviews"
 
   // 🔴 FIX (kifma tlab): "el rating ma waletach todhhor fel profile" -
@@ -97,18 +111,55 @@ class _ViewProfileSitterScreenState extends State<ViewProfileSitterScreen> {
     });
   }
 
-  static const Map<String, String> _serviceLabelKeys = {
-    'house_sitting': 'sitter_service_house_sitting',
-    'dog_walking': 'sitter_service_dog_walking',
-    'doggy_day_care': 'sitter_service_doggy_day_care',
-    'boarding': 'sitter_service_boarding',
-    'overnight_stays': 'sitter_service_overnight_stays',
-    'home_visits': 'sitter_service_home_visits',
-  };
+  // 🔵 ZID (kifma tlab: "wkt naaml recherche ala esl user ma tkounech
+  // binetna reservation w nhb nebaathlo message... kima invitation par
+  // message wel user lekher yakhtar yokblou wle yorfodh") - nefta7ou/
+  // n5al9ou el conversation (el backend ye5tar 'pending'/'accepted'
+  // 7asb ken fama booking déjà beynethom wla le - chraht fel
+  // conversationController.js/startOrGetConversation).
+  // 🔴 FIX (kifma tlab: "nhb el demande ma tkoun envoyee ella ma ykoun
+  // fama message tebaath") - MAFAMECH creation houni khaless (kanet
+  // startConversation twalled Conversation "pending" fel base GHIR ki
+  // el user y-tapi 3al bouton "Message" - 9bal 7atta ma ykteb 7arf!).
+  // Tawa: appel "read-only" bark (getExistingConversationWith) bch
+  // nchoufou ken déjà fama conversation (bla creation) - lowkan le,
+  // ChatScreen tefte7 b conversationId=null (twalled ghir ki l'AWWEL
+  // message 7a9i9i metba3eth).
+  Future<void> _onMessagePressed() async {
+    if (_isOpeningChat || _profile == null) return;
+    setState(() => _isOpeningChat = true);
 
-  String _serviceLabel(String serviceId) {
-    final key = _serviceLabelKeys[serviceId];
-    return key != null ? key.tr() : serviceId;
+    final existing = await _messagesController.getExistingConversationWith(widget.sitterId);
+    if (!mounted) return;
+    setState(() => _isOpeningChat = false);
+
+    final String? rawPhotoUrl = _profile!.photoUrl;
+    final String? otherPhotoUrl = (rawPhotoUrl != null && rawPhotoUrl.isNotEmpty) ? '${ApiService.mediaBaseUrl}$rawPhotoUrl' : null;
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ChatScreen(
+          conversationId: existing?['conversationId'] as String?,
+          otherUserId: widget.sitterId,
+          otherUserName: _profile!.fullName,
+          otherUserPhotoUrl: otherPhotoUrl,
+          status: existing?['status'] as String? ?? 'accepted',
+          isInitiator: existing?['isInitiator'] as bool? ?? true,
+        ),
+      ),
+    );
+  }
+
+  // 🔴 FIX (kifma tlab: "les services nhbhom fi des titre... ken yhb
+  // yzid service ekher") - "sitterServiceLabelKeys" (mel catalogue
+  // partagé) bدal liste mkarrra houni - w "custom" (Autre) yesta3mel
+  // "customLabel" (esm elli el sitter kteb b ydik), mch translation key.
+  String _serviceLabel(SitterServiceEntry service) {
+    if (isCustomServiceId(service.serviceId)) {
+      return (service.customLabel != null && service.customLabel!.isNotEmpty) ? service.customLabel! : service.serviceId;
+    }
+    final key = sitterServiceLabelKeys[service.serviceId];
+    return key != null ? key.tr() : service.serviceId;
   }
 
   String _residenceLabel(String? residenceType) {
@@ -238,37 +289,70 @@ class _ViewProfileSitterScreenState extends State<ViewProfileSitterScreen> {
                             ),
                           ),
 
-                          // "Request a book" - teal, kifma tlab - CONSTANT
-                          // (mzabet fel a5er tel écran, mch lezmou scroll
-                          // bch tel9ah).
-                          // 🔵 ZID: mfaqoud lowkan "hideBookingButton"
-                          // (chrahtha fou9, widget field).
-                          if (!widget.hideBookingButton)
+                          // "Message" + "Request a book" - CONSTANT (mzabet
+                          // fel a5er tel écran, mch lezmou scroll bch tel9ah).
+                          // 🔵 ZID (kifma tlab: "wkt naaml recherche ala esl user ma
+                          // tkounech binetna reservation w nhb nebaathlo
+                          // message... kima invitation par message") - bouton
+                          // "Message" DIMA mawjoud (7ata lowkan hideBookingButton -
+                          // el owner ynajjam ye7ki m3a ay sitter mel search,
+                          // 7ata lowkan mazel ma 3andhomch booking beynethom -
+                          // el backend ye5tar automatique "pending"/"accepted",
+                          // chraht fel startOrGetConversation).
                           Padding(
                             padding: EdgeInsets.fromLTRB(sizes.myProfileHorizontalPadding, sizes.screenHeight * 0.015, sizes.myProfileHorizontalPadding, sizes.myProfileBottomGap),
-                            child: SizedBox(
-                              width: double.infinity,
-                              height: sizes.vpsRequestButtonHeight,
-                              child: ElevatedButton(
-                                // 🔴 FIX: kanet TODO - tawa ymchi l
-                                // "Request a Book" (request_a_book.dart).
-                                onPressed: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (_) => RequestABookScreen(
-                                        sitterId: widget.sitterId,
-                                        sitterName: _profile!.fullName,
-                                        sitterServices: _profile!.services,
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: SizedBox(
+                                    height: sizes.vpsRequestButtonHeight,
+                                    child: OutlinedButton(
+                                      onPressed: _isOpeningChat ? null : _onMessagePressed,
+                                      style: OutlinedButton.styleFrom(
+                                        side: BorderSide(color: AppColors.vertpetsy),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                                      ),
+                                      child: _isOpeningChat
+                                          ? SizedBox(
+                                              width: sizes.vpsRequestButtonHeight * 0.4,
+                                              height: sizes.vpsRequestButtonHeight * 0.4,
+                                              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.vertpetsy),
+                                            )
+                                          : Text('message_button'.tr(), style: TextStyle(color: AppColors.vertpetsy, fontWeight: FontWeight.bold)),
+                                    ),
+                                  ),
+                                ),
+                                // 🔵 ZID: mfaqoud lowkan "hideBookingButton"
+                                // (chrahtha fou9, widget field).
+                                if (!widget.hideBookingButton) ...[
+                                  SizedBox(width: sizes.screenWidth * 0.03),
+                                  Expanded(
+                                    child: SizedBox(
+                                      height: sizes.vpsRequestButtonHeight,
+                                      child: ElevatedButton(
+                                        // 🔴 FIX: kanet TODO - tawa ymchi l
+                                        // "Request a Book" (request_a_book.dart).
+                                        onPressed: () {
+                                          Navigator.of(context).push(
+                                            MaterialPageRoute(
+                                              builder: (_) => RequestABookScreen(
+                                                sitterId: widget.sitterId,
+                                                sitterName: _profile!.fullName,
+                                                sitterServices: _profile!.services,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: AppColors.vertpetsy,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                                        ),
+                                        child: Text('request_a_book_button'.tr(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                                       ),
                                     ),
-                                  );
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.vertpetsy,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
-                                ),
-                                child: Text('request_a_book_button'.tr(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                              ),
+                                  ),
+                                ],
+                              ],
                             ),
                           ),
                         ],
@@ -424,7 +508,11 @@ class _DetailsTabContent extends StatelessWidget {
   final MyProfileData profile;
   final AppSizes sizes;
   final Color mutedTextColor;
-  final String Function(String) serviceLabel;
+  // 🔴 FIX (kifma tlab: "ken yhb yzid service ekher") - kanet "String
+  // Function(String serviceId)" - ma tnajjamch tferrez bin 2 services
+  // "custom" (nafs serviceId='custom' lel kol) - tawa el entry el
+  // KAMLA (bch nel9aw "customLabel").
+  final String Function(SitterServiceEntry) serviceLabel;
   final String Function(String) petTypeLabel;
   final String Function(String?) residenceLabel;
 
@@ -493,7 +581,7 @@ class _DetailsTabContent extends StatelessWidget {
                       children: [
                         Row(
                           children: [
-                            Expanded(child: Text(serviceLabel(service.serviceId), style: TextStyle(fontSize: sizes.myProfileBodyFontSize, fontWeight: FontWeight.w600))),
+                            Expanded(child: Text(serviceLabel(service), style: TextStyle(fontSize: sizes.myProfileBodyFontSize, fontWeight: FontWeight.w600))),
                             SizedBox(width: sizes.screenWidth * 0.025),
                             Container(
                               padding: EdgeInsets.symmetric(horizontal: sizes.screenWidth * 0.025, vertical: sizes.screenHeight * 0.004),

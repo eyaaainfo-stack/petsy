@@ -8,6 +8,12 @@ import '../../../controllers/request_controller.dart';
 import '../../../widgets/pet_avatars_stack.dart';
 import '../sitter/view_profile_sitter.dart';
 import '../../../widgets/message_dialog.dart';
+// 🔴 FIX (bug: bouton "Message à" mayyet, TODO 9dim - tawa el
+// messagerie mawjouda 7a9i9i) - MessagesController.startConversation()
+// + ChatScreen (kifha kif messages_list_screen.dart).
+import '../../../controllers/messages_controller.dart';
+import '../chat_screen.dart';
+import '../../../models/sitter_service_catalog.dart';
 
 // ============================================================================
 // BookingDetailsScreen ("Bookings Details") - owner
@@ -43,30 +49,20 @@ class BookingDetailsScreen extends StatefulWidget {
 
 class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
   final RequestController _requestController = RequestController();
+  final MessagesController _messagesController = MessagesController();
   bool _isResponding = false;
+  // 🔴 FIX (bug: bouton "Message à" mayyet) - loading state ki
+  // n7awlou nefta7ou/n5al9ou el conversation m3a el sitter.
+  bool _isOpeningChat = false;
 
   static const List<String> _monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December',
   ];
 
-  static const Map<String, String> _serviceLabelKeys = {
-    'house_sitting': 'sitter_service_house_sitting',
-    'dog_walking': 'sitter_service_dog_walking',
-    'doggy_day_care': 'sitter_service_doggy_day_care',
-    'boarding': 'sitter_service_boarding',
-    'overnight_stays': 'sitter_service_overnight_stays',
-    'home_visits': 'sitter_service_home_visits',
-  };
-
-  static const Map<String, String> _serviceDescKeys = {
-    'house_sitting': 'sitter_service_house_sitting_desc',
-    'dog_walking': 'sitter_service_dog_walking_desc',
-    'doggy_day_care': 'sitter_service_doggy_day_care_desc',
-    'boarding': 'sitter_service_boarding_desc',
-    'overnight_stays': 'sitter_service_overnight_stays_desc',
-    'home_visits': 'sitter_service_home_visits_desc',
-  };
+  // 🔴 FIX (kifma tlab: "les services nhbhom fi des titre...") -
+  // sitterServiceLabelKeys mel catalogue partagé (bدal liste mkarrra).
+  static Map<String, String> get _serviceLabelKeys => sitterServiceLabelKeys;
 
   OwnerBooking get booking => widget.booking;
 
@@ -77,13 +73,10 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
 
   String get _title => booking.serviceIds.isEmpty ? '-' : booking.serviceIds.map(_serviceLabel).join(' + ');
 
-  // 🔵 el description: tel service el LOUEL bark (lowkan fama ktar men
-  // wa7ed) - kifha kif el mockup (sator wa7ed bark ta7t el 3onwan).
-  String get _description {
-    if (booking.serviceIds.isEmpty) return '';
-    final key = _serviceDescKeys[booking.serviceIds.first];
-    return key != null ? key.tr() : '';
-  }
+  // 🔴 FIX (kifma tlab: "les services nhbhom fi des titre...") - el 14
+  // services jodad esmehom déjà wadh7in brachou - mafamech me3na "desc"
+  // mnfassla zeyda (kifha kif el 6 services el 9dima).
+  String get _description => '';
 
   // 🔵 ZID (fix timezone): ".toLocal()" 9bal .day/.month/.year.
   String _dateRangeLabel(DateTime checkInRaw, DateTime checkOutRaw) {
@@ -108,6 +101,12 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
     switch (status) {
       case OwnerBookingStatus.pending:
         return 'booking_status_pending'.tr();
+      // 🔴 FIX (bug: "el detais mtaa el sitter yetfeskho") - "searching"/
+      // "awaitingConfirmation" kanou mkhalltin m3a "pending" (default).
+      case OwnerBookingStatus.searching:
+        return 'booking_status_searching'.tr();
+      case OwnerBookingStatus.awaitingConfirmation:
+        return 'booking_status_awaiting_confirmation'.tr();
       case OwnerBookingStatus.confirmed:
         return 'booking_status_confirmed'.tr();
       case OwnerBookingStatus.completed:
@@ -121,6 +120,10 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
     switch (status) {
       case OwnerBookingStatus.pending:
         return const Color(0xFFFFA726);
+      case OwnerBookingStatus.searching:
+        return const Color(0xFF29B6F6);
+      case OwnerBookingStatus.awaitingConfirmation:
+        return const Color(0xFF9575CD);
       case OwnerBookingStatus.confirmed:
         return AppColors.vertpetsy;
       case OwnerBookingStatus.completed:
@@ -144,6 +147,37 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
 
     showMessageDialog(context, accept ? 'candidate_confirmed_toast'.tr() : 'candidate_declined_toast'.tr());
     Navigator.of(context).pop(true);
+  }
+
+  // 🔴 FIX (bug: bouton "Message à" mayyet - onTap: () {} TODO 9dim,
+  // "mafamech messagerie mrakza l'hin") - tawa el messagerie mawjouda:
+  // nefta7ou/n5al9ou el conversation m3a el sitter (nafs endpoint elli
+  // messages_list_screen.dart testa3mel 3al bulles), w nemchiw l'ChatScreen.
+  // 🔴 FIX (kifma tlab: "nhb el demande ma tkoun envoyee ella ma ykoun
+  // fama message tebaath") - MAFAMECH creation houni khaless (appel
+  // "read-only" bark, getExistingConversationWith) - ChatScreen tefte7
+  // b conversationId=null lowkan mafamech conversation mazel (twalled
+  // ghir ki l'AWWEL message 7a9i9i metba3eth).
+  Future<void> _onMessageSitterPressed() async {
+    if (_isOpeningChat || booking.sitterId.isEmpty) return;
+    setState(() => _isOpeningChat = true);
+
+    final existing = await _messagesController.getExistingConversationWith(booking.sitterId);
+    if (!mounted) return;
+    setState(() => _isOpeningChat = false);
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ChatScreen(
+          conversationId: existing?['conversationId'] as String?,
+          otherUserId: booking.sitterId,
+          otherUserName: booking.sitterName,
+          otherUserPhotoUrl: booking.sitterPhotoUrl,
+          status: existing?['status'] as String? ?? 'accepted',
+          isInitiator: existing?['isInitiator'] as bool? ?? true,
+        ),
+      ),
+    );
   }
 
   @override
@@ -234,67 +268,109 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
                   // ----------------------------------------------------
                   // Pet Sitter
                   // ----------------------------------------------------
+                  // 🔴 FIX (bug: "el detais mtaa el sitter... mch mawjoudin,
+                  // yetfeskho ki naml operation") - el root cause 7a9i9i:
+                  // status "open" (el sitter el asli RAFEDH, w el owner
+                  // rebroadcasta - "booking.sitter" ywalli null 3ala 9asd,
+                  // marketplace jdid, chraht fel backend broadcastBooking)
+                  // kan yet7esseb "pending" (bug fel displayStatus - sa77e7
+                  // fel les_reservations_controller.dart) - fa el badge
+                  // yban "En attente" (kifha kif fama sitter mestanni ywajeb)
+                  // lakin fel 7a9i9a MAFAMECH sitter mo3ayan khaless -
+                  // "Pet Sitter" section kan ywarri esm fadhi + avatar
+                  // generic + 2 boutons MAYYTIN (bla ma nchekkou
+                  // sitterId.isEmpty 9bal el card el kaملha). Tawa: lowkan
+                  // mafamech sitter 7a9i9i l'hin, twarri "recherche en
+                  // cours" wadh7a (bla boutons fadhyin).
                   Text('pet_sitter_label'.tr(), style: TextStyle(fontWeight: FontWeight.bold, fontSize: sizes.myProfileBodyFontSize)),
                   SizedBox(height: sizes.screenHeight * 0.01),
-                  Row(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(sizes.bookingAvatarSize / 2),
-                        child: Container(
-                          width: sizes.bookingAvatarSize,
-                          height: sizes.bookingAvatarSize,
-                          color: AppColors.pinkpetsy.withOpacity(0.18),
-                          child: booking.sitterPhotoUrl != null
-                              ? Image.network(booking.sitterPhotoUrl!, fit: BoxFit.cover)
-                              : Icon(Icons.person, color: AppColors.pinkpetsy, size: sizes.bookingAvatarSize * 0.55),
-                        ),
+                  if (booking.sitterId.isEmpty)
+                    Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.all(sizes.bookingCardPadding * 0.7),
+                      decoration: BoxDecoration(color: const Color(0xFF29B6F6).withOpacity(0.1), borderRadius: BorderRadius.circular(16)),
+                      child: Row(
+                        children: [
+                          Icon(Icons.search, color: const Color(0xFF29B6F6), size: sizes.bookingAvatarSize * 0.55),
+                          SizedBox(width: sizes.screenWidth * 0.03),
+                          Expanded(
+                            child: Text('booking_searching_sitter_label'.tr(), style: TextStyle(fontSize: sizes.myProfileBodyFontSize * 0.85)),
+                          ),
+                        ],
                       ),
-                      SizedBox(width: sizes.screenWidth * 0.03),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                    )
+                  else
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
                           children: [
-                            Text(booking.sitterName, style: TextStyle(fontWeight: FontWeight.w600, fontSize: sizes.myProfileBodyFontSize * 0.95)),
-                            if (booking.sitterCity.isNotEmpty) ...[
-                              SizedBox(height: sizes.screenHeight * 0.002),
-                              Row(
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(sizes.bookingAvatarSize / 2),
+                              child: Container(
+                                width: sizes.bookingAvatarSize,
+                                height: sizes.bookingAvatarSize,
+                                color: AppColors.pinkpetsy.withOpacity(0.18),
+                                child: booking.sitterPhotoUrl != null
+                                    ? Image.network(booking.sitterPhotoUrl!, fit: BoxFit.cover)
+                                    : Icon(Icons.person, color: AppColors.pinkpetsy, size: sizes.bookingAvatarSize * 0.55),
+                              ),
+                            ),
+                            SizedBox(width: sizes.screenWidth * 0.03),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Icon(Icons.location_on_outlined, size: sizes.myProfileBodyFontSize * 0.7, color: mutedTextColor),
-                                  SizedBox(width: sizes.screenWidth * 0.01),
-                                  Text('${booking.sitterCity} , ${'tunisia_label'.tr()}', style: TextStyle(fontSize: sizes.myProfileBodyFontSize * 0.75, color: mutedTextColor)),
+                                  Text(booking.sitterName, style: TextStyle(fontWeight: FontWeight.w600, fontSize: sizes.myProfileBodyFontSize * 0.95)),
+                                  if (booking.sitterCity.isNotEmpty) ...[
+                                    SizedBox(height: sizes.screenHeight * 0.002),
+                                    Row(
+                                      children: [
+                                        Icon(Icons.location_on_outlined, size: sizes.myProfileBodyFontSize * 0.7, color: mutedTextColor),
+                                        SizedBox(width: sizes.screenWidth * 0.01),
+                                        Text('${booking.sitterCity} , ${'tunisia_label'.tr()}', style: TextStyle(fontSize: sizes.myProfileBodyFontSize * 0.75, color: mutedTextColor)),
+                                      ],
+                                    ),
+                                  ],
                                 ],
                               ),
-                            ],
+                            ),
                           ],
                         ),
-                      ),
-                    ],
-                  ),
+                        SizedBox(height: sizes.bookingSectionGap * 1.4),
 
-                  SizedBox(height: sizes.bookingSectionGap * 1.4),
-
-                  // ----------------------------------------------------
-                  // Message / View Profile (Message TODO - mafamech
-                  // messagerie mrakza l'hin, chrahtha fou9)
-                  // ----------------------------------------------------
-                  Row(
-                    children: [
-                      Expanded(child: _actionButton(sizes: sizes, label: 'message_sitter_button'.tr(namedArgs: {'name': booking.sitterName}), color: AppColors.vertpetsy, onTap: () {})),
-                      SizedBox(width: sizes.screenWidth * 0.03),
-                      Expanded(
-                        child: _actionButton(
-                          sizes: sizes,
-                          label: 'view_sitter_profile_button'.tr(),
-                          color: AppColors.vertpetsy,
-                          onTap: booking.sitterId.isEmpty
-                              ? null
-                              : () => Navigator.of(context).push(
-                                    MaterialPageRoute(builder: (_) => ViewProfileSitterScreen(sitterId: booking.sitterId, distanceKm: booking.distanceKm, hideBookingButton: true)),
-                                  ),
+                        // ----------------------------------------------
+                        // Message / View Profile.
+                        // 🔴 FIX: "Message à" kan onTap: () {} (dead - "mch
+                        // mawjouda messagerie mrakza l'hin", TODO 9dim) -
+                        // tawa el messagerie mawjouda (MessagesController/
+                        // ChatScreen), fa nrabbtouh 7a9i9i.
+                        // ----------------------------------------------
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _actionButton(
+                                sizes: sizes,
+                                label: _isOpeningChat ? 'loading_label'.tr() : 'message_sitter_button'.tr(namedArgs: {'name': booking.sitterName}),
+                                color: AppColors.vertpetsy,
+                                onTap: _isOpeningChat ? null : _onMessageSitterPressed,
+                              ),
+                            ),
+                            SizedBox(width: sizes.screenWidth * 0.03),
+                            Expanded(
+                              child: _actionButton(
+                                sizes: sizes,
+                                label: 'view_sitter_profile_button'.tr(),
+                                color: AppColors.vertpetsy,
+                                onTap: () => Navigator.of(context).push(
+                                      MaterialPageRoute(builder: (_) => ViewProfileSitterScreen(sitterId: booking.sitterId, distanceKm: booking.distanceKm, hideBookingButton: true)),
+                                    ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
                   SizedBox(height: sizes.screenHeight * 0.016),
 
                   // 🔵 ZID (kifma tlab): "awaiting_confirmation" (candidate

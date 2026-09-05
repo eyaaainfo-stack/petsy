@@ -14,6 +14,7 @@ import 'request.dart';
 import 'sitter_calender.dart';
 import '../../../controllers/checkout_questionnaire_controller.dart';
 import '../../../widgets/checkout_questionnaire_dialog.dart';
+import '../../../models/sitter_service_catalog.dart';
 
 // ============================================================================
 // _TodayPatient / _UrgentServiceRequest
@@ -27,14 +28,19 @@ import '../../../widgets/checkout_questionnaire_dialog.dart';
 class _TodayPatient {
   final String bookingId; // 🔵 ZID: bch nnajjmou nvazrou -> request.dart (fromCalendar: true, "Cancel Booking" disponible)
   final List<SchedulePet> pets; // 🔴 FIX (kifma tlab): "par reservation mch par pet" - kol pets el booking m3a ba3dhom, mch card mnfassla likol wa7ed
-  final String serviceType;
+  // 🔴 FIX (kifma tlab: "ma yjiwnich asemi les service lkol nhb just el
+  // logo mtaa el categorie... les service eli zeydinhom zyeda atihom
+  // logo +") - icons bark (déduplicated), mch les noms el kol - category
+  // icon (mkass/dar...) lel services el catalogue, "+" lel services
+  // custom (elli el sitter zad b ydik).
+  final List<IconData> serviceIcons;
   final String date;
   final String time;
 
   const _TodayPatient({
     required this.bookingId,
     required this.pets,
-    required this.serviceType,
+    required this.serviceIcons,
     required this.date,
     required this.time,
   });
@@ -109,14 +115,9 @@ class _SitterProfileScreenState extends State<SitterProfileScreen> {
   List<_UrgentServiceRequest> _urgentServices = [];
   bool _isLoadingUrgent = true;
 
-  static const Map<String, String> _serviceLabelKeys = {
-    'house_sitting': 'sitter_service_house_sitting',
-    'dog_walking': 'sitter_service_dog_walking',
-    'doggy_day_care': 'sitter_service_doggy_day_care',
-    'boarding': 'sitter_service_boarding',
-    'overnight_stays': 'sitter_service_overnight_stays',
-    'home_visits': 'sitter_service_home_visits',
-  };
+  // 🔴 FIX (kifma tlab: "les services nhbhom fi des titre...") -
+  // sitterServiceLabelKeys mel catalogue partagé (bدal liste mkarrra).
+  static Map<String, String> get _serviceLabelKeys => sitterServiceLabelKeys;
 
   static const List<String> _monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -192,8 +193,6 @@ class _SitterProfileScreenState extends State<SitterProfileScreen> {
     final schedule = await _calenderController.fetchMySchedule();
     if (!mounted) return;
 
-    debugPrint('🔍 [TODAY-PATIENTS] schedule.length=${schedule.length}');
-
     final DateTime now = DateTime.now();
     final DateTime todayOnly = DateTime(now.year, now.month, now.day);
     // 🔵 ZID (fix timezone): ".toLocal()" 9bal .year/.month/.day - nafs
@@ -210,23 +209,28 @@ class _SitterProfileScreenState extends State<SitterProfileScreen> {
       // ma tbanche ("eli deja 3malha ma yjich").
       final bool notFinishedYet = now.isBefore(booking.checkOut);
       final bool shouldShow = coversToday && notFinishedYet;
-      debugPrint('🔍 [TODAY-PATIENTS] booking id=${booking.id} checkIn=${booking.checkIn} checkOut=${booking.checkOut} coversToday=$coversToday notFinishedYet=$notFinishedYet');
       if (!shouldShow) continue;
 
-      final String serviceType = booking.serviceIds.isEmpty
-          ? '-'
-          : booking.serviceIds.map((id) => _serviceLabelKeys[id] != null ? _serviceLabelKeys[id]!.tr() : id).join(' + ');
+      // 🔴 FIX (kifma tlab: "ma yjiwnich asemi les service lkol nhb just
+      // el logo mtaa el categorie... les service eli zeydinhom zyeda
+      // atihom logo +") - icon tel category (déduplicated, esm order
+      // el bidaya, "LinkedHashSet" style) - "+" lel services custom.
+      final List<IconData> serviceIcons = [];
+      final Set<int> seenCodePoints = {};
+      for (final id in booking.serviceIds) {
+        final IconData icon = isCustomServiceId(id) ? Icons.add : (categoryIconForService(id) ?? Icons.pets);
+        if (seenCodePoints.add(icon.codePoint)) serviceIcons.add(icon);
+      }
 
       patients.add(_TodayPatient(
         bookingId: booking.id,
         pets: booking.pets,
-        serviceType: serviceType,
+        serviceIcons: serviceIcons,
         date: 'today_label'.tr(),
         time: '${_timeLabel(booking.checkIn)} - ${_timeLabel(booking.checkOut)}',
       ));
     }
 
-    debugPrint('🔍 [TODAY-PATIENTS] patients.length (final) = ${patients.length}');
     setState(() {
       _todayPatients = patients;
       _isLoadingTodayPatients = false;
@@ -596,7 +600,22 @@ class _TodayPatientCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('service_type_label'.tr(), style: TextStyle(color: AppColors.pinkpetsy, fontSize: sizes.screenWidth * 0.026)),
-                      Text(patient.serviceType, style: TextStyle(fontWeight: FontWeight.w600, fontSize: sizes.screenWidth * 0.030)),
+                      SizedBox(height: sizes.screenHeight * 0.004),
+                      // 🔴 FIX (kifma tlab: "ma yjiwnich asemi les
+                      // service lkol nhb just el logo mtaa el categorie")
+                      // - icons bark (déduplicated), mch les noms el
+                      // kol - Wrap bch ma yfoutouch barra el card lowkan
+                      // categories barcha.
+                      Wrap(
+                        spacing: sizes.screenWidth * 0.015,
+                        runSpacing: sizes.screenHeight * 0.006,
+                        children: patient.serviceIcons.isEmpty
+                            ? [Icon(Icons.pets, size: sizes.screenWidth * 0.045, color: AppColors.pinkpetsy)]
+                            : [
+                                for (final icon in patient.serviceIcons)
+                                  Icon(icon, size: sizes.screenWidth * 0.045, color: AppColors.pinkpetsy),
+                              ],
+                      ),
                     ],
                   ),
                 ),

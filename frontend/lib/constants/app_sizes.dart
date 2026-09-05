@@ -1285,4 +1285,145 @@ class AppSizes {
   double get sidebarPillBadgeFontSize => screenWidth * sidebarPillBadgeFontRatio;
   double get sidebarPillBadgeGap => screenWidth * sidebarPillBadgeGapRatio;
   double get sidebarVerifiedBadgeSize => screenWidth * sidebarVerifiedBadgeRatio;
+
+  // --------------------------------------------------------------------
+  // Messages List (views/user/messages_list_screen.dart) - messagerie
+  // "kima Messenger" (kifma tlab): titre + barre de recherche + bulles
+  // (stories) + liste conversations.
+  // --------------------------------------------------------------------
+  static const double messagesTopGapRatio = 0.02;
+  static const double messagesHorizontalPaddingRatio = 0.05;
+  static const double messagesTitleFontRatio = 0.06;
+  static const double messagesSectionGapRatio = 0.022;
+  static const double messagesSearchIconRatio = 0.05;
+  static const double messagesSearchFontRatio = 0.035;
+  static const double messagesSearchPaddingHRatio = 0.04;
+  static const double messagesSearchPaddingVRatio = 0.03;
+  static const double messagesBubbleSizeRatio = 0.16;
+  static const double messagesBubbleGapRatio = 0.03;
+  static const double messagesBubbleNameFontRatio = 0.026;
+  static const double messagesBubbleNameGapRatio = 0.008;
+  static const double messagesBubbleNameWidthRatio = 0.18;
+  static const double messagesConvAvatarSizeRatio = 0.14;
+  static const double messagesConvNameFontRatio = 0.04;
+  static const double messagesConvPreviewFontRatio = 0.033;
+  static const double messagesConvTimeFontRatio = 0.028;
+  static const double messagesConvPaddingVRatio = 0.018;
+  static const double messagesConvGapRatio = 0.006;
+  static const double messagesConvRowGapRatio = 0.006;
+  static const double messagesEmptyStateIconRatio = 0.14;
+  static const double messagesEmptyStateVerticalPadRatio = 0.1;
+  static const double messagesUnreadBadgeMinWidthRatio = 0.05;
+  static const double messagesUnreadBadgeFontRatio = 0.026;
+
+  double get messagesTopGap => screenHeight * messagesTopGapRatio;
+  double get messagesHorizontalPadding => screenWidth * messagesHorizontalPaddingRatio;
+  double get messagesTitleFontSize => screenWidth * messagesTitleFontRatio;
+  double get messagesSectionGap => screenHeight * messagesSectionGapRatio;
+  double get messagesSearchIcon => screenWidth * messagesSearchIconRatio;
+  double get messagesSearchFontSize => screenWidth * messagesSearchFontRatio;
+  double get messagesSearchPaddingH => screenWidth * messagesSearchPaddingHRatio;
+  double get messagesSearchPaddingV => screenWidth * messagesSearchPaddingVRatio;
+  double get messagesBubbleSize => screenWidth * messagesBubbleSizeRatio;
+  double get messagesBubbleGap => screenWidth * messagesBubbleGapRatio;
+  double get messagesBubbleNameFontSize => screenWidth * messagesBubbleNameFontRatio;
+  double get messagesBubbleNameGap => screenHeight * messagesBubbleNameGapRatio;
+  double get messagesBubbleNameWidth => screenWidth * messagesBubbleNameWidthRatio;
+  double get messagesConvAvatarSize => screenWidth * messagesConvAvatarSizeRatio;
+  double get messagesConvNameFontSize => screenWidth * messagesConvNameFontRatio;
+  double get messagesConvPreviewFontSize => screenWidth * messagesConvPreviewFontRatio;
+  double get messagesConvTimeFontSize => screenWidth * messagesConvTimeFontRatio;
+  double get messagesConvPaddingV => screenHeight * messagesConvPaddingVRatio;
+  double get messagesConvGap => screenHeight * messagesConvGapRatio;
+  double get messagesConvRowGap => screenWidth * messagesConvRowGapRatio;
+  double get messagesEmptyStateIcon => screenWidth * messagesEmptyStateIconRatio;
+  double get messagesEmptyStateVerticalPad => screenHeight * messagesEmptyStateVerticalPadRatio;
+  double get messagesUnreadBadgeMinWidth => screenWidth * messagesUnreadBadgeMinWidthRatio;
+  double get messagesUnreadBadgeFontSize => screenWidth * messagesUnreadBadgeFontRatio;
+
+  // --------------------------------------------------------------------
+  // Chat (views/user/chat_screen.dart) - conversation individuelle:
+  // bulles de message (texte/photo) + barre input + camera (gal/appareil).
+  // --------------------------------------------------------------------
+  static const double chatHeaderAvatarSizeRatio = 0.11;
+  static const double chatHeaderNameFontRatio = 0.042;
+  static const double chatHeaderSubFontRatio = 0.03;
+  static const double chatHeaderPaddingHRatio = 0.04;
+  static const double chatHeaderPaddingVRatio = 0.022;
+  static const double chatListPaddingHRatio = 0.04;
+  static const double chatListPaddingVRatio = 0.02;
+  static const double chatBubbleMaxWidthRatio = 0.74;
+  static const double chatBubblePaddingHRatio = 0.04;
+  static const double chatBubblePaddingVRatio = 0.024;
+  static const double chatBubbleFontRatio = 0.036;
+  static const double chatBubbleTimeFontRatio = 0.025;
+  static const double chatBubbleGapRatio = 0.01;
+  static const double chatBubbleImageMaxWidthRatio = 0.55;
+  static const double chatBubbleImageRadiusRatio = 0.045;
+  static const double chatDateSeparatorFontRatio = 0.03;
+  static const double chatDateSeparatorGapRatio = 0.02;
+  static const double chatInputBarPaddingHRatio = 0.03;
+  static const double chatInputBarPaddingVRatio = 0.018;
+  static const double chatInputFontRatio = 0.036;
+  static const double chatInputIconRatio = 0.065;
+  static const double chatSendButtonSizeRatio = 0.105;
+  static const double chatEmptyStateIconRatio = 0.16;
+  static const double chatEmptyStateVerticalPadRatio = 0.16;
+
+  double get chatHeaderAvatarSize => screenWidth * chatHeaderAvatarSizeRatio;
+  double get chatHeaderNameFontSize => screenWidth * chatHeaderNameFontRatio;
+  double get chatHeaderSubFontSize => screenWidth * chatHeaderSubFontRatio;
+  double get chatHeaderPaddingH => screenWidth * chatHeaderPaddingHRatio;
+  double get chatHeaderPaddingV => screenWidth * chatHeaderPaddingVRatio;
+  double get chatListPaddingH => screenWidth * chatListPaddingHRatio;
+  double get chatListPaddingV => screenHeight * chatListPaddingVRatio;
+  double get chatBubbleMaxWidth => screenWidth * chatBubbleMaxWidthRatio;
+  double get chatBubblePaddingH => screenWidth * chatBubblePaddingHRatio;
+  double get chatBubblePaddingV => screenWidth * chatBubblePaddingVRatio;
+  double get chatBubbleFontSize => screenWidth * chatBubbleFontRatio;
+  double get chatBubbleTimeFontSize => screenWidth * chatBubbleTimeFontRatio;
+  double get chatBubbleGap => screenHeight * chatBubbleGapRatio;
+  double get chatBubbleImageMaxWidth => screenWidth * chatBubbleImageMaxWidthRatio;
+  double get chatBubbleImageRadius => screenWidth * chatBubbleImageRadiusRatio;
+  double get chatDateSeparatorFontSize => screenWidth * chatDateSeparatorFontRatio;
+  double get chatDateSeparatorGap => screenHeight * chatDateSeparatorGapRatio;
+  double get chatInputBarPaddingH => screenWidth * chatInputBarPaddingHRatio;
+  double get chatInputBarPaddingV => screenWidth * chatInputBarPaddingVRatio;
+  double get chatInputFontSize => screenWidth * chatInputFontRatio;
+  double get chatInputIcon => screenWidth * chatInputIconRatio;
+  double get chatSendButtonSize => screenWidth * chatSendButtonSizeRatio;
+  double get chatEmptyStateIcon => screenWidth * chatEmptyStateIconRatio;
+  double get chatEmptyStateVerticalPad => screenHeight * chatEmptyStateVerticalPadRatio;
+
+  // --------------------------------------------------------------------
+  // About Us (views/user/about_us_screen.dart) - kifma tlab: "interface
+  // about us mahleha w fiha klem touchant".
+  // --------------------------------------------------------------------
+  static const double aboutUsTopGapRatio = 0.015;
+  static const double aboutUsHorizontalPaddingRatio = 0.06;
+  static const double aboutUsTitleFontRatio = 0.062;
+  static const double aboutUsHeroRadiusRatio = 0.05;
+  static const double aboutUsSectionGapRatio = 0.03;
+  static const double aboutUsIntroFontRatio = 0.038;
+  static const double aboutUsCardPaddingRatio = 0.045;
+  static const double aboutUsCardGapRatio = 0.03;
+  static const double aboutUsCardIconSizeRatio = 0.09;
+  static const double aboutUsCardIconGapRatio = 0.035;
+  static const double aboutUsCardTitleFontRatio = 0.042;
+  static const double aboutUsCardBodyFontRatio = 0.034;
+  static const double aboutUsClosingFontRatio = 0.04;
+
+  double get aboutUsTopGap => screenHeight * aboutUsTopGapRatio;
+  double get aboutUsHorizontalPadding => screenWidth * aboutUsHorizontalPaddingRatio;
+  double get aboutUsTitleFontSize => screenWidth * aboutUsTitleFontRatio;
+  double get aboutUsHeroRadius => screenWidth * aboutUsHeroRadiusRatio;
+  double get aboutUsSectionGap => screenHeight * aboutUsSectionGapRatio;
+  double get aboutUsIntroFontSize => screenWidth * aboutUsIntroFontRatio;
+  double get aboutUsCardPadding => screenWidth * aboutUsCardPaddingRatio;
+  double get aboutUsCardGap => screenHeight * aboutUsCardGapRatio;
+  double get aboutUsCardIconSize => screenWidth * aboutUsCardIconSizeRatio;
+  double get aboutUsCardIconGap => screenWidth * aboutUsCardIconGapRatio;
+  double get aboutUsCardTitleFontSize => screenWidth * aboutUsCardTitleFontRatio;
+  double get aboutUsCardBodyFontSize => screenWidth * aboutUsCardBodyFontRatio;
+  double get aboutUsClosingFontSize => screenWidth * aboutUsClosingFontRatio;
 }

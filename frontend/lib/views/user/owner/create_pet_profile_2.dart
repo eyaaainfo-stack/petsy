@@ -63,13 +63,16 @@ class _CreatePetProfile2ScreenState extends State<CreatePetProfile2Screen> {
   // --------------------------------------------------------------------
   final Set<String> _selectedBehaviors = {};
 
+  // 🔴 FIX (kifma tlab: "el behaviors mtaa el pet badelhom b hedhom") -
+  // liste jdida (7 behaviors, mbadlin l'9dima).
   static const List<String> _behaviorKeys = [
-    'behavior_scared_new_people',
-    'behavior_calm',
-    'behavior_scared_animals',
-    'behavior_active',
-    'behavior_friendly',
-    'behavior_angry',
+    'behavior_playful_energetic',
+    'behavior_calm_relaxed',
+    'behavior_curious_exploratory',
+    'behavior_affectionate',
+    'behavior_protective_territorial',
+    'behavior_anxious_stressed',
+    'behavior_food_motivated',
   ];
 
   // --------------------------------------------------------------------
@@ -312,8 +315,16 @@ class _CreatePetProfile2ScreenState extends State<CreatePetProfile2Screen> {
     );
   }
 
-  // Sef (row) fih 2 behaviors jenb b3adhom
-  Widget _behaviorRow(String key1, String key2, double screenWidth, double buttonWidth, double buttonHeight) {
+  // Sef (row) fih 2 behaviors jenb b3adhom - wla WA7ED bark (full width)
+  // lowkan key2 null (🔴 FIX: 7 behaviors tawa, 3ad = impair, el 7ell
+  // el fardi ykoun b'ru7ou f'sef mnfassel, mch mkassar/mzabet ghalet).
+  Widget _behaviorRow(String key1, String? key2, double screenWidth, double buttonWidth, double buttonHeight, {double? soloWidth}) {
+    if (key2 == null) {
+      return Padding(
+        padding: EdgeInsets.symmetric(vertical: screenWidth * 0.012),
+        child: _behaviorButton(key1, soloWidth ?? buttonWidth, buttonHeight),
+      );
+    }
     return Padding(
       padding: EdgeInsets.symmetric(vertical: screenWidth * 0.012),
       child: Row(
@@ -426,6 +437,8 @@ class _CreatePetProfile2ScreenState extends State<CreatePetProfile2Screen> {
                           _behaviorRow(_behaviorKeys[0], _behaviorKeys[1], screenSize.width, buttonWidth, buttonHeight),
                           _behaviorRow(_behaviorKeys[2], _behaviorKeys[3], screenSize.width, buttonWidth, buttonHeight),
                           _behaviorRow(_behaviorKeys[4], _behaviorKeys[5], screenSize.width, buttonWidth, buttonHeight),
+                          // 🔴 FIX: 7em behavior (impair) - sef b'ru7ou, full width (cardInnerWidth).
+                          _behaviorRow(_behaviorKeys[6], null, screenSize.width, buttonWidth, buttonHeight, soloWidth: cardInnerWidth),
                         ],
                       ),
                     );

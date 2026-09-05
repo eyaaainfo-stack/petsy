@@ -8,6 +8,7 @@ import '../../../controllers/availability_controller.dart';
 import '../../../widgets/availability_picker.dart';
 import 'request.dart';
 import '../../../widgets/message_dialog.dart';
+import '../../../models/sitter_service_catalog.dart';
 
 // ============================================================================
 // SitterCalenderScreen ("Calender") - sitter
@@ -49,23 +50,14 @@ class _SitterCalenderScreenState extends State<SitterCalenderScreen> {
   ];
   static const List<String> _weekdayKeys = ['weekday_mon', 'weekday_tue', 'weekday_wed', 'weekday_thu', 'weekday_fri', 'weekday_sat', 'weekday_sun'];
 
-  static const Map<String, String> _serviceLabelKeys = {
-    'house_sitting': 'sitter_service_house_sitting',
-    'dog_walking': 'sitter_service_dog_walking',
-    'doggy_day_care': 'sitter_service_doggy_day_care',
-    'boarding': 'sitter_service_boarding',
-    'overnight_stays': 'sitter_service_overnight_stays',
-    'home_visits': 'sitter_service_home_visits',
-  };
+  // 🔴 FIX (kifma tlab: "les services nhbhom fi des titre...") -
+  // sitterServiceLabelKeys mel catalogue partagé (bدal liste mkarrra).
+  static Map<String, String> get _serviceLabelKeys => sitterServiceLabelKeys;
 
-  static const Map<String, IconData> _serviceIcons = {
-    'house_sitting': Icons.house_outlined,
-    'dog_walking': Icons.directions_walk,
-    'doggy_day_care': Icons.wb_sunny_outlined,
-    'boarding': Icons.hotel_outlined,
-    'overnight_stays': Icons.nightlight_outlined,
-    'home_visits': Icons.home_outlined,
-  };
+  // 🔴 FIX (kifma tlab: "les services nhbhom fi des titre...") - 14
+  // service tawa (bدal 6) - icon tel CATEGORY (mch tel service el
+  // fardi, "wa9t sur3a" mch detail, chraht fel catalogue partagé).
+  static IconData? _serviceIconFor(String id) => categoryIconForService(id);
 
   // ==========================================================================
   // Mode "Availability"
@@ -168,7 +160,7 @@ class _SitterCalenderScreenState extends State<SitterCalenderScreen> {
 
   String _serviceLabel(String id) => _serviceLabelKeys[id] != null ? _serviceLabelKeys[id]!.tr() : id;
 
-  IconData _serviceIcon(List<String> serviceIds) => serviceIds.isNotEmpty ? (_serviceIcons[serviceIds.first] ?? Icons.pets) : Icons.pets;
+  IconData _serviceIcon(List<String> serviceIds) => serviceIds.isNotEmpty ? (_serviceIconFor(serviceIds.first) ?? Icons.pets) : Icons.pets;
 
   String _dateLabel(DateTime d) => '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}.${d.year}';
   // 🔵 ZID (fix timezone): ".toLocal()" 9bal .hour/.minute - mnghirha,

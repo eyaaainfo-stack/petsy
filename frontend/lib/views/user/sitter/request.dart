@@ -7,6 +7,7 @@ import '../../../controllers/request_controller.dart';
 import '../../../controllers/auth_session.dart';
 import '../owner/pet_profile.dart';
 import '../../../widgets/message_dialog.dart';
+import '../../../models/sitter_service_catalog.dart';
 
 // ============================================================================
 // RequestScreen ("Bookings Details") - sitter
@@ -45,23 +46,9 @@ class _RequestScreenState extends State<RequestScreen> {
     'July', 'August', 'September', 'October', 'November', 'December',
   ];
 
-  static const Map<String, String> _serviceLabelKeys = {
-    'house_sitting': 'sitter_service_house_sitting',
-    'dog_walking': 'sitter_service_dog_walking',
-    'doggy_day_care': 'sitter_service_doggy_day_care',
-    'boarding': 'sitter_service_boarding',
-    'overnight_stays': 'sitter_service_overnight_stays',
-    'home_visits': 'sitter_service_home_visits',
-  };
-
-  static const Map<String, String> _serviceDescKeys = {
-    'house_sitting': 'sitter_service_house_sitting_desc',
-    'dog_walking': 'sitter_service_dog_walking_desc',
-    'doggy_day_care': 'sitter_service_doggy_day_care_desc',
-    'boarding': 'sitter_service_boarding_desc',
-    'overnight_stays': 'sitter_service_overnight_stays_desc',
-    'home_visits': 'sitter_service_home_visits_desc',
-  };
+  // 🔴 FIX (kifma tlab: "les services nhbhom fi des titre...") -
+  // sitterServiceLabelKeys mel catalogue partagé (bدal liste mkarrra).
+  static Map<String, String> get _serviceLabelKeys => sitterServiceLabelKeys;
 
   @override
   void initState() {
@@ -84,9 +71,11 @@ class _RequestScreenState extends State<RequestScreen> {
   String _title(BookingRequestDetail b) => b.serviceIds.isEmpty ? '-' : b.serviceIds.map(_serviceLabel).join(' + ');
 
   String _description(BookingRequestDetail b) {
-    if (b.serviceIds.isEmpty) return '';
-    final key = _serviceDescKeys[b.serviceIds.first];
-    return key != null ? key.tr() : '';
+    // 🔴 FIX (kifma tlab: "les services nhbhom fi des titre...") - el
+    // 14 services jodad esmehom déjà wadh7in brachou (mathalan "Bain
+    // complet et séchage") - mafamech me3na "desc" mnfassla zeyda (kifha
+    // kif el 6 services el 9dima, "Le sitter reste chez vous...").
+    return '';
   }
 
   // 🔵 ZID (fix timezone): ".toLocal()" 9bal .day/.month/.year -

@@ -15,6 +15,8 @@ import '../../views/user/settings_screen.dart';
 import '../../views/user/owner/my_favourites_screen.dart';
 import '../../views/user/owner/les_reservations.dart';
 import '../../controllers/notification_controller.dart';
+import '../../views/user/messages_list_screen.dart';
+import '../../views/user/about_us_screen.dart';
 
 // ============================================================================
 // SidebarOwner (Drawer tel owner) - redesign "moderne"
@@ -290,7 +292,12 @@ class _SidebarOwnerState extends State<SidebarOwner> {
                       icon: Icons.chat_bubble_outline,
                       label: 'messages_label'.tr(),
                       color: AppColors.vertpetsy,
-                      onTap: () => _notImplementedYet(context),
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const MessagesListScreen()),
+                        );
+                      },
                     ),
                     SizedBox(height: sizes.sidebarPillGap),
                     // 🔵 ZID (kifma tlab): "My Favourites"
@@ -348,7 +355,12 @@ class _SidebarOwnerState extends State<SidebarOwner> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                     elevation: 0,
                   ),
-                  onPressed: () => _notImplementedYet(context),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const AboutUsScreen()),
+                    );
+                  },
                   child: Text(
                     'about_us_label'.tr(),
                     style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: sizes.sidebarItemFontSize),

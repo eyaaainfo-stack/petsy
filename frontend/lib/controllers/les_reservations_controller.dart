@@ -23,13 +23,23 @@ class BookedPet {
 // ============================================================================
 // OwnerBooking (booking kifma yban fel owner side - les_reservations.dart)
 // ============================================================================
-// 🔵 status mel backend: 'pending' / 'accepted' / 'rejected' bark
-// (chrahtha models/booking.js). "Confirmed" vs "Completed" (mockup)
-// mch 2 statuses mnfaslin fel database - houma NAFS "accepted", el
-// farq bark: checkOut 3adda (fel me'di) wla le. Fa n7esbouha houni
-// (derived), mch el backend (bla ma nzidou status jdid l'ghir data).
+// 🔵 status mel backend: 'pending' / 'accepted' / 'rejected' / 'open' /
+// 'awaiting_confirmation' (chrahtha models/booking.js). "Confirmed" vs
+// "Completed" (mockup) mch 2 statuses mnfaslin fel database - houma
+// NAFS "accepted", el farq bark: checkOut 3adda (fel me'di) wla le.
+// Fa n7esbouha houni (derived), mch el backend (bla ma nzidou status
+// jdid l'ghir data).
+// 🔴 FIX (bug: "el detais mtaa el sitter... yetfeskho ki naml operation"):
+// "open" (rebroadcast, sitter=null, mafamech sitter mo3ayan l'hin) w
+// "awaiting_confirmation" (candidate jdid, mestanni confirmation)
+// kanou el 2 yet7esbou "pending" (ghir case "default") - fa el badge
+// kan ywarri "En attente" 7atta lel booking elli el sitter el asli
+// RAFEDH w el owner rebroadcasta biha (sitter=null 7a9i9atan) - el
+// user yosloh "En attente" (kifha kif fama sitter mestanni ywajeb)
+// lakin fel 7a9i9a MAFAMECH sitter mo3ayan khaless, houwa "recherche"
+// 7a9i9iya (chraht el UI fel booking_details.dart, "Pet Sitter" section).
 // ============================================================================
-enum OwnerBookingStatus { pending, confirmed, completed, rejected }
+enum OwnerBookingStatus { pending, searching, awaitingConfirmation, confirmed, completed, rejected }
 
 class OwnerBooking {
   final String id;
@@ -70,6 +80,12 @@ class OwnerBooking {
         return OwnerBookingStatus.rejected;
       case 'accepted':
         return DateTime.now().isAfter(checkOut) ? OwnerBookingStatus.completed : OwnerBookingStatus.confirmed;
+      // 🔴 FIX: kanou el 2 (open/awaiting_confirmation) yet7esbou
+      // "pending" (case default) - tawa 3andhom status "réel" mnfassel.
+      case 'open':
+        return OwnerBookingStatus.searching;
+      case 'awaiting_confirmation':
+        return OwnerBookingStatus.awaitingConfirmation;
       case 'pending':
       default:
         return OwnerBookingStatus.pending;

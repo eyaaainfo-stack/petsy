@@ -7,14 +7,20 @@
 // getProfile) yrajja3 el kol f nefs el appel.
 // ============================================================================
 class SitterServiceEntry {
-  final String serviceId; // 'house_sitting' / 'dog_walking' / ...
+  final String serviceId; // 'grooming_full_bath' / 'walking_daily_walk' / 'custom' / ...
   final double price;
   final String petType; // 'cat' / 'dog' / 'both'
+  // 🔵 ZID (kifma tlab: "ken yhb yzid service ekher") - esm el service
+  // "Autre" (custom, serviceId == 'custom') - el sitter kteb b ydik,
+  // mafamech labelKey lel translation (mch mel catalogue - chraht fel
+  // models/sitter_service_catalog.dart).
+  final String? customLabel;
 
   const SitterServiceEntry({
     required this.serviceId,
     required this.price,
     required this.petType,
+    this.customLabel,
   });
 
   factory SitterServiceEntry.fromJson(Map<String, dynamic> json) {
@@ -22,6 +28,7 @@ class SitterServiceEntry {
       serviceId: json['serviceId'] as String? ?? '',
       price: (json['price'] as num?)?.toDouble() ?? 0,
       petType: json['petType'] as String? ?? '',
+      customLabel: json['customLabel'] as String?,
     );
   }
 }

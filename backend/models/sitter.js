@@ -7,9 +7,13 @@ const User = require('./user');
 // bla appel API 7a9i9i). Tawa nkhazzenhom fel Sitter document.
 const sitterServiceSchema = new mongoose.Schema(
   {
-    serviceId: { type: String, required: true }, // mathalan 'house_sitting', 'dog_walking'...
+    serviceId: { type: String, required: true }, // mathalan 'grooming_full_bath', 'walking_daily_walk', 'custom'...
     price: { type: Number, required: true },
     petType: { type: String, enum: ['cat', 'dog', 'both'], required: true },
+    // 🔵 ZID (kifma tlab: "ken yhb yzid service ekher") - esm el service
+    // "Autre" (custom, serviceId === 'custom') - el sitter kteb b ydik
+    // (chraht fel frontend, models/sitter_service_catalog.dart).
+    customLabel: { type: String, default: null },
   },
   { _id: false }
 );

@@ -6,6 +6,7 @@ import '../../../widgets/back_button.dart';
 import '../../../widgets/verified_badge.dart';
 import '../../../controllers/my_profile_controller.dart';
 import '../../../models/my_profile_data.dart';
+import '../../../models/sitter_service_catalog.dart';
 import '../../../services/api_service.dart';
 import 'update_profile_sitter.dart';
 
@@ -51,20 +52,15 @@ class _MyProfileSitterScreenState extends State<MyProfileSitterScreen> {
     });
   }
 
-  // 🔵 serviceId ('house_sitting'...) -> translation key mawjouda déjà
-  // (create_sitter_profile.dart) - nafs el labels, bla ma nkarrarhom.
-  static const Map<String, String> _serviceLabelKeys = {
-    'house_sitting': 'sitter_service_house_sitting',
-    'dog_walking': 'sitter_service_dog_walking',
-    'doggy_day_care': 'sitter_service_doggy_day_care',
-    'boarding': 'sitter_service_boarding',
-    'overnight_stays': 'sitter_service_overnight_stays',
-    'home_visits': 'sitter_service_home_visits',
-  };
-
-  String _serviceLabel(String serviceId) {
-    final key = _serviceLabelKeys[serviceId];
-    return key != null ? key.tr() : serviceId;
+  // 🔴 FIX (kifma tlab: "les services nhbhom fi des titre... ken yhb
+  // yzid service ekher") - sitterServiceLabelKeys mel catalogue partagé
+  // (bدal liste mkarrra houni) - "custom" (Autre) yesta3mel "customLabel".
+  String _serviceLabel(SitterServiceEntry service) {
+    if (isCustomServiceId(service.serviceId)) {
+      return (service.customLabel != null && service.customLabel!.isNotEmpty) ? service.customLabel! : service.serviceId;
+    }
+    final key = sitterServiceLabelKeys[service.serviceId];
+    return key != null ? key.tr() : service.serviceId;
   }
 
   String _residenceLabel(String? residenceType) {
@@ -153,7 +149,7 @@ class _ProfileContent extends StatelessWidget {
   final MyProfileData profile;
   final AppSizes sizes;
   final Color mutedTextColor;
-  final String Function(String) serviceLabel;
+  final String Function(SitterServiceEntry) serviceLabel;
   final String Function(String?) residenceLabel;
   final VoidCallback onEditPressed;
 
@@ -380,7 +376,7 @@ class _ProfileContent extends StatelessWidget {
                           ),
                         ),
                         SizedBox(width: sizes.screenWidth * 0.025),
-                        Expanded(child: Text(serviceLabel(service.serviceId), style: TextStyle(fontSize: sizes.myProfileBodyFontSize))),
+                        Expanded(child: Text(serviceLabel(service), style: TextStyle(fontSize: sizes.myProfileBodyFontSize))),
                       ],
                     ),
                   ),
