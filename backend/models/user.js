@@ -67,6 +67,21 @@ const userSchema = new mongoose.Schema(
     // d'identité: l'admin ynajjam ye5tar "Valider" ghir ken el checklist
     // (chraht fel adminController.js/computeChecklist) kaملa.
     isVerified: { type: Boolean, default: false },
+    // 🔵 ZID (kifma tlab: "el verification tetnahha idha el user tahet
+    // el taux des avis positifs mteou ala el taux elli khadha bih el
+    // verification") - "snapshot" tel seuil (VerificationSettings.
+    // sitterMinGoodReviewPercent/ownerMinGoodReviewPercent) ki l'admin
+    // 9bel el vérification (verifyUser, adminController.js) - MCH el
+    // seuil el 7ali (live) - bch ken l'admin ybeddel el seuil MEN BA3D
+    // (yza3ez3ou), el comptes elli déjà verified MA yet2ath-rouch (el
+    // comparaison DIMA m3a el seuil elli "khadhou bih" el vérification,
+    // mch m3a el seuil el jdid). Ye5dem m3a computeGoodReviewPercent()
+    // (verificationService.js) ki ysir avis jdid (checkoutQuestionnaire
+    // Controller.js/answerSatisfaction) bch yfixi ken el taux 7ali
+    // yenzel ta7t hedha - null = mazel ma verified 3ad (wla verified
+    // 9bal had el feature - "grandfathered", mafamech baseline bch
+    // n9arnouha biha).
+    verificationReviewThreshold: { type: Number, default: null },
     // 🔵 ZID (kifma tlab: "idha el creation du compte n'esy pas finis
     // ma yetsajelch el compte f base de donnes") - false ki el compte
     // yetkha9 (email+password bark, mel signup), True ghir ki el user

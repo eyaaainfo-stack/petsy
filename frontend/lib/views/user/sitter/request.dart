@@ -40,6 +40,12 @@ class _RequestScreenState extends State<RequestScreen> {
   BookingRequestDetail? _booking;
   bool _isLoading = true;
   bool _isResponding = false;
+  // 🔴 FIX (kifma tlab: "ma ejbetnich fel mandhar... khalliha wkt
+  // nenzel al categorie tethalli tahtha lista mta3 les service
+  // selectionnees") - key = icon.codePoint (el category/"+" tel
+  // custom) - bch na3rfou anhi category(s) el user 7ell (expand
+  // toggle), mch AlertDialog/SnackBar 3ad.
+  final Set<int> _expandedServiceGroups = {};
 
   static const List<String> _monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -68,7 +74,141 @@ class _RequestScreenState extends State<RequestScreen> {
 
   String _serviceLabel(String id) => _serviceLabelKeys[id] != null ? _serviceLabelKeys[id]!.tr() : id;
 
-  String _title(BookingRequestDetail b) => b.serviceIds.isEmpty ? '-' : b.serviceIds.map(_serviceLabel).join(' + ');
+  // 🔴 FIX (kifma tlab: "aleh tji custom num... nhb el logo mtaa el
+  // categorie... w kif nenzel ala categorie tethalli el service eli
+  // khtarou el owner") - "_title()" el 9dima kanet testa3mel GHIR
+  // "b.serviceIds" (catalog labels bark) - el "customLabel" (déjà
+  // mjabed mel backend, chraht kaملa fel request_controller.dart/
+  // BookedServiceEntry) kan mahmel khales, fahetha service custom
+  // kan yban raw ("custom_1788576050362000") bدal el esm el 7a9i9i.
+  //
+  // Tawa: icon (nafs convention "Patients du jour" - sitter_profile.
+  // dart/_TodayPatientCard: "+" lel custom, category icon l'el b9iya)
+  // + esm 7a9i9i (customLabel ken custom, wla catalog label) - "chip"
+  // tappable l'kol wa7ed (SnackBar ywarri el esm el kamel, mch ghir
+  // icon bark).
+  IconData _serviceIcon(String serviceId) {
+    return isCustomServiceId(serviceId) ? Icons.add : (categoryIconForService(serviceId) ?? Icons.pets);
+  }
+
+  // 🔴 FIX (kifma tlab: "tethalli fenetre fiha esm el service w
+  // kodemou el prix mteou") - zedt el prix (déjà mo5azzan fel booking,
+  // models/booking.js/bookingServiceSchema - price required per
+  // service) m3a l'esm fel SnackBar.
+  String _resolvedServiceLabel(BookedServiceEntry s) {
+    if (isCustomServiceId(s.serviceId)) {
+      return (s.customLabel != null && s.customLabel!.trim().isNotEmpty)
+          ? s.customLabel!
+          : 'sitter_custom_service_generic_label'.tr();
+    }
+    return _serviceLabel(s.serviceId);
+  }
+
+  // 🔵 ZID (kifma tlab: "zidni kodem el logo esm el categorie") - esm
+  // el category ("Toilettage"/"Garde d'animaux"/... wla "Autre" l'el
+  // custom) - categoryTitleKeyForService (sitter_service_catalog.dart,
+  // nafs pattern categoryIconForService).
+  String _categoryLabel(String serviceId) {
+    if (isCustomServiceId(serviceId)) return 'sitter_category_custom'.tr();
+    final key = categoryTitleKeyForService(serviceId);
+    return key != null ? key.tr() : '';
+  }
+
+  // 🔴 FIX (kifma tlab: "ma ejbetnich fel mandhar khalliha wkt nenzel
+  // al categorie tethalli tahtha lista mta3 les service selectionnees
+  // w kodemhom prix mteehom w kenhom akthar men pet amlha *nb pet") -
+  // bدal AlertDialog: chip per CATEGORY (déduplicated, mch per service
+  // fardi) - dass 3liha, tet7ell/tet3allef LISTA jowaha (inline, mch
+  // popup) - kol service jowa had category m3a el prix (× 3adad el
+  // pets, "price" mo5azzan houwa PER PET - chraht kaملa fel backend,
+  // bookingController.js/respondToBooking: "newTotal += price * petCount").
+  Widget _serviceChips(BookingRequestDetail b, AppSizes sizes) {
+    if (b.services.isEmpty) {
+      return Text('-', style: TextStyle(color: AppColors.pinkpetsy, fontWeight: FontWeight.bold, fontSize: sizes.myProfileBodyFontSize));
+    }
+    final int petCount = b.pets.isEmpty ? 1 : b.pets.length;
+
+    final Map<int, IconData> iconByKey = {};
+    final Map<int, String> labelByKey = {};
+    final Map<int, List<BookedServiceEntry>> grouped = {};
+    for (final s in b.services) {
+      final icon = _serviceIcon(s.serviceId);
+      iconByKey[icon.codePoint] = icon;
+      labelByKey.putIfAbsent(icon.codePoint, () => _categoryLabel(s.serviceId));
+      grouped.putIfAbsent(icon.codePoint, () => []).add(s);
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: sizes.screenWidth * 0.02,
+          runSpacing: sizes.screenHeight * 0.008,
+          children: [
+            for (final key in grouped.keys)
+              InkWell(
+                borderRadius: BorderRadius.circular(20),
+                onTap: () => setState(() {
+                  if (_expandedServiceGroups.contains(key)) {
+                    _expandedServiceGroups.remove(key);
+                  } else {
+                    _expandedServiceGroups.add(key);
+                  }
+                }),
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: sizes.screenWidth * 0.025, vertical: sizes.screenHeight * 0.006),
+                  decoration: BoxDecoration(color: AppColors.pinkpetsy.withOpacity(0.14), borderRadius: BorderRadius.circular(20)),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(iconByKey[key], color: AppColors.pinkpetsy, size: sizes.screenWidth * 0.04),
+                      SizedBox(width: sizes.screenWidth * 0.014),
+                      Text(labelByKey[key] ?? '', style: TextStyle(color: AppColors.pinkpetsy, fontWeight: FontWeight.bold, fontSize: sizes.myProfileBodyFontSize)),
+                      SizedBox(width: sizes.screenWidth * 0.01),
+                      Icon(
+                        _expandedServiceGroups.contains(key) ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                        color: AppColors.pinkpetsy,
+                        size: sizes.screenWidth * 0.04,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
+        for (final key in grouped.keys)
+          if (_expandedServiceGroups.contains(key))
+            Padding(
+              padding: EdgeInsets.only(top: sizes.screenHeight * 0.008, bottom: sizes.screenHeight * 0.004),
+              child: Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(horizontal: sizes.screenWidth * 0.03, vertical: sizes.screenHeight * 0.008),
+                decoration: BoxDecoration(color: AppColors.pinkpetsy.withOpacity(0.06), borderRadius: BorderRadius.circular(14)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (final s in grouped[key]!)
+                      Padding(
+                        padding: EdgeInsets.symmetric(vertical: sizes.screenHeight * 0.004),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(_resolvedServiceLabel(s), style: TextStyle(fontSize: sizes.myProfileBodyFontSize * 0.9)),
+                            ),
+                            Text(
+                              '${(s.price * petCount).toStringAsFixed(0)} DT',
+                              style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.pinkpetsy, fontSize: sizes.myProfileBodyFontSize * 0.9),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+      ],
+    );
+  }
 
   String _description(BookingRequestDetail b) {
     // 🔴 FIX (kifma tlab: "les services nhbhom fi des titre...") - el
@@ -143,15 +283,28 @@ class _RequestScreenState extends State<RequestScreen> {
     setState(() => _isResponding = true);
     final success = await _controller.respond(_booking!.id, accept: accept);
     if (!mounted) return;
-    setState(() => _isResponding = false);
 
     if (!success) {
+      setState(() => _isResponding = false);
       showMessageDialog(context, 'profile_submit_error'.tr());
       return;
     }
 
+    // 🔴 FIX (kifma tlab: "nenzel ala accepter ma yetbadel chy fel
+    // interface... ama kif nokhrej w naawed nodkhol tjini confirmer
+    // yaani hiya reelement tkoblet men awl clic") - "Navigator.pop"
+    // direct ba3d "showMessageDialog" kan race: showDialog ye39ad route
+    // JDIDA (el dialog), w el "pop()" el jayya direct wra kanet
+    // te9ta3 EL DIALOG (el route el a5ir eli et7atet), mch el
+    // RequestScreen nafsou - fahetha el écran kan yeb9a HOWA HOWA (bla
+    // ma yetbeddel 7ata 7aja), 7atta ken el backend déjà 3addel el
+    // status mel awel clic (chraht kaملa fel adminController.js/
+    // updateUser, nafs mant9). Tawa: _load() (re-fetch) bدal el pop -
+    // el status yban el jdid EN PLACE, direct.
+    await _load();
+    if (!mounted) return;
+    setState(() => _isResponding = false);
     showMessageDialog(context, accept ? 'request_accepted_toast'.tr() : 'request_rejected_toast'.tr());
-    Navigator.of(context).pop(true);
   }
 
   Future<void> _cancel() async {
@@ -159,21 +312,24 @@ class _RequestScreenState extends State<RequestScreen> {
     setState(() => _isResponding = true);
     final success = await _controller.cancelBooking(_booking!.id);
     if (!mounted) return;
-    setState(() => _isResponding = false);
 
     if (!success) {
+      setState(() => _isResponding = false);
       showMessageDialog(context, 'profile_submit_error'.tr());
       return;
     }
 
+    // 🔴 FIX (kifma tlab) - nafs el fix mel fou9 (_respond) - _load()
+    // bدal Navigator.pop (race m3a showMessageDialog).
+    await _load();
+    if (!mounted) return;
+    setState(() => _isResponding = false);
     showMessageDialog(context, 'booking_cancelled_toast'.tr());
-    Navigator.of(context).pop(true);
   }
 
   @override
   Widget build(BuildContext context) {
     final sizes = AppSizes.of(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final Color mutedTextColor =
         Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.65) ?? Colors.grey;
 
@@ -216,7 +372,7 @@ class _RequestScreenState extends State<RequestScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(_title(_booking!), style: TextStyle(color: AppColors.pinkpetsy, fontWeight: FontWeight.bold, fontSize: sizes.myProfileBodyFontSize)),
+                          _serviceChips(_booking!, sizes),
                           if (_description(_booking!).isNotEmpty) ...[
                             SizedBox(height: sizes.screenHeight * 0.004),
                             Text(_description(_booking!), style: TextStyle(fontSize: sizes.myProfileBodyFontSize * 0.85)),

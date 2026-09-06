@@ -30,6 +30,28 @@ class RequestPersonInfo {
 }
 
 // ============================================================================
+// BookedServiceEntry (kifma tlab: "el logo mtaa el categorie... w ki
+// nenzel ala categorie tethalli el service eli khtarou el owner") -
+// serviceId + customLabel (lowkan "custom_..." - chraht kaملa fel
+// backend, bookingController.js/getBookingById).
+// ============================================================================
+class BookedServiceEntry {
+  final String serviceId;
+  final String? customLabel;
+  final double price;
+
+  const BookedServiceEntry({required this.serviceId, this.customLabel, required this.price});
+
+  factory BookedServiceEntry.fromJson(Map<String, dynamic> json) {
+    return BookedServiceEntry(
+      serviceId: json['serviceId'] as String? ?? '',
+      customLabel: json['customLabel'] as String?,
+      price: (json['price'] as num?)?.toDouble() ?? 0,
+    );
+  }
+}
+
+// ============================================================================
 // BookingRequestDetail (request.dart - "Request Details")
 // ============================================================================
 // 🔵 status: 'pending' / 'accepted' / 'rejected' / 'open' / 'awaiting_confirmation'
@@ -38,7 +60,7 @@ class RequestPersonInfo {
 class BookingRequestDetail {
   final String id;
   final String status;
-  final List<String> serviceIds;
+  final List<BookedServiceEntry> services;
   final DateTime checkIn;
   final DateTime checkOut;
   final double total;
@@ -49,7 +71,7 @@ class BookingRequestDetail {
   const BookingRequestDetail({
     required this.id,
     required this.status,
-    required this.serviceIds,
+    required this.services,
     required this.checkIn,
     required this.checkOut,
     required this.total,
@@ -58,6 +80,11 @@ class BookingRequestDetail {
     required this.pets,
   });
 
+  // 🔵 ZID: backward-compat (mafamech blasa okhra testa3melha barra
+  // request.dart, lakin ma3neha ma tetghayarhach ken 7ad zad ye7taj el
+  // IDs bark, bla el customLabel).
+  List<String> get serviceIds => services.map((s) => s.serviceId).toList();
+
   factory BookingRequestDetail.fromJson(Map<String, dynamic> json) {
     final List<dynamic> petsJson = json['pets'] as List<dynamic>? ?? [];
     final List<dynamic> servicesJson = json['services'] as List<dynamic>? ?? [];
@@ -65,7 +92,7 @@ class BookingRequestDetail {
     return BookingRequestDetail(
       id: json['_id'] as String? ?? '',
       status: json['status'] as String? ?? 'pending',
-      serviceIds: servicesJson.map((s) => (s as Map<String, dynamic>)['serviceId'] as String? ?? '').toList(),
+      services: servicesJson.map((s) => BookedServiceEntry.fromJson(s as Map<String, dynamic>)).toList(),
       checkIn: DateTime.parse(json['checkIn'] as String),
       checkOut: DateTime.parse(json['checkOut'] as String),
       total: (json['total'] as num?)?.toDouble() ?? 0,

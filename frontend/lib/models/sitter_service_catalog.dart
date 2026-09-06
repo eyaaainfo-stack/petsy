@@ -100,3 +100,14 @@ IconData? categoryIconForService(String serviceId) {
   }
   return null;
 }
+
+// 🔵 ZID (kifma tlab: "zidni kodem el logo esm el categorie") - nafs
+// l'idée mte3 categoryIconForService, lakin el titleKey (esm) - bch
+// el chip (request.dart/booking_details.dart) ywarri l'esm el
+// categorie jamb el icon, mch icon bark.
+String? categoryTitleKeyForService(String serviceId) {
+  for (final cat in sitterServiceCatalog) {
+    if (cat.services.any((s) => s.id == serviceId)) return cat.titleKey;
+  }
+  return null;
+}

@@ -41,6 +41,30 @@ class Validators {
   }
 
   // --------------------------------------------------------------------
+  // Phone (AdminAccountFormScreen): "ma nkhalihomch ferghin" - ken el
+  // admin y5alli el 7a9el fadhi, ma yfoutch el form. Bess "required"
+  // houni (mch strict 8 ra9ma kif ProfileValidators.phone) 7it el
+  // admin ynajjam ye5la9 comptes b numeros mch tounsiin zeda.
+  // --------------------------------------------------------------------
+  static String? phone(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'phone_required_error'.tr();
+    }
+    return null;
+  }
+
+  // --------------------------------------------------------------------
+  // City (AdminAccountFormScreen): nafs l'idée - "ma nkhalihomch
+  // ferghin".
+  // --------------------------------------------------------------------
+  static String? city(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'city_required_error'.tr();
+    }
+    return null;
+  }
+
+  // --------------------------------------------------------------------
   // Password SIGNUP: rules 9awiya (tal9ithom kif tlabt):
   //   - 8 caractères 3ala l'a9al
   //   - 1 7arf kbir (majuscule) 3ala l'a9al

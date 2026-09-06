@@ -4,6 +4,7 @@ import '../../../constants/app_colors.dart';
 import '../../../constants/app_sizes.dart';
 import '../../../widgets/back_button.dart';
 import '../../../controllers/les_reservations_controller.dart';
+import '../../../controllers/request_controller.dart' show BookedServiceEntry;
 import '../../../widgets/pet_avatars_stack.dart';
 import 'booking_details.dart';
 import '../../../models/sitter_service_catalog.dart';
@@ -60,12 +61,26 @@ class _LesReservationsScreenState extends State<LesReservationsScreen> {
     return key != null ? key.tr() : serviceId;
   }
 
+  // 🔴 FIX (kifma tlab: "aleh tji custom num...") - customLabel (déjà
+  // mjabed mel backend/model, chraht kaملa fel request.dart/
+  // booking_details.dart) ken el service "custom_..." - fallback l'esm
+  // générique ("sitter_custom_service_generic_label") ken el sitter
+  // 7ذef/beddel el service custom mel profile tou3ou ba3d el booking.
+  String _resolvedServiceLabel(BookedServiceEntry s) {
+    if (isCustomServiceId(s.serviceId)) {
+      return (s.customLabel != null && s.customLabel!.trim().isNotEmpty)
+          ? s.customLabel!
+          : 'sitter_custom_service_generic_label'.tr();
+    }
+    return _serviceLabel(s.serviceId);
+  }
+
   // 🔵 lowkan fama service wa7ed wla ktar (el owner ynajjam ye5tar
   // ktar mel booking wa7ed, chrahtha request_a_book.dart) - njam3ouhom
   // b " + " (mathalan "Dog Walking + Boarding").
   String _titleFor(OwnerBooking booking) {
-    if (booking.serviceIds.isEmpty) return '-';
-    return booking.serviceIds.map(_serviceLabel).join(' + ');
+    if (booking.services.isEmpty) return '-';
+    return booking.services.map(_resolvedServiceLabel).join(' + ');
   }
 
   // 🔵 ZID (fix timezone): ".toLocal()" 9bal .day/.month/.year.

@@ -398,7 +398,19 @@ class _SitterProfileScreenState extends State<SitterProfileScreen> {
                             scrollDirection: Axis.horizontal,
                             itemCount: _todayPatients.length,
                             separatorBuilder: (_, __) => SizedBox(width: sizes.sitterProfileTodayCardGap),
-                            itemBuilder: (context, index) => _TodayPatientCard(patient: _todayPatients[index], sizes: sizes),
+                            itemBuilder: (context, index) => _TodayPatientCard(
+                              patient: _todayPatients[index],
+                              sizes: sizes,
+                              // 🔴 FIX (kifma tlab: "idha lyoum kbelt service
+                              // lel lyoum tjini toul mnghir ma naaml refrech") -
+                              // ken el sitter y3addel 7aja mel écran (cancel
+                              // booking, mathalan) - el liste tet-refreshi
+                              // direct, bla pull-to-refresh manuel.
+                              onReturn: () {
+                                _fetchTodayPatients();
+                                _fetchUrgentRequests();
+                              },
+                            ),
                           ),
                         ),
 
@@ -442,11 +454,22 @@ class _SitterProfileScreenState extends State<SitterProfileScreen> {
                             // 🔵 ZID (kifma tlab): dass 3al card -> request.dart.
                             // Ki yerja3 (accept/reject), n3awdou njibou el liste
                             // (el card elli 9bel/rafedh ma te5tefich mel grid).
+                            // 🔴 FIX (kifma tlab: "idha lyoum kbelt service lel
+                            // lyoum tjini toul mnghir ma naaml refrech") - ken
+                            // el service el mo9bel lel YOUM (checkIn = lyoum),
+                            // lezmou yban fel "Patients du jour" direct - kanet
+                            // ghir _fetchUrgentRequests() ye5dem (el "urgent" list
+                            // te-refreshi), lakin "Patients du jour" (_todayPatients)
+                            // ma kanetch, fahetha el user lezmou pull-to-refresh
+                            // bidou bch ychouf el booking el jdid.
                             onTap: () async {
                               await Navigator.of(context).push(
                                 MaterialPageRoute(builder: (_) => RequestScreen(bookingId: _urgentServices[index].id)),
                               );
-                              if (mounted) _fetchUrgentRequests();
+                              if (mounted) {
+                                _fetchUrgentRequests();
+                                _fetchTodayPatients();
+                              }
                             },
                           ),
                         ),
@@ -544,16 +567,18 @@ class _HeaderIconButton extends StatelessWidget {
 class _TodayPatientCard extends StatelessWidget {
   final _TodayPatient patient;
   final AppSizes sizes;
+  final VoidCallback onReturn;
 
-  const _TodayPatientCard({required this.patient, required this.sizes});
+  const _TodayPatientCard({required this.patient, required this.sizes, required this.onReturn});
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () {
-        Navigator.of(context).push(
+      onTap: () async {
+        await Navigator.of(context).push(
           MaterialPageRoute(builder: (_) => RequestScreen(bookingId: patient.bookingId, fromCalendar: true)),
         );
+        onReturn();
       },
       borderRadius: BorderRadius.circular(18),
       child: Container(

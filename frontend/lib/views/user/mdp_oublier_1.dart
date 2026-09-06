@@ -95,15 +95,22 @@ class _MdpOublier1ScreenState extends State<MdpOublier1Screen> {
                   children: [
                     SizedBox(height: sizes.fpTopGap),
 
-                    // 🔙 bouton retour (teal, dayra) - kifha kif mockup
-                    InkWell(
-                      onTap: () => Navigator.of(context).maybePop(),
-                      borderRadius: BorderRadius.circular(30),
-                      child: Container(
-                        width: sizes.fpBackButtonSize,
-                        height: sizes.fpBackButtonSize,
-                        decoration: const BoxDecoration(color: AppColors.vertpetsy, shape: BoxShape.circle),
-                        child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
+                    // 🔴 FIX (kifma tlab: "khallih fou9 lyasar mch f
+                    // west") - Align(topLeft) explicite, bch el bouton
+                    // ma yeb9ach centré (el Column fou9 3andha "stretch"
+                    // - bla Align, el Container/InkWell ynajjam yebda
+                    // centré 7asb el widget tree).
+                    Align(
+                      alignment: Alignment.topLeft,
+                      child: InkWell(
+                        onTap: () => Navigator.of(context).maybePop(),
+                        borderRadius: BorderRadius.circular(30),
+                        child: Container(
+                          width: sizes.fpBackButtonSize,
+                          height: sizes.fpBackButtonSize,
+                          decoration: const BoxDecoration(color: AppColors.vertpetsy, shape: BoxShape.circle),
+                          child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
+                        ),
                       ),
                     ),
 

@@ -79,7 +79,7 @@ class _MyProfileOwnerScreenState extends State<MyProfileOwnerScreen> {
           children: [
             RefreshIndicator(
               onRefresh: _load,
-              color: AppColors.pinkpetsy,
+              color: AppColors.myProfileAccent(_profile?.gender),
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : _hasError || _profile == null
@@ -141,20 +141,25 @@ class _OwnerProfileContent extends StatelessWidget {
     required this.onEditPressed,
   });
 
+  // 🔵 ZID (kifma tlab: "badel el rose bel vert ken male, khallih rose
+  // ken femelle") - accent color tel "My Profile" tel owner, mrakez
+  // 3al gender (AppColors.myProfileAccent, app_colors.dart).
+  Color get _accentColor => AppColors.myProfileAccent(profile.gender);
+
   Widget _pillCard({required String pillText, required Widget content}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Container(
           padding: EdgeInsets.symmetric(vertical: sizes.screenHeight * 0.012),
-          decoration: BoxDecoration(color: AppColors.pinkpetsy, borderRadius: BorderRadius.circular(30)),
+          decoration: BoxDecoration(color: _accentColor, borderRadius: BorderRadius.circular(30)),
           alignment: Alignment.center,
           child: Text(pillText, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: sizes.myProfilePillFontSize)),
         ),
         Container(
           width: double.infinity,
           padding: EdgeInsets.fromLTRB(sizes.screenWidth * 0.05, sizes.screenHeight * 0.022, sizes.screenWidth * 0.05, sizes.screenHeight * 0.018),
-          decoration: BoxDecoration(color: AppColors.pinkpetsy.withOpacity(0.10), borderRadius: BorderRadius.circular(18)),
+          decoration: BoxDecoration(color: _accentColor.withOpacity(0.10), borderRadius: BorderRadius.circular(18)),
           child: content,
         ),
       ],
@@ -167,16 +172,16 @@ class _OwnerProfileContent extends StatelessWidget {
         padding: EdgeInsets.symmetric(vertical: sizes.screenHeight * 0.016, horizontal: sizes.screenWidth * 0.03),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.pinkpetsy.withOpacity(0.5)),
+          border: Border.all(color: _accentColor.withOpacity(0.5)),
         ),
         child: Row(
           children: [
-            Icon(icon, color: AppColors.pinkpetsy, size: sizes.screenWidth * 0.05),
+            Icon(icon, color: _accentColor, size: sizes.screenWidth * 0.05),
             SizedBox(width: sizes.screenWidth * 0.02),
             Expanded(
               child: Text(
                 '$label : $value',
-                style: TextStyle(color: AppColors.pinkpetsy, fontWeight: FontWeight.w600, fontSize: sizes.screenWidth * 0.03),
+                style: TextStyle(color: _accentColor, fontWeight: FontWeight.w600, fontSize: sizes.screenWidth * 0.03),
               ),
             ),
           ],
@@ -251,8 +256,8 @@ class _OwnerProfileContent extends StatelessWidget {
               borderRadius: BorderRadius.circular(30),
               child: Container(
                 padding: EdgeInsets.all(sizes.screenWidth * 0.022),
-                decoration: BoxDecoration(color: AppColors.pinkpetsy.withOpacity(0.15), shape: BoxShape.circle),
-                child: Icon(Icons.edit_outlined, color: AppColors.pinkpetsy, size: sizes.screenWidth * 0.05),
+                decoration: BoxDecoration(color: _accentColor.withOpacity(0.15), shape: BoxShape.circle),
+                child: Icon(Icons.edit_outlined, color: _accentColor, size: sizes.screenWidth * 0.05),
               ),
             ),
           ],

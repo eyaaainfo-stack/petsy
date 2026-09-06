@@ -247,11 +247,25 @@ class _AdminAccountDetailScreenState extends State<AdminAccountDetailScreen> {
                           children: [
                             _InfoRow(icon: Icons.person_outline, color: AppColors.vertpetsy, label: 'name_label'.tr(), value: _detail!.user.fullName),
                             _rowDivider(context),
-                            _InfoRow(icon: Icons.email_outlined, color: AppColors.pinkpetsy, label: 'email_label'.tr(), value: _detail!.user.email),
-                            _rowDivider(context),
-                            _InfoRow(icon: Icons.phone_outlined, color: AppColors.vertpetsy, label: 'phone_label'.tr(), value: _detail!.user.phone),
-                            _rowDivider(context),
-                            _InfoRow(icon: Icons.location_city_outlined, color: AppColors.pinkpetsy, label: 'city_label'.tr(), value: _detail!.user.city, isLast: _detail!.user.birthday.isEmpty),
+                            _InfoRow(
+                              icon: Icons.email_outlined,
+                              color: AppColors.pinkpetsy,
+                              label: 'email_label'.tr(),
+                              value: _detail!.user.email,
+                              // 🔴 FIX (kifma tlab: "el admin principale khallih
+                              // hakk mnghir ville w num") - el principal ma3andouch
+                              // "il faut" phone/city (isProfileComplete: true mel
+                              // creation mel script, mch mel form), fa nehiw el 2
+                              // rows mel interface mte3ou bark (mch ghir "Non
+                              // renseigné" elli ma3ndhach ma3na houni).
+                              isLast: widget.user.isPrincipalAdmin && _detail!.user.birthday.isEmpty,
+                            ),
+                            if (!widget.user.isPrincipalAdmin) ...[
+                              _rowDivider(context),
+                              _InfoRow(icon: Icons.phone_outlined, color: AppColors.vertpetsy, label: 'phone_label'.tr(), value: _detail!.user.phone),
+                              _rowDivider(context),
+                              _InfoRow(icon: Icons.location_city_outlined, color: AppColors.pinkpetsy, label: 'city_label'.tr(), value: _detail!.user.city, isLast: _detail!.user.birthday.isEmpty),
+                            ],
                             if (_detail!.user.birthday.isNotEmpty) ...[
                               _rowDivider(context),
                               _InfoRow(icon: Icons.cake_outlined, color: AppColors.vertpetsy, label: 'birthday_label'.tr(), value: _detail!.user.birthday, isLast: true),

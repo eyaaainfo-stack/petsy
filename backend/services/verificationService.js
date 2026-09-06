@@ -45,6 +45,64 @@ async function computeGoodReviewPercent(userId) {
   return { percent, total };
 }
 
+// 🔵 el seuil "% avis mzyanin" el mounasib l'role (owner/sitter) - nafs
+// el logique mest3amla fi 3 blayes (computeChecklist taht, w
+// verifyUser/checkAndMaybeRevokeVerification, adminController.js/
+// verificationService.js) - houni bark bch ma nkarrarouch.
+function getGoodReviewPercentThresholdForRole(role, settings) {
+  if (role === 'sitter') return settings.sitterMinGoodReviewPercent;
+  if (role === 'owner') return settings.ownerMinGoodReviewPercent;
+  return null; // courier/admin: mafamech critère "% avis" fel checklist tou3hom.
+}
+
+// ============================================================================
+// checkAndMaybeRevokeVerification(userId)
+// ============================================================================
+// 🔵 ZID (kifma tlab: "nhb el verification tetnahha idha el user el
+// verifiee ta7et el taux des avis positifs mteou ala el taux elli
+// khadha bih el verification") - te7sab el % avis mzyanin EL 7ALI (mel
+// avis el kol l7ad tawa), w te9arnou m3a "user.verificationReviewThreshold"
+// (el seuil elli l'user "5adha bih" el vérification, chraht kaملa fel
+// user.js) - MCH m3a settings.xxxMinGoodReviewPercent el 7ali (live) -
+// bch ken l'admin ybeddel el seuil (yza3ez3ou) MEN BA3D, el comptes
+// elli déjà verified MA yet2ath-rouch b'ghalta.
+//
+// Testa3melha ki ysir avis JDID (checkoutQuestionnaireController.js/
+// answerSatisfaction) 3al "reviewee" - hedhi el lam7a el wa7ida elli
+// el % avis tel user ynajjam yetbeddel.
+//
+// Ma tel3abch 7aja ken: el user mch verified, wla role mch owner/sitter
+// (courier/admin mafamech critère "% avis"), wla verificationReviewThreshold
+// null (verified 9bal had el feature - "grandfathered", mafamech
+// baseline bch n9arnouha biha).
+// ============================================================================
+async function checkAndMaybeRevokeVerification(userId) {
+  const User = require('../models/user'); // 🔵 require() houni (mch fou9) - najjmou n7aynou "circular require" (user.js ma yeحtajch had el fichier).
+  const user = await User.findById(userId);
+  if (!user || !user.isVerified) return;
+  if (user.role !== 'owner' && user.role !== 'sitter') return;
+  if (user.verificationReviewThreshold === null || user.verificationReviewThreshold === undefined) return;
+
+  const { percent } = await computeGoodReviewPercent(user._id);
+  if (percent === null) return; // mafamech avis 7atta - ma ynajjamch ye5ser el critère.
+
+  if (percent < user.verificationReviewThreshold) {
+    user.isVerified = false;
+    user.verifiedAt = null;
+    user.verificationReviewThreshold = null;
+    await user.save();
+
+    // 🔵 ZID: notification l'user - nafs l'idée mte3 "account_verified"
+    // (adminController.js/verifyUser), lakin l'3aks (badge etnahha).
+    const Notification = require('../models/notification');
+    await Notification.create({
+      recipient: user._id,
+      message: 'Your verified badge has been removed because your positive-review rate dropped below the level required at the time you were verified.',
+      type: 'account_verification_revoked',
+    });
+  }
+}
+
 // ============================================================================
 // computeChecklist(user)
 // ============================================================================
@@ -74,14 +132,15 @@ async function computeChecklist(user) {
     const settings = await getVerificationSettings();
     const servicesCount = await Booking.countDocuments({ owner: user._id, status: 'accepted' });
     const { percent: goodReviewPercent, total: totalReviews } = await computeGoodReviewPercent(user._id);
+    const goodReviewPercentRequired = getGoodReviewPercentThresholdForRole('owner', settings);
 
     items.minServices = servicesCount >= settings.ownerMinServices;
-    items.goodReviewPercent = goodReviewPercent !== null && goodReviewPercent >= settings.ownerMinGoodReviewPercent;
+    items.goodReviewPercent = goodReviewPercent !== null && goodReviewPercent >= goodReviewPercentRequired;
 
     metrics.servicesCount = servicesCount;
     metrics.servicesRequired = settings.ownerMinServices;
     metrics.goodReviewPercent = goodReviewPercent;
-    metrics.goodReviewPercentRequired = settings.ownerMinGoodReviewPercent;
+    metrics.goodReviewPercentRequired = goodReviewPercentRequired;
     metrics.totalReviews = totalReviews;
   } else if (user.role === 'sitter') {
     items.bio = !!(user.bio && user.bio.trim());
@@ -98,17 +157,18 @@ async function computeChecklist(user) {
     const servicesCount = acceptedBookings.length;
     const distinctClients = new Set(acceptedBookings.map((b) => b.owner.toString())).size;
     const { percent: goodReviewPercent, total: totalReviews } = await computeGoodReviewPercent(user._id);
+    const goodReviewPercentRequired = getGoodReviewPercentThresholdForRole('sitter', settings);
 
     items.minServices = servicesCount >= settings.sitterMinServices;
     items.minDistinctClients = distinctClients >= settings.sitterMinDistinctClients;
-    items.goodReviewPercent = goodReviewPercent !== null && goodReviewPercent >= settings.sitterMinGoodReviewPercent;
+    items.goodReviewPercent = goodReviewPercent !== null && goodReviewPercent >= goodReviewPercentRequired;
 
     metrics.servicesCount = servicesCount;
     metrics.servicesRequired = settings.sitterMinServices;
     metrics.distinctClients = distinctClients;
     metrics.distinctClientsRequired = settings.sitterMinDistinctClients;
     metrics.goodReviewPercent = goodReviewPercent;
-    metrics.goodReviewPercentRequired = settings.sitterMinGoodReviewPercent;
+    metrics.goodReviewPercentRequired = goodReviewPercentRequired;
     metrics.totalReviews = totalReviews;
   } else if (user.role === 'courier') {
     items.vehicleType = !!(user.vehicleType && user.vehicleType.trim());
@@ -119,4 +179,4 @@ async function computeChecklist(user) {
   return { items, metrics, isComplete };
 }
 
-module.exports = { getVerificationSettings, computeChecklist };
+module.exports = { getVerificationSettings, computeChecklist, getGoodReviewPercentThresholdForRole, checkAndMaybeRevokeVerification };

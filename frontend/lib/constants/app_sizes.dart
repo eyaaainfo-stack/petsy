@@ -79,13 +79,24 @@ class AppSizes {
   static const double languagePawSize4Ratio = 60 / 390;
   static const double languagePawSize5Ratio = 40 / 390;
   static const double languagePawSize6Ratio = 19 / 390;
+  // 🔵 ZID (kifma tlab: "nhbhom kima hedhy" - référence: petit paw
+  // rose centré JUSTE fou9 el logo, 9rib mel status bar) - paw jdid
+  // mnfassel (mch mel 6 el mbaathrin fel coins).
+  static const double languagePawTopCenterRatio = 26 / 390;
 
-  static const double languageLogoWidthRatio = 242 / 390;
-  static const double languageLogoHeightRatio = 57 / 844;
+  // 🔵 ZID (kifma tlab: "badelt el logo petsy... nhbou akbar fel
+  // interface w yahbat akthar") - logo kbar shwaya (kifma tlabt), nafs
+  // l'aspect-ratio tel image el jdida (ppetsy.png, 2106x496 ≈ 4.25:1)
+  // bch ma tetfaزach/tetmedhech (BoxFit.contain fel language.dart).
+  static const double languageLogoWidthRatio = 300 / 390;
+  static const double languageLogoHeightRatio = 71 / 844;
 
   static const double languageTitleFontRatio = 30 / 390;
 
-  static const double languageBlockTopGapRatio = 24 / 844;
+  // 🔵 ZID (kifma tlab: "yahbat akthar") - gap el fou9 (9bal el logo)
+  // kbar shwaya bch el block (logo+titre) yenzel taht (mch la9i m3allaq
+  // fi ras el écran).
+  static const double languageBlockTopGapRatio = 50 / 844;
   static const double languageLogoTitleGapRatio = 24 / 844;
   static const double languageButtonGapRatio = 16 / 844;
   static const double languageBottomGapRatio = 10 / 844;
@@ -99,6 +110,7 @@ class AppSizes {
   double get languagePawSize4 => screenWidth * languagePawSize4Ratio;
   double get languagePawSize5 => screenWidth * languagePawSize5Ratio;
   double get languagePawSize6 => screenWidth * languagePawSize6Ratio;
+  double get languagePawTopCenterSize => screenWidth * languagePawTopCenterRatio;
 
   double get languageLogoWidth => screenWidth * languageLogoWidthRatio;
   double get languageLogoHeight => screenHeight * languageLogoHeightRatio;
@@ -382,7 +394,12 @@ class AppSizes {
   static const double sitterProfileSectionTitleFontRatio = 0.042;
   static const double sitterProfileSectionTitleListGapRatio = 0.016;
   static const double sitterProfileTodayCardWidthRatio = 0.62;
-  static const double sitterProfileTodayCardHeightRatio = 0.16;
+  // 🔴 FIX (kifma tlab: "kabbar fihom chwaya bch maach yji el barre") -
+  // el card ("Patients du jour") kan yfout (RenderFlex overflow ~29px) -
+  // el height fixe (SizedBox) kan asghar mel content el 7a9i9i (avatar
+  // row + card "Type de service"/date). 0.16 -> 0.20 (m3a marge zeyda,
+  // mch ghir el 29px el da9i9a, bch tet7ammel variations tel écran/font).
+  static const double sitterProfileTodayCardHeightRatio = 0.20;
   static const double sitterProfileTodayCardGapRatio = 0.03;
   static const double sitterProfileEmptyStateVerticalPadRatio = 0.045;
   static const double sitterProfileEmptyStateIconRatio = 0.11;

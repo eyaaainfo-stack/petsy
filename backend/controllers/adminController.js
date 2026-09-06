@@ -9,7 +9,7 @@ const Booking = require('../models/booking');
 const CheckoutQuestionnaire = require('../models/checkoutQuestionnaire');
 const Notification = require('../models/notification');
 const bcrypt = require('bcryptjs');
-const { getVerificationSettings, computeChecklist } = require('../services/verificationService');
+const { getVerificationSettings, computeChecklist, getGoodReviewPercentThresholdForRole } = require('../services/verificationService');
 
 // ==========================================
 // GET STATS (dashboard admin - views/user/admin/admin_statistics.dart)
@@ -241,7 +241,19 @@ exports.listUsers = async (req, res) => {
     // createdAt bark) - Array.sort() f'Node.js stable (ye7fadh l'ordre
     // el asli - createdAt desc - bin el comptes admin b3adhom, w bin
     // el comptes l'okhrin b3adhom).
+    // 🔴 FIX (kifma tlab: "el admin principale nhbou dima epinglée ...
+    // hata w ken saret creation mtaa admin jdid") - 9bal, "role===admin"
+    // bark kanet tekafi (kol el admins fou9) - lakin bin el admins
+    // b3adhom, stable sort kan yeb9a 7asb createdAt DESC (el jdid fou9),
+    // fa ken etkha9 admin jdid, houwa (el jdid) yet7ott FOU9 el
+    // principal. Tawa ncheckiw principalAdminId l'awel (priority a3la
+    // mel role grouping) - el principal DIMA l'awwel wa7ed, ay wa9t.
     users.sort((a, b) => {
+      const aIsPrincipal = principalAdminId != null && a._id.toString() === principalAdminId;
+      const bIsPrincipal = principalAdminId != null && b._id.toString() === principalAdminId;
+      if (aIsPrincipal && !bIsPrincipal) return -1;
+      if (!aIsPrincipal && bIsPrincipal) return 1;
+
       if (a.role === 'admin' && b.role !== 'admin') return -1;
       if (a.role !== 'admin' && b.role === 'admin') return 1;
       return 0;
@@ -274,6 +286,15 @@ exports.createUser = async (req, res) => {
     }
     if (password.length < 8) {
       return res.status(400).json({ message: 'Password doit avoir au moins 8 caractères' });
+    }
+    // 🔴 FIX (kifma tlab: "ma nkhalihomch ferghin") - phone w city tawa
+    // obligatoires zeda mel "Gestion des comptes" (l'admin), mch ghir
+    // fel parcours mte3 el user normal (UserCreateProfileScreen).
+    if (!phone || !phone.trim()) {
+      return res.status(400).json({ message: 'phone obligatoire' });
+    }
+    if (!city || !city.trim()) {
+      return res.status(400).json({ message: 'city obligatoire' });
     }
 
     const normalizedEmail = email.toLowerCase().trim();
@@ -359,11 +380,25 @@ exports.updateUser = async (req, res) => {
 
     const updates = {};
     if (fullName !== undefined) updates.fullName = fullName;
-    if (phone !== undefined) updates.phone = phone;
+    // 🔴 FIX (kifma tlab: "ma nkhalihomch ferghin") - phone/city
+    // ynajjmou yetbeddlou (updates.phone/city) LAKIN mch ynajjmou ye39dou
+    // fadhin - ken el admin y7ell el 7a9el w yfassa5 el valeur (yeb3ath
+    // string fadhi), 400 mch update sakta l'valeur fadhya.
+    if (phone !== undefined) {
+      if (!phone.trim()) {
+        return res.status(400).json({ message: 'phone obligatoire' });
+      }
+      updates.phone = phone;
+    }
     // 🔴 FIX (kifma tlab): city/birthday tawa modifiables zeda (kanou
     // ghir affichés fel écran détail, mch modifiables - tawa "les
     // champs modifiables = les champs affichés", nafs l'idée).
-    if (city !== undefined) updates.city = city;
+    if (city !== undefined) {
+      if (!city.trim()) {
+        return res.status(400).json({ message: 'city obligatoire' });
+      }
+      updates.city = city;
+    }
     if (birthday !== undefined) updates.birthday = birthday;
 
     // 🔵 ZID (kifma tlab: "les données mtaa el admin nom mail w mdp
@@ -706,8 +741,13 @@ exports.verifyUser = async (req, res) => {
       return res.status(400).json({ message: 'Checklist not complete yet' });
     }
 
+    // 🔵 ZID (kifma tlab: "el verification tetnahha idha tahet el taux
+    // ala el taux elli khadha bih") - n7ottou "snapshot" tel seuil el
+    // 7ali (settings) - chraht kaملa fel user.js/verificationReviewThreshold.
+    const settings = await getVerificationSettings();
     user.isVerified = true;
     user.verifiedAt = new Date();
+    user.verificationReviewThreshold = getGoodReviewPercentThresholdForRole(user.role, settings);
     await user.save();
 
     // 🔵 ZID (kifma tlab: "ywalli el compte verifiee nhb tji lel user
@@ -732,7 +772,11 @@ exports.verifyUser = async (req, res) => {
 exports.unverifyUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const user = await User.findByIdAndUpdate(id, { isVerified: false, verifiedAt: null }, { new: true });
+    const user = await User.findByIdAndUpdate(
+      id,
+      { isVerified: false, verifiedAt: null, verificationReviewThreshold: null },
+      { new: true }
+    );
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }

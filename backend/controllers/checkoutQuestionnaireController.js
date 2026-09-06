@@ -3,6 +3,7 @@ const Booking = require('../models/booking');
 const CheckoutQuestionnaire = require('../models/checkoutQuestionnaire');
 const User = require('../models/user');
 const Notification = require('../models/notification');
+const { checkAndMaybeRevokeVerification } = require('../services/verificationService');
 
 // ============================================================================
 // Helper: njibou (wla nkhalgou lowkan mazel mawjoud) el questionnaire
@@ -262,6 +263,14 @@ exports.answerSatisfaction = async (req, res) => {
       type: 'new_review',
       relatedReviewId: questionnaire._id,
     });
+
+    // 🔵 ZID (kifma tlab: "el verification tetnahha idha el user tahet
+    // el taux ... ala el taux elli khadha bih el verification") - had
+    // el avis el jdid ynajjam ybeddel el % avis mzyanin tel "reviewee"
+    // (l'ken hedha WA7EDLI 3andou el critère - owner/sitter, chraht
+    // kaملa fel verificationService.js) - nchekkiw daba, mch nestennaw
+    // job mnfassel.
+    await checkAndMaybeRevokeVerification(questionnaire.reviewee);
 
     res.status(200).json({ questionnaire });
   } catch (error) {

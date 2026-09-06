@@ -1,6 +1,7 @@
 import 'dart:convert';
 import '../services/api_service.dart';
 import 'auth_session.dart';
+import 'request_controller.dart' show BookedServiceEntry;
 
 // ============================================================================
 // BookedPet (pet sghir - esm+photo bark, kifma yban fel card)
@@ -43,7 +44,7 @@ enum OwnerBookingStatus { pending, searching, awaitingConfirmation, confirmed, c
 
 class OwnerBooking {
   final String id;
-  final List<String> serviceIds;
+  final List<BookedServiceEntry> services;
   final DateTime checkIn;
   final DateTime checkOut;
   final double total;
@@ -58,7 +59,7 @@ class OwnerBooking {
 
   const OwnerBooking({
     required this.id,
-    required this.serviceIds,
+    required this.services,
     required this.checkIn,
     required this.checkOut,
     required this.total,
@@ -71,6 +72,13 @@ class OwnerBooking {
     required this.pets,
     this.distanceKm,
   });
+
+  // 🔵 ZID (kifma tlab: "aleh tji custom num... nhb el logo mtaa el
+  // categorie") - backward-compat (mafamech blasa okhra testa3melha
+  // barra had el fichier, lakin ma3neha ma tetghayarhach ken 7ad zad
+  // ye7taj el IDs bark, bla el customLabel) - nafs pattern
+  // request_controller.dart/BookingRequestDetail.serviceIds.
+  List<String> get serviceIds => services.map((s) => s.serviceId).toList();
 
   // 🔵 el status "affiché" (4 etats, kifma el mockup) - derived mel
   // rawStatus + checkOut (chrahtha fou9).
@@ -110,7 +118,7 @@ class OwnerBooking {
 
     return OwnerBooking(
       id: json['_id'] as String? ?? '',
-      serviceIds: servicesJson.map((s) => (s as Map<String, dynamic>)['serviceId'] as String? ?? '').toList(),
+      services: servicesJson.map((s) => BookedServiceEntry.fromJson(s as Map<String, dynamic>)).toList(),
       checkIn: DateTime.parse(json['checkIn'] as String),
       checkOut: DateTime.parse(json['checkOut'] as String),
       total: (json['total'] as num?)?.toDouble() ?? 0,

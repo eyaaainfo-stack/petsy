@@ -61,7 +61,7 @@ class _LanguageViewState extends State<LanguageView> {
             buildPetPaw(
               context: context,
               size: sizes.languagePawSize1,
-              topPercent: 0.2,
+              topPercent: 0.32,
               leftPercent: 0.80,
               color: AppColors.pinkpetsy,
             ),
@@ -82,8 +82,8 @@ class _LanguageViewState extends State<LanguageView> {
             buildPetPaw(
               context: context,
               size: sizes.languagePawSize4,
-              topPercent: 0.30,
-              leftPercent: 0.75,
+              topPercent: 0.45,
+              leftPercent: 0.88,
               color: AppColors.pinkpetsy,
             ),
             buildPetPaw(
@@ -99,6 +99,16 @@ class _LanguageViewState extends State<LanguageView> {
               topPercent: 0.85,
               leftPercent: 0.87,
               color: AppColors.vertpetsy,
+            ),
+            // 🔵 ZID (kifma tlab: "nhbhom kima hedhy") - paw sghir rose
+            // centré JUSTE fou9 el logo (9rib mel status bar) - hakka
+            // kima el référence.
+            buildPetPaw(
+              context: context,
+              size: sizes.languagePawTopCenterSize,
+              topPercent: 0.02,
+              leftPercent: 0.46,
+              color: AppColors.pinkpetsy,
             ),
 
             // 📄 2. Contenu Principal

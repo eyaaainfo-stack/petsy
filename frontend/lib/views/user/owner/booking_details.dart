@@ -50,6 +50,24 @@ class BookingDetailsScreen extends StatefulWidget {
 class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
   final RequestController _requestController = RequestController();
   final MessagesController _messagesController = MessagesController();
+  // 🔴 FIX (kifma tlab: "ma ejbetnich fel mandhar... khalliha wkt
+  // nenzel al categorie tethalli tahtha lista") - nafs state mte3
+  // request.dart (sitter) - key = icon.codePoint.
+  final Set<int> _expandedServiceGroups = {};
+  // 🔴 FIX (kifma tlab: "nenzel ala accepter ma yetbadel chy fel
+  // interface... ama kif nokhrej w naawed nodkhol tjini confirmer") -
+  // "booking" kanet getter fixe (widget.booking, immutable - déjà
+  // mawsoula mel constructeur, chraht kaملa fou9). Ba3d "Accepter"/
+  // "Refuser la demande" (_onConfirmCandidate), el backend ya3mel
+  // el update 7a9i9i (mel awel clic!) lakin el écran ma kanch
+  // yre-fetchi/yre-affichi - el user ken ma yo5rojch w ye3awed
+  // yod5ol (re-fetch mel jdid mel API) ma ychouf 7ata tağyir.
+  // Tawa "_currentBooking" (state mutable, initialisée b'widget.booking
+  // fel initState) - "booking" (getter) yerja3ha, w _onConfirmCandidate
+  // yre-fetchiha (fetchBookingById) ba3d succès - el UI yban el status
+  // el jdid EN PLACE, bla ma tel3ab Navigator.pop race m3a el dialog.
+  late OwnerBooking _currentBooking;
+  final LesReservationsController _reservationsController = LesReservationsController();
   bool _isResponding = false;
   // 🔴 FIX (bug: bouton "Message à" mayyet) - loading state ki
   // n7awlou nefta7ou/n5al9ou el conversation m3a el sitter.
@@ -60,18 +78,142 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
     'July', 'August', 'September', 'October', 'November', 'December',
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    _currentBooking = widget.booking;
+  }
+
   // 🔴 FIX (kifma tlab: "les services nhbhom fi des titre...") -
   // sitterServiceLabelKeys mel catalogue partagé (bدal liste mkarrra).
   static Map<String, String> get _serviceLabelKeys => sitterServiceLabelKeys;
 
-  OwnerBooking get booking => widget.booking;
+  OwnerBooking get booking => _currentBooking;
 
   String _serviceLabel(String serviceId) {
     final key = _serviceLabelKeys[serviceId];
     return key != null ? key.tr() : serviceId;
   }
 
-  String get _title => booking.serviceIds.isEmpty ? '-' : booking.serviceIds.map(_serviceLabel).join(' + ');
+  // 🔴 FIX (kifma tlab: "aleh tji custom num... nhb el logo mtaa el
+  // categorie... w kif nenzel ala categorie tethalli el service eli
+  // khtarou el owner") - nafs el fix (icon + esm 7a9i9i, chip tappable)
+  // mte3 request.dart (sitter) - chraht kaملa el logique houniya.
+  IconData _serviceIcon(String serviceId) {
+    return isCustomServiceId(serviceId) ? Icons.add : (categoryIconForService(serviceId) ?? Icons.pets);
+  }
+
+  String _resolvedServiceLabel(BookedServiceEntry s) {
+    if (isCustomServiceId(s.serviceId)) {
+      return (s.customLabel != null && s.customLabel!.trim().isNotEmpty)
+          ? s.customLabel!
+          : 'sitter_custom_service_generic_label'.tr();
+    }
+    return _serviceLabel(s.serviceId);
+  }
+
+  // 🔵 ZID (kifma tlab: "zidni kodem el logo esm el categorie") - nafs
+  // fix mte3 request.dart (sitter).
+  String _categoryLabel(String serviceId) {
+    if (isCustomServiceId(serviceId)) return 'sitter_category_custom'.tr();
+    final key = categoryTitleKeyForService(serviceId);
+    return key != null ? key.tr() : '';
+  }
+
+  // 🔴 FIX (kifma tlab: "ma ejbetnich fel mandhar khalliha wkt nenzel
+  // al categorie tethalli tahtha lista mta3 les service selectionnees
+  // w kodemhom prix mteehom w kenhom akthar men pet amlha *nb pet") -
+  // nafs implementation mte3 request.dart (sitter) - chip PER CATEGORY
+  // (déduplicated), dass 3liha -> lista inline (mch popup) m3a el prix
+  // (× 3adad el pets - "price" mo5azzan PER PET, chraht kaملa fel
+  // backend).
+  Widget _serviceChips(AppSizes sizes) {
+    if (booking.services.isEmpty) {
+      return Text('-', style: TextStyle(color: AppColors.pinkpetsy, fontWeight: FontWeight.bold, fontSize: sizes.myProfileBodyFontSize));
+    }
+    final int petCount = booking.pets.isEmpty ? 1 : booking.pets.length;
+
+    final Map<int, IconData> iconByKey = {};
+    final Map<int, String> labelByKey = {};
+    final Map<int, List<BookedServiceEntry>> grouped = {};
+    for (final s in booking.services) {
+      final icon = _serviceIcon(s.serviceId);
+      iconByKey[icon.codePoint] = icon;
+      labelByKey.putIfAbsent(icon.codePoint, () => _categoryLabel(s.serviceId));
+      grouped.putIfAbsent(icon.codePoint, () => []).add(s);
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: sizes.screenWidth * 0.02,
+          runSpacing: sizes.screenHeight * 0.008,
+          children: [
+            for (final key in grouped.keys)
+              InkWell(
+                borderRadius: BorderRadius.circular(20),
+                onTap: () => setState(() {
+                  if (_expandedServiceGroups.contains(key)) {
+                    _expandedServiceGroups.remove(key);
+                  } else {
+                    _expandedServiceGroups.add(key);
+                  }
+                }),
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: sizes.screenWidth * 0.025, vertical: sizes.screenHeight * 0.006),
+                  decoration: BoxDecoration(color: AppColors.pinkpetsy.withOpacity(0.14), borderRadius: BorderRadius.circular(20)),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(iconByKey[key], color: AppColors.pinkpetsy, size: sizes.screenWidth * 0.04),
+                      SizedBox(width: sizes.screenWidth * 0.014),
+                      Text(labelByKey[key] ?? '', style: TextStyle(color: AppColors.pinkpetsy, fontWeight: FontWeight.bold, fontSize: sizes.myProfileBodyFontSize)),
+                      SizedBox(width: sizes.screenWidth * 0.01),
+                      Icon(
+                        _expandedServiceGroups.contains(key) ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                        color: AppColors.pinkpetsy,
+                        size: sizes.screenWidth * 0.04,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
+        for (final key in grouped.keys)
+          if (_expandedServiceGroups.contains(key))
+            Padding(
+              padding: EdgeInsets.only(top: sizes.screenHeight * 0.008, bottom: sizes.screenHeight * 0.004),
+              child: Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(horizontal: sizes.screenWidth * 0.03, vertical: sizes.screenHeight * 0.008),
+                decoration: BoxDecoration(color: AppColors.pinkpetsy.withOpacity(0.06), borderRadius: BorderRadius.circular(14)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (final s in grouped[key]!)
+                      Padding(
+                        padding: EdgeInsets.symmetric(vertical: sizes.screenHeight * 0.004),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(_resolvedServiceLabel(s), style: TextStyle(fontSize: sizes.myProfileBodyFontSize * 0.9)),
+                            ),
+                            Text(
+                              '${(s.price * petCount).toStringAsFixed(0)} DT',
+                              style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.pinkpetsy, fontSize: sizes.myProfileBodyFontSize * 0.9),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+      ],
+    );
+  }
 
   // 🔴 FIX (kifma tlab: "les services nhbhom fi des titre...") - el 14
   // services jodad esmehom déjà wadh7in brachou - mafamech me3na "desc"
@@ -138,15 +280,26 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
     setState(() => _isResponding = true);
     final success = await _requestController.confirmCandidate(booking.id, accept: accept);
     if (!mounted) return;
-    setState(() => _isResponding = false);
 
     if (!success) {
+      setState(() => _isResponding = false);
       showMessageDialog(context, 'profile_submit_error'.tr());
       return;
     }
 
+    // 🔴 FIX (kifma tlab: "nenzel ala accepter ma yetbadel chy...
+    // ama kif nokhrej w naawed nodkhol tjini confirmer") - re-fetch
+    // (mch Navigator.pop direct - kan race m3a showMessageDialog, el
+    // dialog el jdid ye39od HOWA elli yetpoppa, mch el écran - fahetha
+    // "kan ma yban 7atta tağyir" 7atta ken el backend déjà 3addel).
+    final refreshed = await _reservationsController.fetchBookingById(booking.id);
+    if (!mounted) return;
+    setState(() {
+      _isResponding = false;
+      if (refreshed != null) _currentBooking = refreshed;
+    });
+
     showMessageDialog(context, accept ? 'candidate_confirmed_toast'.tr() : 'candidate_declined_toast'.tr());
-    Navigator.of(context).pop(true);
   }
 
   // 🔴 FIX (bug: bouton "Message à" mayyet - onTap: () {} TODO 9dim,
@@ -220,7 +373,7 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Expanded(
-                              child: Text(_title, style: TextStyle(color: AppColors.pinkpetsy, fontWeight: FontWeight.bold, fontSize: sizes.myProfileBodyFontSize)),
+                              child: _serviceChips(sizes),
                             ),
                             Container(
                               padding: EdgeInsets.symmetric(horizontal: sizes.screenWidth * 0.028, vertical: sizes.screenHeight * 0.006),

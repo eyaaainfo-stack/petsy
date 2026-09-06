@@ -99,14 +99,20 @@ class _MdpOublier3ScreenState extends State<MdpOublier3Screen> {
                   children: [
                     SizedBox(height: sizes.fpTopGap),
 
-                    InkWell(
-                      onTap: () => Navigator.of(context).maybePop(),
-                      borderRadius: BorderRadius.circular(30),
-                      child: Container(
-                        width: sizes.fpBackButtonSize,
-                        height: sizes.fpBackButtonSize,
-                        decoration: const BoxDecoration(color: AppColors.vertpetsy, shape: BoxShape.circle),
-                        child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
+                    // 🔴 FIX (kifma tlab: "khallih fou9 lyasar mch f
+                    // west") - Align(topLeft) explicite (chraht kaملa
+                    // fel mdp_oublier_1.dart).
+                    Align(
+                      alignment: Alignment.topLeft,
+                      child: InkWell(
+                        onTap: () => Navigator.of(context).maybePop(),
+                        borderRadius: BorderRadius.circular(30),
+                        child: Container(
+                          width: sizes.fpBackButtonSize,
+                          height: sizes.fpBackButtonSize,
+                          decoration: const BoxDecoration(color: AppColors.vertpetsy, shape: BoxShape.circle),
+                          child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
+                        ),
                       ),
                     ),
 

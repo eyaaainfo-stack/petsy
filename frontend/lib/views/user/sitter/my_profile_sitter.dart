@@ -88,7 +88,7 @@ class _MyProfileSitterScreenState extends State<MyProfileSitterScreen> {
           children: [
             RefreshIndicator(
               onRefresh: _load,
-              color: AppColors.pinkpetsy,
+              color: AppColors.myProfileAccent(_profile?.gender),
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : _hasError || _profile == null
@@ -162,13 +162,18 @@ class _ProfileContent extends StatelessWidget {
     required this.onEditPressed,
   });
 
+  // 🔵 ZID (kifma tlab: "badel el rose bel vert ken male, khallih rose
+  // ken femelle") - accent color tel "My Profile" tel sitter, mrakez
+  // 3al gender (AppColors.myProfileAccent, app_colors.dart).
+  Color get _accentColor => AppColors.myProfileAccent(profile.gender);
+
   Widget _pillCard({required String pillText, required Widget content}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Container(
           padding: EdgeInsets.symmetric(vertical: sizes.screenHeight * 0.012),
-          decoration: BoxDecoration(color: AppColors.pinkpetsy, borderRadius: BorderRadius.circular(30)),
+          decoration: BoxDecoration(color: _accentColor, borderRadius: BorderRadius.circular(30)),
           alignment: Alignment.center,
           child: Text(
             pillText,
@@ -184,7 +189,7 @@ class _ProfileContent extends StatelessWidget {
             sizes.screenHeight * 0.018,
           ),
           decoration: BoxDecoration(
-            color: AppColors.pinkpetsy.withOpacity(0.10),
+            color: _accentColor.withOpacity(0.10),
             borderRadius: BorderRadius.circular(18),
           ),
           child: content,
@@ -198,14 +203,14 @@ class _ProfileContent extends StatelessWidget {
       child: Container(
         padding: EdgeInsets.symmetric(vertical: sizes.screenHeight * 0.018, horizontal: sizes.screenWidth * 0.02),
         decoration: BoxDecoration(
-          color: AppColors.pinkpetsy.withOpacity(0.10),
+          color: _accentColor.withOpacity(0.10),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
           children: [
             Text(label, textAlign: TextAlign.center, style: TextStyle(fontSize: sizes.screenWidth * 0.026, color: mutedTextColor)),
             SizedBox(height: sizes.screenHeight * 0.008),
-            Icon(icon, color: AppColors.pinkpetsy, size: sizes.myProfileMiniCardIconSize),
+            Icon(icon, color: _accentColor, size: sizes.myProfileMiniCardIconSize),
             SizedBox(height: sizes.screenHeight * 0.006),
             Text(value, style: TextStyle(fontWeight: FontWeight.bold, fontSize: sizes.screenWidth * 0.032)),
           ],
@@ -369,7 +374,7 @@ class _ProfileContent extends StatelessWidget {
                       children: [
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: sizes.screenWidth * 0.025, vertical: sizes.screenHeight * 0.004),
-                          decoration: BoxDecoration(color: AppColors.pinkpetsy, borderRadius: BorderRadius.circular(8)),
+                          decoration: BoxDecoration(color: _accentColor, borderRadius: BorderRadius.circular(8)),
                           child: Text(
                             '${service.price.toStringAsFixed(0)} DT',
                             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: sizes.myProfileBodyFontSize * 0.85),

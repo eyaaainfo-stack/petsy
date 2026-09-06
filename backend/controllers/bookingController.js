@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Booking = require('../models/booking');
 const Notification = require('../models/notification');
 const User = require('../models/user');
@@ -229,7 +230,13 @@ exports.getUrgentBookingsForSitter = async (req, res) => {
 
     const bookings = await Booking.find({
       status: 'open',
-      rejectedBy: { $ne: req.userId },
+      // 🔴 FIX (kifma tlab: "sallahli just enou hatta el sitter eli
+      // rfadh el talab tjih fel need urgent services") - cast explicite
+      // l'ObjectId (mch req.userId, string raw mel JWT decoded) - $ne
+      // 3ala array field (rejectedBy) yeحtaj el valeur mratb b'NAFS
+      // type el elements bch el exclusion te5dem b'thi9a (mch depend
+      // 3al auto-cast implicite tel Mongoose).
+      rejectedBy: { $ne: new mongoose.Types.ObjectId(req.userId) },
     })
       .populate('owner', 'fullName city location')
       .populate('pets', 'name photoUrl')
@@ -310,6 +317,34 @@ exports.getBookingById = async (req, res) => {
     const bookingObj = booking.toObject();
     bookingObj.distanceKm = distanceKm;
 
+    // 🔵 ZID (kifma tlab: "nhb el logo mtaa el categorie... w ki nenzel
+    // ala categorie tethalli el service eli khtarou el owner") - el
+    // Booking.services (models/booking.js) yeحtafedh GHIR serviceId +
+    // price (mch "esm" 7a9i9i) - ken "custom_..." (chraht kaملa fel
+    // sitter_service_catalog.dart/isCustomServiceId), el esm el 7a9i9i
+    // (customLabel) mo5azzan GHIR fel PROFILE mte3 el sitter (models/
+    // sitter.js), mch fel booking nafsou. Njibouh houni (best-effort -
+    // null ken el sitter 7ذef/beddel el service custom mel profile
+    // tou3ou ba3d el booking, el front ywarri fallback generic) -
+    // effectiveSitter mawjoud déjà fou9 (distance haversine).
+    if (effectiveSitter) {
+      // 🔴 FIX: "services" mch mel base schema (User) - houwa discriminator
+      // field (Sitter bark, models/sitter.js) - ".lean()" houni MHIM
+      // (ma3neha object khadem bark, bla hydration Mongoose elli
+      // ynajjam "yfassa5" el 7ou9oul elli mch mel schema el "base").
+      const sitterDoc = await User.findById(effectiveSitter._id).select('services').lean();
+      const customLabelById = {};
+      if (sitterDoc && Array.isArray(sitterDoc.services)) {
+        for (const s of sitterDoc.services) {
+          if (s.customLabel) customLabelById[s.serviceId] = s.customLabel;
+        }
+      }
+      bookingObj.services = (bookingObj.services || []).map((s) => ({
+        ...s,
+        customLabel: customLabelById[s.serviceId] || null,
+      }));
+    }
+
     res.status(200).json({ booking: bookingObj });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -341,6 +376,23 @@ exports.respondToBooking = async (req, res) => {
 
     if (!isAssignedSitter && !isOpenMarketplace) {
       return res.status(403).json({ message: 'Not authorized to respond to this booking' });
+    }
+
+    // 🔴 FIX (bug: "el sitter rfadhha... w hiya awdet jetou fel ntf w
+    // ki 9belha jetou l'attente mtaa el confirmation") - el notification
+    // "booking_received" el asliya (createBooking) MA tetmسa7ch/ma
+    // tet-disable-ch ba3d el sitter yerfudh - ken ye3awed ydass 3liha
+    // mel jdid (Notifications, stale) ba3d el owner yrebroadcasti
+    // (status="open"), RequestScreen yeحell b'NAFS el bookingId, w
+    // "isOpenMarketplace" (fou9) ma yeحekk-ch ken had el sitter HOWA
+    // NAFSOU elli rafedh déjà - ynajjam ye5tar "accept" mel jdid 3la
+    // el booking mte3ou nafsou (candidate), el owner ye5ou "En attente
+    // de confirmation" 3la sitter elli déjà rafedh. Guard explicite:
+    // sitter mawjoud fel "rejectedBy" MARFOUDH yerja3 yjaweb (accept
+    // WALA reject) 3la NAFS el booking, quelle que soit el tari9a elli
+    // wselou biha (notification stale, appel API direct...).
+    if (isOpenMarketplace && booking.rejectedBy.some((id) => id.toString() === uid)) {
+      return res.status(403).json({ message: 'You already declined this booking' });
     }
 
     const respondingSitter = await User.findById(req.userId).select('fullName');

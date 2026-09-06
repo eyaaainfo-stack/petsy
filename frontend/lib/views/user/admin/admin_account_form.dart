@@ -251,14 +251,19 @@ class _AdminAccountFormScreenState extends State<AdminAccountFormScreen> {
                     TextFormField(
                       controller: _phoneController,
                       keyboardType: TextInputType.phone,
+                      validator: Validators.phone,
                       decoration: _fieldDecoration(hintText: 'phone_hint'.tr(), icon: Icons.phone_outlined),
                     ),
                     SizedBox(height: sizes.adminFormFieldGap),
 
                     // 🔴 FIX (kifma tlab): city/birthday - kanou affichés
                     // fel écran détail lakin mch modifiables mel formulaire.
+                    // 🔴 FIX (kifma tlab: "ma nkhalihomch ferghin") - phone
+                    // w city tawa obligatoires (validator 7a9i9i, mch ghir
+                    // hint).
                     TextFormField(
                       controller: _cityController,
+                      validator: Validators.city,
                       decoration: _fieldDecoration(hintText: 'city_label'.tr(), icon: Icons.location_city_outlined),
                     ),
                     SizedBox(height: sizes.adminFormFieldGap),

@@ -50,14 +50,28 @@ class _SitterCalenderScreenState extends State<SitterCalenderScreen> {
   ];
   static const List<String> _weekdayKeys = ['weekday_mon', 'weekday_tue', 'weekday_wed', 'weekday_thu', 'weekday_fri', 'weekday_sat', 'weekday_sun'];
 
-  // 🔴 FIX (kifma tlab: "les services nhbhom fi des titre...") -
-  // sitterServiceLabelKeys mel catalogue partagé (bدal liste mkarrra).
-  static Map<String, String> get _serviceLabelKeys => sitterServiceLabelKeys;
-
   // 🔴 FIX (kifma tlab: "les services nhbhom fi des titre...") - 14
   // service tawa (bدal 6) - icon tel CATEGORY (mch tel service el
   // fardi, "wa9t sur3a" mch detail, chraht fel catalogue partagé).
   static IconData? _serviceIconFor(String id) => categoryIconForService(id);
+
+  // 🔴 FIX (kifma tlab: "fel calendrier khalli just el logo mtaa les
+  // services... ken mch categorie brk khalli les logos mtaa les
+  // categorie selectionnees f demande lkol") - kanet "_serviceIcon"
+  // te5ou GHIR l'awel service (serviceIds.first), w el text label
+  // (join " + ") kan yban raw ("custom_...") l'services custom - tawa
+  // icons el categories el KOL (déduplicated, nafs convention
+  // "Patients du jour" - sitter_profile.dart/_TodayPatient: "+" l'el
+  // custom, category icon l'el b9iya) - bla text khales.
+  List<IconData> _serviceIcons(List<String> serviceIds) {
+    final List<IconData> icons = [];
+    final Set<int> seenCodePoints = {};
+    for (final id in serviceIds) {
+      final IconData icon = isCustomServiceId(id) ? Icons.add : (_serviceIconFor(id) ?? Icons.pets);
+      if (seenCodePoints.add(icon.codePoint)) icons.add(icon);
+    }
+    return icons.isEmpty ? [Icons.pets] : icons;
+  }
 
   // ==========================================================================
   // Mode "Availability"
@@ -157,10 +171,6 @@ class _SitterCalenderScreenState extends State<SitterCalenderScreen> {
       _selectedDate = (_selectedDate != null && _dateOnly(_selectedDate!) == _dateOnly(day)) ? null : day;
     });
   }
-
-  String _serviceLabel(String id) => _serviceLabelKeys[id] != null ? _serviceLabelKeys[id]!.tr() : id;
-
-  IconData _serviceIcon(List<String> serviceIds) => serviceIds.isNotEmpty ? (_serviceIconFor(serviceIds.first) ?? Icons.pets) : Icons.pets;
 
   String _dateLabel(DateTime d) => '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}.${d.year}';
   // 🔵 ZID (fix timezone): ".toLocal()" 9bal .hour/.minute - mnghirha,
@@ -441,16 +451,18 @@ class _SitterCalenderScreenState extends State<SitterCalenderScreen> {
               SizedBox(height: sizes.screenHeight * 0.006),
               Row(
                 children: [
-                  Container(
-                    padding: EdgeInsets.all(sizes.screenWidth * 0.018),
-                    decoration: BoxDecoration(color: (isFinished ? mutedTextColor : AppColors.vertpetsy).withOpacity(0.15), shape: BoxShape.circle),
-                    child: Icon(_serviceIcon(booking.serviceIds), color: isFinished ? mutedTextColor : AppColors.vertpetsy, size: sizes.calendarEventIconSize * 0.5),
-                  ),
-                  SizedBox(width: sizes.screenWidth * 0.025),
                   Expanded(
-                    child: Text(
-                      booking.serviceIds.isEmpty ? '-' : booking.serviceIds.map(_serviceLabel).join(' + '),
-                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: sizes.myProfileBodyFontSize * 0.85),
+                    child: Wrap(
+                      spacing: sizes.screenWidth * 0.02,
+                      runSpacing: sizes.screenHeight * 0.006,
+                      children: [
+                        for (final icon in _serviceIcons(booking.serviceIds))
+                          Container(
+                            padding: EdgeInsets.all(sizes.screenWidth * 0.018),
+                            decoration: BoxDecoration(color: (isFinished ? mutedTextColor : AppColors.vertpetsy).withOpacity(0.15), shape: BoxShape.circle),
+                            child: Icon(icon, color: isFinished ? mutedTextColor : AppColors.vertpetsy, size: sizes.calendarEventIconSize * 0.5),
+                          ),
+                      ],
                     ),
                   ),
                   ClipRRect(
