@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
+import 'api_config.dart';
 
 // ============================================================================
 // ApiService
@@ -24,16 +25,11 @@ class ApiService {
   // 9bal ma ykammel (khousousan WiFi batia3/battery saver), w el photo
   // teb9a ma tetsajlch (photoUrl fadhya) bla ay erreur bayna l'user.
   static const Duration _uploadTimeout = Duration(seconds: 30);
-  // --------------------------------------------------------------------
-  // 🔵 BADEL HOUNI 3ala 7sab win rayeh tjarrab:
-  //   - Web (flutter run -d chrome)  : 'http://localhost:5000'
-  //   - Émulateur Android            : 'http://10.0.2.2:5000'
-  //   - iOS Simulator                : 'http://localhost:5000'
-  //   - Device 7a9i9i (téléphone)    : 'http://<192.168.1.201>:5000'
-  //     (el IP tel PC: ipconfig fi terminal, w el PC w el téléphone
-  //     lezmin fi nefs el WiFi)
-  // --------------------------------------------------------------------
-  static const String baseUrl = 'http://localhost:5000/api';
+  // 🔵 ZID: baseUrl tawa mجي mel ApiConfig (services/api_config.dart) -
+  // bch tbadel bin chrome/émulateur/téléphone 7a9i9i, badel GHIR
+  // "ApiConfig.target" (w el IP fi "physicalDeviceIp" ken tji l7ala) -
+  // ma3adech lezemek tfattech wla tbadel string manuel houni.
+  static String get baseUrl => ApiConfig.baseUrl;
 
   // 🔵 ZID: lel photos (pets/users, mathalan "/uploads/pets/xxx.jpg")
   // - hedhi el routes TAHT el root (mch taht "/api"), fa lezemna base

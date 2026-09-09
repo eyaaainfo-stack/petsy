@@ -3,6 +3,110 @@ const Booking = require('../models/booking');
 const Notification = require('../models/notification');
 const User = require('../models/user');
 const Sitter = require('../models/sitter');
+const Animal = require('../models/animal');
+
+// ============================================================================
+// FEATURE "COMPATIBILITE ENTRE ANIMAUX" (safety scheduling)
+// ============================================================================
+// Regle (kifma tlab): 3 categories - 'small_dog' / 'guard_dog' / 'cat'.
+// - Kol pets fi NEFS el booking lezem ykounou nefs el category (bla
+//   mzij small_dog + guard_dog fi nefs el talab).
+// - NAFS el sitter ma ynajjamch ykoun 3andou, fi NEFS el creneau
+//   (checkIn/checkOut mتداخلين), 2 categories mختلفة b'nefs el wa9t.
+// - Max MAX_PETS_PER_SLOT (5) pets (nefs el category) 3and NAFS el
+//   sitter fi nefs el creneau.
+// Hedhi el logique metmarkza houni bch tetsta3mel mel 3 blayes elli
+// booking ynajjam "yetakadd" fihom (createBooking, respondToBooking,
+// confirmCandidate) - defense en profondeur, nafs l'approche mta3 el
+// verification tel dates (checkOutDate > checkInDate).
+// ============================================================================
+const MAX_PETS_PER_SLOT = 5;
+const ACTIVE_BOOKING_STATUSES = ['pending', 'accepted', 'awaiting_confirmation'];
+
+// 🔵 el pets el kol fi booking lezem ykounou nefs el category. Terja3
+// el category (string) ken kol chay sa77i7, wala "null" ken famma mzij
+// (caller ye5tar chnowa ye3mel - 9bal wla n7esbouha "pas de conflit").
+function getSingleCategory(petsWithCategory) {
+  const categories = new Set((petsWithCategory || []).map((p) => p.category).filter(Boolean));
+  if (categories.size !== 1) return null;
+  return [...categories][0];
+}
+
+// 🔵 yjib el Animal docs (category bark) mel IDs, w yرجع el category
+// el mchtarka + l'3adad - wala "error" ken el pets ma jeach lqahom,
+// wala ken el category mch nefsha 3al kol el pets fel booking.
+async function resolveBookingPetsCategory(petIds) {
+  const pets = await Animal.find({ _id: { $in: petIds } }).select('category');
+  if (pets.length !== petIds.length) {
+    return { error: 'One or more pets were not found' };
+  }
+  const category = getSingleCategory(pets);
+  if (!category) {
+    return { error: 'All pets in a single booking must belong to the same category' };
+  }
+  return { category, count: pets.length };
+}
+
+// 🔵 el fonction "el mou7imma": tchekk ken had el sitter, fi had el
+// creneau, ynajjam ye5ou booking jdid b had el category/3adad. Terja3
+// { ok: true } wala { ok: false, reason, ... } (reason: 'category_
+// mismatch' wala 'capacity_full').
+async function checkCategoryCapacityConflict({ sitterId, checkIn, checkOut, category, newPetCount, excludeBookingId }) {
+  // 🔵 fail-open: ken el category mahich m3aroufa (null/undefined -
+  // data legacy/incohérente), ma nbلokiw walou - a7san ma nziidouch
+  // erreurs ghreeba 3al data el 9dima.
+  if (!category) return { ok: true };
+
+  const overlapFilter = {
+    sitter: sitterId,
+    status: { $in: ACTIVE_BOOKING_STATUSES },
+    checkIn: { $lt: checkOut },
+    checkOut: { $gt: checkIn },
+  };
+  if (excludeBookingId) {
+    overlapFilter._id = { $ne: excludeBookingId };
+  }
+
+  const overlapping = await Booking.find(overlapFilter).populate('pets', 'category');
+
+  let existingCount = 0;
+  const otherCategories = new Set();
+  for (const b of overlapping) {
+    for (const pet of b.pets) {
+      if (!pet?.category) continue;
+      if (pet.category === category) existingCount += 1;
+      else otherCategories.add(pet.category);
+    }
+  }
+
+  if (otherCategories.size > 0) {
+    return { ok: false, reason: 'category_mismatch', conflictingCategories: [...otherCategories] };
+  }
+  if (existingCount + newPetCount > MAX_PETS_PER_SLOT) {
+    return { ok: false, reason: 'capacity_full', existingCount, max: MAX_PETS_PER_SLOT };
+  }
+  return { ok: true, existingCount };
+}
+
+function buildConflictMessage(conflict) {
+  if (conflict.reason === 'category_mismatch') {
+    return 'This sitter already has a booking with a different pet category during this time slot.';
+  }
+  if (conflict.reason === 'capacity_full') {
+    return `This sitter already has ${conflict.existingCount}/${MAX_PETS_PER_SLOT} pets booked for this time slot.`;
+  }
+  return 'This time slot is not available for this sitter.';
+}
+
+// 🔵 el sitter "off" (recurringDaysOff/specificDatesOff, sitter_calender.dart)
+// 3al youm tel date mo3ayana - nafs convention DateTime.weekday
+// (1=Mon...7=Sun) elli chraht fel models/sitter.js.
+function isSitterOffOnDate(sitterDoc, date) {
+  const weekday = date.getDay() === 0 ? 7 : date.getDay();
+  if ((sitterDoc.recurringDaysOff || []).includes(weekday)) return true;
+  const dateStr = date.toISOString().slice(0, 10);
+  return (sitterDoc.specificDatesOff || []).some((d) => new Date(d).toISOString().slice(0, 10) === dateStr);
+}
 
 // 🔵 ZID: nafs el formule Haversine (userController.js) - mkarrra houni
 // bch bookingController.js ma yeh tajch "require" cross-controller
@@ -148,6 +252,26 @@ exports.createBooking = async (req, res) => {
     const oneHourFromNow = new Date(Date.now() + 60 * 60 * 1000);
     if (checkInDate < oneHourFromNow) {
       return res.status(400).json({ message: 'Check-in must be at least 1 hour from now' });
+    }
+
+    // 🔵 ZID (feature "compatibilite entre animaux"): 9bal ma nzidou el
+    // booking, nchekkou el category (kol pets fel talab lezem ykounou
+    // nefs el category) w el conflit m3a bookings okhrin el sitter fi
+    // nefs el creneau.
+    const petsCheck = await resolveBookingPetsCategory(petIds);
+    if (petsCheck.error) {
+      return res.status(400).json({ message: petsCheck.error });
+    }
+
+    const conflict = await checkCategoryCapacityConflict({
+      sitterId,
+      checkIn: checkInDate,
+      checkOut: checkOutDate,
+      category: petsCheck.category,
+      newPetCount: petsCheck.count,
+    });
+    if (!conflict.ok) {
+      return res.status(409).json({ message: buildConflictMessage(conflict), reason: conflict.reason });
     }
 
     const booking = await Booking.create({
@@ -367,7 +491,7 @@ exports.respondToBooking = async (req, res) => {
       return res.status(400).json({ message: 'action must be "accept" or "reject"' });
     }
 
-    const booking = await Booking.findById(req.params.id);
+    const booking = await Booking.findById(req.params.id).populate('pets', 'category');
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
 
     const uid = req.userId.toString();
@@ -399,6 +523,23 @@ exports.respondToBooking = async (req, res) => {
 
     if (booking.status === 'pending') {
       if (action === 'accept') {
+        // 🔵 ZID (feature "compatibilite entre animaux"): n3awdou
+        // nchekkou el conflit CE moment (mch ghir ki createBooking) -
+        // el sitter momken 9bel booking okhra (nefs creneau, category
+        // mختلفة) MIN BAAD el owner ba3ath had el talab (defense en
+        // profondeur, nafs l'approche mta3 verification el dates).
+        const conflict = await checkCategoryCapacityConflict({
+          sitterId: req.userId,
+          checkIn: booking.checkIn,
+          checkOut: booking.checkOut,
+          category: getSingleCategory(booking.pets),
+          newPetCount: booking.pets.length,
+          excludeBookingId: booking._id,
+        });
+        if (!conflict.ok) {
+          return res.status(409).json({ message: buildConflictMessage(conflict), reason: conflict.reason });
+        }
+
         booking.status = 'accepted';
         await booking.save();
         await Notification.create({
@@ -427,18 +568,32 @@ exports.respondToBooking = async (req, res) => {
         // tawa, kol sitter 3andou tarifs mte3ou. Ne5dou el services
         // (serviceId elli el owner talab) w n7ottoulhom PRIX el
         // candidate el jdid, w total = sum(price) * 3adad el pets.
+        //
+        // 🔵 ZID (feature "compatibilite entre animaux"): el prix tawa
+        // ye5taleф 3ala 7sab el category (small_dog/guard_dog/cat) -
+        // kol el pets fel booking NEFS el category (chraht fel
+        // resolveBookingPetsCategory), fa n7esbou category WA7DA bark.
+        const bookingCategory = getSingleCategory(booking.pets);
         const candidateSitterDoc = await Sitter.findById(req.userId).select('services');
-        const candidatePriceMap = new Map((candidateSitterDoc?.services || []).map((s) => [s.serviceId, s.price]));
-        const petCount = booking.pets.length;
+        const candidatePriceMap = new Map();
+        for (const s of candidateSitterDoc?.services || []) {
+          const match = (s.prices || []).find((p) => p.category === bookingCategory);
+          if (match) candidatePriceMap.set(s.serviceId, match.price);
+        }
 
+        // 🔵 ZID (kifma tlab): "kol service 3andou el pets mte3ou howa"
+        // - MCH 3adad global tel pets (booking.pets.length) - kol
+        // service, el 3adad houwa "s.petIds.length" (chraht fel
+        // bookingServiceSchema, models/booking.js).
         let newTotal = 0;
         booking.services = booking.services.map((s) => {
           // 🔵 fallback: lowkan (7ala nadra) had sitter ma3andouch had
-          // service mrakez - n5alliw el prix el 9dim (bch ma tsirch
-          // "0 DT" bla ma3na).
+          // service mrakez l'had category - n5alliw el prix el 9dim
+          // (bch ma tsirch "0 DT" bla ma3na).
           const price = candidatePriceMap.has(s.serviceId) ? candidatePriceMap.get(s.serviceId) : s.price;
+          const petCount = (s.petIds || []).length || booking.pets.length; // fallback: data 9dima (9bal el feature)
           newTotal += price * petCount;
-          return { serviceId: s.serviceId, price };
+          return { serviceId: s.serviceId, price, petIds: s.petIds };
         });
         booking.total = newTotal;
 
@@ -501,7 +656,7 @@ exports.broadcastBooking = async (req, res) => {
 exports.confirmCandidate = async (req, res) => {
   try {
     const { accept } = req.body;
-    const booking = await Booking.findById(req.params.id);
+    const booking = await Booking.findById(req.params.id).populate('pets', 'category');
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
     if (booking.owner.toString() !== req.userId.toString()) {
       return res.status(403).json({ message: 'Not authorized' });
@@ -511,6 +666,25 @@ exports.confirmCandidate = async (req, res) => {
     }
 
     const candidateId = booking.pendingCandidateSitter;
+
+    // 🔵 ZID (feature "compatibilite entre animaux"): nchekkou el
+    // conflit 9BAL ma nmassa7ou el notification ("actioned") - CE
+    // moment houwa l'engagement 7a9i9i tel candidate. Ken famma
+    // conflit, lezem el owner tab9a 3andou el boutons Accept/Decline
+    // (ma yban-lou-ch "khlast" bla ma tsir 7atta 7aja).
+    if (accept) {
+      const conflict = await checkCategoryCapacityConflict({
+        sitterId: candidateId,
+        checkIn: booking.checkIn,
+        checkOut: booking.checkOut,
+        category: getSingleCategory(booking.pets),
+        newPetCount: booking.pets.length,
+        excludeBookingId: booking._id,
+      });
+      if (!conflict.ok) {
+        return res.status(409).json({ message: buildConflictMessage(conflict), reason: conflict.reason });
+      }
+    }
 
     // 🔵 el bouton "Accept/Decline" fel notification ma yban-ch mrra thenya.
     await Notification.updateMany(
@@ -583,6 +757,103 @@ exports.cancelBooking = async (req, res) => {
     });
 
     res.status(200).json({ message: 'Booking cancelled', booking });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// ============================================================================
+// GET BOOKING ALTERNATIVES (feature "compatibilite entre animaux") -
+// ki createBooking/respondToBooking/confirmCandidate yرجعو 409
+// (conflit category/capacite), el front yeste5dem el endpoint hedha
+// bch y3aroudh 3al owner:
+//   A) "sameSitterSlots": horaire ekher 3and NAFS el sitter (nafs
+//      douree, l'awwal 3 creneaux khalyin fel 7 ayem el jayin).
+//   B) "otherSitters": sitters okhrin elli ye9blou el category, soit
+//      fadhyin kaملement ("free") soit ynajjmou yzidou el pet fel
+//      groupe mawjoud ("joinGroup", < 5).
+// GET /bookings/alternatives?sitterId=..&checkIn=..&checkOut=..&petIds=id1,id2
+// ============================================================================
+exports.getBookingAlternatives = async (req, res) => {
+  try {
+    const { sitterId, checkIn, checkOut, petIds } = req.query;
+    if (!sitterId || !checkIn || !checkOut || !petIds) {
+      return res.status(400).json({ message: 'Missing required query params (sitterId, checkIn, checkOut, petIds)' });
+    }
+
+    const petIdList = String(petIds).split(',').filter(Boolean);
+    const petsCheck = await resolveBookingPetsCategory(petIdList);
+    if (petsCheck.error) {
+      return res.status(400).json({ message: petsCheck.error });
+    }
+    const { category, count: newPetCount } = petsCheck;
+
+    const originalCheckIn = new Date(checkIn);
+    const originalCheckOut = new Date(checkOut);
+    const durationMs = originalCheckOut.getTime() - originalCheckIn.getTime();
+    const oneHourFromNow = Date.now() + 60 * 60 * 1000;
+
+    // -------- A) nafs el Sitter, horaire ekher (l'awwal 3, 7 ayem el jayin) --------
+    const currentSitter = await Sitter.findById(sitterId).select('recurringDaysOff specificDatesOff isAvailable');
+    const sameSitterSlots = [];
+    if (currentSitter) {
+      for (let dayOffset = 0; dayOffset <= 6 && sameSitterSlots.length < 3; dayOffset++) {
+        const candidateCheckIn = new Date(originalCheckIn.getTime() + dayOffset * 24 * 60 * 60 * 1000);
+        const candidateCheckOut = new Date(candidateCheckIn.getTime() + durationMs);
+
+        if (candidateCheckIn.getTime() < oneHourFromNow) continue;
+        if (isSitterOffOnDate(currentSitter, candidateCheckIn)) continue;
+
+        const conflict = await checkCategoryCapacityConflict({
+          sitterId,
+          checkIn: candidateCheckIn,
+          checkOut: candidateCheckOut,
+          category,
+          newPetCount,
+        });
+        if (conflict.ok) {
+          sameSitterSlots.push({ checkIn: candidateCheckIn, checkOut: candidateCheckOut });
+        }
+      }
+    }
+
+    // -------- B) sitters okhrin (nefs el creneau el mtaleb) --------
+    const candidateSitters = await Sitter.find({
+      _id: { $ne: sitterId },
+      role: 'sitter',
+      acceptedPetCategories: category,
+    }).select('fullName photoUrl city location isAvailable recurringDaysOff specificDatesOff');
+
+    const otherSitters = [];
+    for (const s of candidateSitters) {
+      if (s.isAvailable === false) continue;
+      if (isSitterOffOnDate(s, originalCheckIn)) continue;
+
+      const conflict = await checkCategoryCapacityConflict({
+        sitterId: s._id,
+        checkIn: originalCheckIn,
+        checkOut: originalCheckOut,
+        category,
+        newPetCount,
+      });
+      if (!conflict.ok) continue; // category mختلفة wela complet - skip
+
+      otherSitters.push({
+        sitterId: s._id,
+        fullName: s.fullName,
+        photoUrl: s.photoUrl,
+        city: s.city,
+        type: conflict.existingCount > 0 ? 'joinGroup' : 'free',
+        existingCount: conflict.existingCount || 0,
+        // 🔵 mafamech "price" houni 3ala 9asd - el tarif tawa PER-
+        // SERVICE (sitterServiceSchema.prices), w had endpoint ma
+        // ye3rafch chnowa el services elli el owner talab (bark sitterId/
+        // checkIn/checkOut/petIds) - el owner yechouf el prix el kaملa
+        // ki yedkhol l'profile tel sitter (getSitterPublicProfile).
+      });
+    }
+
+    res.status(200).json({ category, sameSitterSlots, otherSitters });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

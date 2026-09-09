@@ -22,6 +22,9 @@ router.patch('/notifications/:id/dismiss', protect, bookingController.dismissNot
 router.get('/pending-questionnaires', protect, questionnaireController.getPendingQuestionnaires);
 router.get('/my-schedule', protect, bookingController.getMySchedule);
 router.get('/urgent', protect, bookingController.getUrgentBookingsForSitter);
+// 🔵 ZID (feature "compatibilite entre animaux") - "GET /alternatives"
+// LEZEM 9BAL "GET /:id" zeda (nafs raison el 3 routes ta7t).
+router.get('/alternatives', protect, bookingController.getBookingAlternatives);
 router.get('/:id', protect, bookingController.getBookingById);
 router.patch('/:id/respond', protect, bookingController.respondToBooking);
 router.patch('/:id/broadcast', protect, bookingController.broadcastBooking);

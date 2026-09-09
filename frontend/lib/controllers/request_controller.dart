@@ -2,6 +2,7 @@ import 'dart:convert';
 import '../services/api_service.dart';
 import 'auth_session.dart';
 import '../models/pet_summary.dart';
+import 'booking_controller.dart';
 
 // ============================================================================
 // RequestPersonInfo (owner wla sitter - esm+photo+ville, kifha kif
@@ -110,6 +111,8 @@ class BookingRequestDetail {
           breed: m['breed'] as String?,
           size: m['size']?.toString(),
           gender: m['gender'] as String?,
+          // 🔵 ZID (feature "compatibilite entre animaux")
+          category: m['category'] as String?,
           behaviors: (m['behaviors'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
           careInfo: (m['careInfo'] as Map<String, dynamic>?)?.map((k, v) => MapEntry(k, v == true)) ?? {},
           vetClinicName: m['vetClinicName'] as String?,
@@ -135,16 +138,27 @@ class RequestController {
   // 🔵 sitter: accept/reject - te5dem l'zoùj 7alet (talab direct
   // "pending", wala "open" marketplace kandidature) - el backend
   // yfarra9 (chrahtha bookingController.js).
-  Future<bool> respond(String bookingId, {required bool accept}) async {
+  //
+  // 🔵 ZID (feature "compatibilite entre animaux"): terja3 BookingResult
+  // (mch bool 3adi) - ki el backend yرجع 409 (conflit category/capacite,
+  // ki el sitter y9bel "accept"), el message el 7a9i9i (mch générique)
+  // ynajjam yban lel sitter (chrahtha views/user/sitter/request.dart).
+  Future<BookingResult> respond(String bookingId, {required bool accept}) async {
     try {
       final response = await ApiService.patch(
         '/bookings/$bookingId/respond',
         {'action': accept ? 'accept' : 'reject'},
         token: AuthSession.token,
       );
-      return response.statusCode == 200;
+      if (response.statusCode == 200) return BookingResult.success();
+
+      final Map<String, dynamic> data = jsonDecode(response.body) as Map<String, dynamic>;
+      return BookingResult.failure(
+        data['message'] as String? ?? 'login_generic_error',
+        reason: data['reason'] as String?,
+      );
     } catch (_) {
-      return false;
+      return BookingResult.failure('login_generic_error');
     }
   }
 
@@ -160,16 +174,26 @@ class RequestController {
   }
 
   // 🔵 owner: Accept/Decline fel notification "candidate_accepted".
-  Future<bool> confirmCandidate(String bookingId, {required bool accept}) async {
+  //
+  // 🔵 ZID (feature "compatibilite entre animaux"): BookingResult (mch
+  // bool) - nafs raison el "respond" - conflit ynajjam yçir houni zeda
+  // (ki el owner y confirmi candidate).
+  Future<BookingResult> confirmCandidate(String bookingId, {required bool accept}) async {
     try {
       final response = await ApiService.patch(
         '/bookings/$bookingId/confirm-candidate',
         {'accept': accept},
         token: AuthSession.token,
       );
-      return response.statusCode == 200;
+      if (response.statusCode == 200) return BookingResult.success();
+
+      final Map<String, dynamic> data = jsonDecode(response.body) as Map<String, dynamic>;
+      return BookingResult.failure(
+        data['message'] as String? ?? 'login_generic_error',
+        reason: data['reason'] as String?,
+      );
     } catch (_) {
-      return false;
+      return BookingResult.failure('login_generic_error');
     }
   }
 

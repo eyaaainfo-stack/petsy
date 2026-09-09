@@ -6,10 +6,16 @@ const mongoose = require('mongoose');
 // 🔵 ZID: request_a_book.dart (Flutter) - el owner ye5tar pets + services
 // + check-in/check-out, w ybaath talab lel sitter.
 // ============================================================================
+// 🔵 ZID (kifma tlab): "kol service ykoun 3andou el pets mte3ou howa"
+// - mch nefs el pets lel booking kollou (mathalan Grooming l'Pet A
+// bark, Walking l'Pet A + Pet B fi NEFS el booking). "pets" (fou9,
+// booking-level) yeb9a el UNION tel kol services (esta3mlnah lel check
+// category/capacite - resolveBookingPetsCategory - w lel affichage).
 const bookingServiceSchema = new mongoose.Schema(
   {
     serviceId: { type: String, required: true },
     price: { type: Number, required: true },
+    petIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Animal', required: true }],
   },
   { _id: false }
 );

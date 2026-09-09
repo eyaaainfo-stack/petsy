@@ -32,6 +32,9 @@ class PetSummary {
   final String? breed;
   final String? size;
   final String? gender;
+  // 🔵 ZID (feature "compatibilite entre animaux"): 'small_dog' /
+  // 'guard_dog' (dogs bark) / 'cat' (chats, automatique).
+  final String? category;
   final List<String> behaviors;
   final Map<String, bool> careInfo;
   final String? vetClinicName;
@@ -47,6 +50,7 @@ class PetSummary {
     this.breed,
     this.size,
     this.gender,
+    this.category,
     this.behaviors = const [],
     this.careInfo = const {},
     this.vetClinicName,

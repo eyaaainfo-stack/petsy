@@ -12,6 +12,8 @@ import '../../../models/my_profile_data.dart';
 import '../../../repositories/pet_repository.dart';
 import '../../../widgets/message_dialog.dart';
 import '../../../models/sitter_service_catalog.dart';
+import '../../../widgets/booking_alternatives_dialog.dart';
+import '../sitter/view_profile_sitter.dart';
 
 // ============================================================================
 // RequestABookScreen ("Request a Book")
@@ -23,6 +25,12 @@ import '../../../models/sitter_service_catalog.dart';
 // 🔴 FIX (kifma tlab): "el pets lkol b tsawerhom" - data 7a9i9iya
 // (PetRepository.fetchOwnerPets()), mch mock. "el Accommodation"
 // tna77at tamaman. "kol service tenzel 3lih ywarri prix + total".
+//
+// 🔵 ZID (kifma tlab el a5ir): "Service for" (pets, global lel booking
+// kollou) tna77a - TAWA kol SERVICE 3andou el pets mte3ou HOWA (mathalan
+// Grooming l'Pet A bark, Walking l'Pet A + Pet B fi NEFS el booking).
+// El total ye7seb PER-SERVICE (prix * 3adad el pets el mkhtarin fi
+// HAD el service, mch global).
 // ============================================================================
 class RequestABookScreen extends StatefulWidget {
   final String sitterId;
@@ -58,8 +66,9 @@ class _RequestABookScreenState extends State<RequestABookScreen> {
 
   List<PetSummary> _pets = [];
   bool _isLoadingPets = true;
-  final Set<String> _selectedPetIds = {};
-  final Set<String> _selectedServiceIds = {};
+  // 🔵 ZID (kifma tlab): serviceId -> pets el mkhtarin l'HAD service
+  // bark (mch selection global lel booking kollou).
+  final Map<String, Set<String>> _servicePetIds = {};
 
   final BookingController _controller = BookingController();
   bool _isSubmitting = false;
@@ -114,20 +123,76 @@ class _RequestABookScreenState extends State<RequestABookScreen> {
     });
   }
 
+  // 🔵 ZID (kifma tlab): UNION tel kol pets el mkhtarin fi AY service
+  // (booking-level) - esta3mlnah lel category tel booking el kaملa +
+  // lel payload el general (petIds, backend, resolveBookingPetsCategory).
+  Set<String> get _allSelectedPetIds => _servicePetIds.values.expand((s) => s).toSet();
+
+  // 🔵 ZID (feature "compatibilite entre animaux"): kol pets fi NEFS
+  // booking (fi AY service) lezem ykounou nefs el category (chraht fel
+  // backend, resolveBookingPetsCategory). Terja3 el category el
+  // mchtarka lowkan kol el pets el mkhtarin (fi AY service) NEFS el
+  // category, wala null (mafamech 7atta pet mkhtar l'hin).
+  String? get _bookingCategory {
+    final categories = _pets
+        .where((p) => p.id != null && _allSelectedPetIds.contains(p.id))
+        .map((p) => p.category)
+        .whereType<String>()
+        .toSet();
+    return categories.length == 1 ? categories.first : null;
+  }
+
+  // 🔵 ZID (feature "compatibilite entre animaux"): el prix PER-
+  // CATEGORY (service.prices) - null lowkan mafamech category m7addda
+  // l'hin (mafamech 7atta pet mkhtar), wala had service ma yban-lich
+  // l'category hedhi (kifma tlab: "mch chart enou nwafrou lel 3 types").
+  double? _priceForService(SitterServiceEntry service) {
+    final category = _bookingCategory;
+    if (category == null) return null;
+    for (final p in service.prices) {
+      if (p.category == category) return p.price;
+    }
+    return null;
+  }
+
+  // 🔵 ZID (kifma tlab): toggle pet l'HAD service bark (mch global).
+  void _onServicePetTap(SitterServiceEntry service, PetSummary pet) {
+    if (pet.id == null) return;
+    final assigned = _servicePetIds.putIfAbsent(service.serviceId, () => {});
+    if (assigned.contains(pet.id)) {
+      setState(() {
+        assigned.remove(pet.id);
+        if (assigned.isEmpty) _servicePetIds.remove(service.serviceId);
+      });
+      return;
+    }
+    // 🔵 ZID (feature "compatibilite entre animaux"): manna3 mzij
+    // categories (small_dog + guard_dog mathalan) fi NEFS el booking
+    // (7ata bin services mختلفين) - el backend yerfudhha barra, ahsen
+    // ن3allmou el owner FORAN houni.
+    final String? currentCategory = _bookingCategory;
+    if (currentCategory != null && pet.category != null && pet.category != currentCategory) {
+      showMessageDialog(context, 'booking_pets_category_mismatch_error'.tr());
+      return;
+    }
+    setState(() => assigned.add(pet.id!));
+  }
+
   // 🔴 FIX (kifma tlab: "el totale des service yethseb nb pets * service
-  // selectionnees") - kan el total ghir sum el services (bla ma
-  // ya54ou b3in el 3adad tel pets) - tawa: sum el services (prix
-  // wa7ed, mch b7sab kol pet) * 3adad el pets el mkhtarin (2 pets +
-  // nafs el service = 2x el prix, 7it el sitter ye5dem 3al 2 mch wa7ed).
-  double get _servicesSum {
+  // selectionnees") -> tawa (kifma tlab el a5ir): PER-SERVICE, mch
+  // global - kol service: prix (category) * 3adad el pets el mkhtarin
+  // FI HAD el service bark.
+  double get _total {
     double sum = 0;
     for (final service in widget.sitterServices) {
-      if (_selectedServiceIds.contains(service.serviceId)) sum += service.price;
+      final petIds = _servicePetIds[service.serviceId];
+      if (petIds == null || petIds.isEmpty) continue;
+      final price = _priceForService(service);
+      if (price == null) continue;
+      sum += price * petIds.length;
     }
     return sum;
   }
-
-  double get _total => _servicesSum * _selectedPetIds.length;
 
   void _changeMonth(int delta) {
     setState(() {
@@ -154,11 +219,14 @@ class _RequestABookScreenState extends State<RequestABookScreen> {
       showMessageDialog(context, 'sitter_unavailable_this_day_error'.tr());
       return;
     }
-    if (_selectedPetIds.isEmpty) {
+    if (_allSelectedPetIds.isEmpty) {
       showMessageDialog(context, 'select_pet_error'.tr());
       return;
     }
-    if (_selectedServiceIds.isEmpty) {
+    // 🔵 ZID (kifma tlab): "service selectionnee" tawa ye3ni "3andou
+    // l'a9al pet wa7ed mrakez bih" (mch checkbox mnfassel).
+    final bool hasAnyActiveService = widget.sitterServices.any((s) => (_servicePetIds[s.serviceId]?.isNotEmpty ?? false));
+    if (!hasAnyActiveService) {
       showMessageDialog(context, 'select_service_error'.tr());
       return;
     }
@@ -179,14 +247,22 @@ class _RequestABookScreenState extends State<RequestABookScreen> {
 
     setState(() => _isSubmitting = true);
 
+    // 🔵 ZID (kifma tlab): kol service, "petIds" mte3ou HOWA (mch
+    // global) - Booking.services (bookingServiceSchema, backend) tawa
+    // fiha "petIds" per-entry.
     final servicesPayload = [
       for (final s in widget.sitterServices)
-        if (_selectedServiceIds.contains(s.serviceId)) {'serviceId': s.serviceId, 'price': s.price},
+        if (_servicePetIds[s.serviceId]?.isNotEmpty ?? false)
+          {
+            'serviceId': s.serviceId,
+            'price': _priceForService(s) ?? 0,
+            'petIds': _servicePetIds[s.serviceId]!.toList(),
+          },
     ];
 
     final result = await _controller.createBooking(
       sitterId: widget.sitterId,
-      petIds: _selectedPetIds.toList(),
+      petIds: _allSelectedPetIds.toList(),
       services: servicesPayload,
       checkIn: checkIn,
       checkOut: checkOut,
@@ -197,6 +273,40 @@ class _RequestABookScreenState extends State<RequestABookScreen> {
     setState(() => _isSubmitting = false);
 
     if (!result.success) {
+      // 🔵 ZID (feature "compatibilite entre animaux"): 409 - conflit
+      // category/capacite - nfahsou les alternatives (Khyar A/B) 9bal
+      // ma nwarriw erreur 3adiya bark.
+      const conflictReasons = {'category_mismatch', 'capacity_full'};
+      if (result.reason != null && conflictReasons.contains(result.reason)) {
+        final alternatives = await _controller.getAlternatives(
+          sitterId: widget.sitterId,
+          petIds: _allSelectedPetIds.toList(),
+          checkIn: checkIn,
+          checkOut: checkOut,
+        );
+        if (!mounted) return;
+        if (alternatives != null && !alternatives.isEmpty) {
+          await showBookingAlternativesDialog(
+            context,
+            alternatives: alternatives,
+            onPickSlot: (newCheckIn, newCheckOut) {
+              setState(() {
+                _visibleMonth = DateTime(newCheckIn.year, newCheckIn.month);
+                _selectedDate = DateTime(newCheckIn.year, newCheckIn.month, newCheckIn.day);
+                _checkInTime = TimeOfDay(hour: newCheckIn.hour, minute: newCheckIn.minute);
+                _checkOutTime = TimeOfDay(hour: newCheckOut.hour, minute: newCheckOut.minute);
+              });
+              showMessageDialog(context, 'booking_alternatives_slot_applied_label'.tr());
+            },
+            onPickSitter: (otherSitterId) {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => ViewProfileSitterScreen(sitterId: otherSitterId)),
+              );
+            },
+          );
+          return;
+        }
+      }
       showMessageDialog(context, result.errorMessage ?? 'login_generic_error'.tr());
       return;
     }
@@ -266,48 +376,27 @@ class _RequestABookScreenState extends State<RequestABookScreen> {
                   SizedBox(height: sizes.rabSectionGap),
 
                   // --------------------------------------------------
-                  // Service for (pets - data 7a9i9iya)
-                  // --------------------------------------------------
-                  Text('service_for_label'.tr(), style: TextStyle(fontWeight: FontWeight.bold, fontSize: sizes.myProfileBodyFontSize)),
-                  SizedBox(height: sizes.rabSectionGap * 0.6),
-                  _isLoadingPets
-                      ? const Center(child: CircularProgressIndicator())
-                      : _pets.isEmpty
-                          ? Text('no_pets_yet_label'.tr(), style: TextStyle(color: Colors.grey.shade600))
-                          : Wrap(
-                              spacing: sizes.screenWidth * 0.03,
-                              runSpacing: sizes.screenHeight * 0.012,
-                              children: [
-                                for (final pet in _pets)
-                                  if (pet.id != null)
-                                    _petChip(
-                                      sizes: sizes,
-                                      pet: pet,
-                                      isSelected: _selectedPetIds.contains(pet.id),
-                                      onTap: () => setState(() {
-                                        if (!_selectedPetIds.remove(pet.id!)) _selectedPetIds.add(pet.id!);
-                                      }),
-                                    ),
-                              ],
-                            ),
-
-                  SizedBox(height: sizes.rabSectionGap),
-
-                  // --------------------------------------------------
+                  // 🔵 ZID (kifma tlab el a5ir): "Service for" (global)
+                  // tna77a - kol service (ta7t) 3andou el pets mte3ou HOWA.
                   // 🔴 FIX (kifma tlab): "Service Type" - GHIR el
                   // services el 7a9i9iyin elli el SITTER 3andou (mch
-                  // liste thabta) - kol wa7ed m3ah prix, w total.
+                  // liste thabta) - kol wa7ed m3ah prix, w el pets
+                  // mte3ou (selection mnfassla).
                   // --------------------------------------------------
                   Text('sitter_services_offered_label'.tr(), style: TextStyle(fontWeight: FontWeight.bold, fontSize: sizes.myProfileBodyFontSize)),
                   SizedBox(height: sizes.rabSectionGap * 0.6),
-                  if (widget.sitterServices.isEmpty)
+                  if (_isLoadingPets)
+                    const Center(child: CircularProgressIndicator())
+                  else if (widget.sitterServices.isEmpty)
                     Text('no_urgent_services_label'.tr(), style: TextStyle(color: Colors.grey.shade600))
+                  else if (_pets.isEmpty)
+                    Text('no_pets_yet_label'.tr(), style: TextStyle(color: Colors.grey.shade600))
                   else
                     for (final service in widget.sitterServices) _serviceCheckRow(sizes: sizes, service: service),
 
                   SizedBox(height: sizes.rabSectionGap * 0.6),
                   // 🔵 ZID (kifma tlab): total 7ay (yetbeddel automatique
-                  // ki tzid/tna77i service).
+                  // ki tzid/tna77i pet mel service).
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -315,18 +404,6 @@ class _RequestABookScreenState extends State<RequestABookScreen> {
                       Text('${_total.toStringAsFixed(0)} DT', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.pinkpetsy, fontSize: sizes.myProfileNameFontSize * 0.7)),
                     ],
                   ),
-                  // 🔵 ZID: breakdown ("150 DT x 2 animaux") - bch el
-                  // owner yefham 3lech el total twalla b hedh el 9ima
-                  // (mch bark ra9m yban mnfajet lowkan 3andou ktar men
-                  // pet wa7ed).
-                  if (_selectedPetIds.length > 1 && _servicesSum > 0)
-                    Padding(
-                      padding: EdgeInsets.only(top: sizes.rabSectionGap * 0.15),
-                      child: Text(
-                        '${_servicesSum.toStringAsFixed(0)} DT × ${_selectedPetIds.length} ${'pets_owned_label'.tr()}',
-                        style: TextStyle(color: Colors.grey.shade600, fontSize: sizes.myProfileBodyFontSize * 0.75),
-                      ),
-                    ),
 
                   // 🔴 FIX (kifma tlab): "el fazet el accommodation"
                   // tna77at KAMLA (mafamech Apartment/House/Country
@@ -518,59 +595,145 @@ class _RequestABookScreenState extends State<RequestABookScreen> {
     );
   }
 
-  Widget _petChip({required AppSizes sizes, required PetSummary pet, required bool isSelected, required VoidCallback onTap}) {
+  // 🔵 ZID (kifma tlab: "el prix kodem el esm el pet") - el prix mte3
+  // HAD el pet (7asb el category mte3ha HIYA, mch el "booking category"
+  // el 3am) - hakka kol chip ywarri prix tou3ha mba3rech, 7atta 9bal
+  // ma tختار 7atta pet fi service okhor.
+  double? _priceForPetInService(SitterServiceEntry service, PetSummary pet) {
+    if (pet.category == null) return null;
+    for (final p in service.prices) {
+      if (p.category == pet.category) return p.price;
+    }
+    return null;
+  }
+
+  // 🔵 ZID (kifma tlab): chip SGHIRA (bla photo) - bch tab9a compacte
+  // ki tban TA7T KOL service (mch chip kbira kifma "_petChip" el 9dima
+  // elli kanet fel section globale "Service for" - tna77at).
+  Widget _miniPetChip({
+    required AppSizes sizes,
+    required PetSummary pet,
+    required bool isSelected,
+    required VoidCallback onTap,
+    double? price,
+  }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(30),
+      borderRadius: BorderRadius.circular(20),
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: sizes.screenWidth * 0.02, vertical: sizes.screenHeight * 0.008),
+        padding: EdgeInsets.symmetric(horizontal: sizes.screenWidth * 0.025, vertical: sizes.screenHeight * 0.006),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.vertpetsy.withOpacity(0.2) : Colors.grey.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(30),
-          border: Border.all(color: isSelected ? AppColors.vertpetsy : Colors.transparent, width: 1.6),
+          color: isSelected ? AppColors.vertpetsy.withOpacity(0.18) : Colors.grey.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: isSelected ? AppColors.vertpetsy : Colors.transparent, width: 1.4),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ClipOval(
-              child: Container(
-                width: sizes.screenWidth * 0.08,
-                height: sizes.screenWidth * 0.08,
-                color: AppColors.pinkpetsy.withOpacity(0.15),
-                child: pet.photoBytes != null
-                    ? Image.memory(pet.photoBytes!, fit: BoxFit.cover)
-                    : pet.photoUrl != null
-                        ? Image.network(pet.photoUrl!, fit: BoxFit.cover)
-                        : Icon(pet.icon, color: AppColors.pinkpetsy, size: sizes.screenWidth * 0.04),
+            Icon(
+              isSelected ? Icons.check_circle : Icons.circle_outlined,
+              size: sizes.screenWidth * 0.032,
+              color: isSelected ? AppColors.vertpetsy : Colors.grey,
+            ),
+            SizedBox(width: sizes.screenWidth * 0.012),
+            // 🔵 ZID (kifma tlab): el prix KODEM el esm (mch ba3dou).
+            if (price != null)
+              Text(
+                '${price.toStringAsFixed(0)} DT  ',
+                style: TextStyle(
+                  fontSize: sizes.myProfileBodyFontSize * 0.78,
+                  fontWeight: FontWeight.w700,
+                  color: isSelected ? AppColors.vertpetsy : AppColors.pinkpetsy,
+                ),
+              ),
+            Text(
+              pet.name,
+              style: TextStyle(
+                fontSize: sizes.myProfileBodyFontSize * 0.78,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal,
+                color: isSelected ? AppColors.vertpetsy : null,
               ),
             ),
-            SizedBox(width: sizes.screenWidth * 0.02),
-            Text(pet.name, style: TextStyle(fontWeight: FontWeight.w600, color: isSelected ? AppColors.vertpetsy : null)),
           ],
         ),
       ),
     );
   }
 
+  // 🔵 ZID (kifma tlab el a5ir): kol service tawa 3andou selection tel
+  // pets mte3ou HOWA (mnghir "Service for" global) - esm+prix fou9,
+  // w ta7tou chips tel pets (tap = zid/na77i mel service hedha bark).
   Widget _serviceCheckRow({required AppSizes sizes, required SitterServiceEntry service}) {
-    final bool isSelected = _selectedServiceIds.contains(service.serviceId);
-    return InkWell(
-      onTap: () => setState(() {
-        if (!_selectedServiceIds.remove(service.serviceId)) _selectedServiceIds.add(service.serviceId);
-      }),
-      child: Padding(
-        padding: EdgeInsets.symmetric(vertical: sizes.screenHeight * 0.006),
-        child: Row(
+    final Set<String> assignedPetIds = _servicePetIds[service.serviceId] ?? {};
+    // 🔴 FIX (bug "deadlock": kol service yban 'Non propose pour cet
+    // animal', 7atta chips el pets ma yebanouch, fa el owner ma
+    // ynajjamch ye5tar 7atta pet mel bidaya!) - el mochkla kanet:
+    // "isUnavailable = price == null", ama "price" ye7taj category, w
+    // "category" ye7taj pet mkhtar - fa 9bal ma tkhtar 7atta pet (category
+    // null), KOL service kan yban "unavailable" -> chips ma yebanouch
+    // -> ma tنجمch tkhtar 7atta pet -> DEADLOCK.
+    // Tawa: "unavailable" ye3ni 7aja OKHRA - "el category MA3ROUFA
+    // (mel pets el mkhtarin fi services OKHRIN) W had service specifiquement
+    // ma yesnedhech biha" - MCH "mafamech 7atta pet mkhtar l'hin".
+    final String? category = _bookingCategory;
+    final double? price = category != null ? _priceForService(service) : null;
+    final bool isUnavailable = category != null && price == null;
+
+    String priceText;
+    if (price != null) {
+      priceText = '${price.toStringAsFixed(0)} DT';
+    } else if (isUnavailable) {
+      priceText = 'service_not_offered_label'.tr();
+    } else {
+      // 🔵 category mazel ma t7addedetch (mafamech 7atta pet mkhtar
+      // l'hin, fi AY service) - placeholder neutre, MCH "not offered".
+      priceText = '—';
+    }
+
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: sizes.screenHeight * 0.01),
+      child: Opacity(
+        opacity: isUnavailable ? 0.45 : 1,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Checkbox(
-              value: isSelected,
-              activeColor: AppColors.pinkpetsy,
-              onChanged: (_) => setState(() {
-                if (!_selectedServiceIds.remove(service.serviceId)) _selectedServiceIds.add(service.serviceId);
-              }),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(_serviceLabel(service), style: TextStyle(fontWeight: FontWeight.w600, fontSize: sizes.myProfileBodyFontSize)),
+                ),
+                Text(
+                  priceText,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: isUnavailable ? Colors.grey : AppColors.pinkpetsy,
+                    fontStyle: isUnavailable ? FontStyle.italic : FontStyle.normal,
+                  ),
+                ),
+              ],
             ),
-            Expanded(child: Text(_serviceLabel(service))),
-            Text('${service.price.toStringAsFixed(0)} DT', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.pinkpetsy)),
+            // 🔴 FIX: "!isUnavailable" tawa sa7i7 (chips yebanou dima
+            // GHIR ken el category ma3roufa 7a9i9atan w had service
+            // ma yesnedhech biha - mch bark ken price mazel null 7it
+            // mafamech pet mkhtar l'hin).
+            if (!isUnavailable) ...[
+              SizedBox(height: sizes.screenHeight * 0.008),
+              Wrap(
+                spacing: sizes.screenWidth * 0.02,
+                runSpacing: sizes.screenHeight * 0.006,
+                children: [
+                  for (final pet in _pets)
+                    if (pet.id != null)
+                      _miniPetChip(
+                        sizes: sizes,
+                        pet: pet,
+                        isSelected: assignedPetIds.contains(pet.id),
+                        onTap: () => _onServicePetTap(service, pet),
+                        price: _priceForPetInService(service, pet),
+                      ),
+                ],
+              ),
+            ],
           ],
         ),
       ),

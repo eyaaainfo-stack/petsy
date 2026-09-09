@@ -10,6 +10,7 @@ import '../../../widgets/back_button.dart';
 import '../../../widgets/button.dart';
 import '../../../widgets/map.dart';
 import '../../../widgets/service_category_selector.dart';
+import '../../../widgets/accepted_categories_selector.dart';
 import '../../../controllers/auth_session.dart';
 import '../../../controllers/user_create_profile_controller.dart';
 import '../../../controllers/create_sitter_profile_controller.dart';
@@ -56,7 +57,6 @@ class _UpdateProfileSitterScreenState extends State<UpdateProfileSitterScreen> {
   String? _locationName;
   String? _selectedGender;
   bool _isSubmitting = false;
-  bool _triedSubmit = false;
 
   // 🔴 FIX (kifma tlab: "les services nhbhom fi des titre...") -
   // ServiceCategorySelector (widgets/service_category_selector.dart)
@@ -64,6 +64,13 @@ class _UpdateProfileSitterScreenState extends State<UpdateProfileSitterScreen> {
   // (nafs mant9 create_sitter_profile.dart, tawa fi widget WA7ED
   // partagé bin el 2 écrans - bla duplication).
   final GlobalKey<ServiceCategorySelectorState> _serviceSelectorKey = GlobalKey();
+  // 🔵 ZID (feature "compatibilite entre animaux")
+  final GlobalKey<AcceptedCategoriesSelectorState> _categoriesSelectorKey = GlobalKey();
+  // 🔵 ZID: nafs raison tel create_sitter_profile.dart - "live" state
+  // bch ServiceCategorySelector yerebuild ki el categories yetbedlou,
+  // m3ammra mel data el 7aliya (initState) bch el prix el 9dam yban
+  // el marra el loula (mch bark ba3d ma el user y7ell chay b idou).
+  Set<String> _acceptedCategories = {};
 
   @override
   void initState() {
@@ -79,6 +86,8 @@ class _UpdateProfileSitterScreenState extends State<UpdateProfileSitterScreen> {
     _locationController = TextEditingController(text: p.locationName ?? '');
     _locationName = p.locationName;
     _selectedGender = p.gender;
+    // 🔵 ZID (feature "compatibilite entre animaux")
+    _acceptedCategories = Set.of(p.acceptedPetCategories);
   }
 
   @override
@@ -206,7 +215,15 @@ class _UpdateProfileSitterScreenState extends State<UpdateProfileSitterScreen> {
     if (_isSubmitting) return;
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _triedSubmit = true);
+    // 🔵 ZID (feature "compatibilite entre animaux"): category 9BAL
+    // el services (kifma tlab).
+    final categoriesState = _categoriesSelectorKey.currentState!;
+    categoriesState.markTriedSubmit();
+    final String? categoriesErrorKey = categoriesState.validate();
+    if (categoriesErrorKey != null) {
+      showMessageDialog(context, categoriesErrorKey.tr());
+      return;
+    }
 
     // 🔴 FIX (kifma tlab: "les services nhbhom fi des titre... ken yhb
     // yzid service ekher") - validation/payload tawa mel ServiceCategorySelector
@@ -240,7 +257,11 @@ class _UpdateProfileSitterScreenState extends State<UpdateProfileSitterScreen> {
     // services (zid/na77i/beddel price) tawa ye3ملهم PATCH 7a9i9i zeda
     // (bark el profile mch kafi).
     final List<Map<String, dynamic>> servicesPayload = selectorState.getPayload();
-    final bool servicesSuccess = await _servicesController.submitServices(services: servicesPayload);
+    final List<String> categoriesPayload = categoriesState.getPayload();
+    final bool servicesSuccess = await _servicesController.submitServices(
+      services: servicesPayload,
+      acceptedPetCategories: categoriesPayload,
+    );
 
     // 🔵 photo: appel MNFASSEL bark lowkan el user 5tar photo jdida
     // (bla ma nab3thou el photo el 9dima mel jdid).
@@ -483,6 +504,30 @@ class _UpdateProfileSitterScreenState extends State<UpdateProfileSitterScreen> {
                     SizedBox(height: sizes.myProfileSectionGap),
 
                     // ----------------------------------------------------
+                    // 🔵 ZID (feature "compatibilite entre animaux"):
+                    // GHIR categories (bla prix) - 9BAL "Services Offered"
+                    // (kifma tlab), m3ammra mel data el 7aliya.
+                    // ----------------------------------------------------
+                    _fieldLabel('sitter_accepted_categories_question'.tr(), sizes),
+                    SizedBox(height: sizes.screenHeight * 0.01),
+                    Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.symmetric(horizontal: sizes.screenWidth * 0.03, vertical: sizes.screenHeight * 0.012),
+                      decoration: BoxDecoration(
+                        color: AppColors.pinkpetsy.withOpacity(0.06),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.pinkpetsy.withOpacity(0.3)),
+                      ),
+                      child: AcceptedCategoriesSelector(
+                        key: _categoriesSelectorKey,
+                        initialCategories: p.acceptedPetCategories,
+                        onChanged: (categories) => setState(() => _acceptedCategories = categories),
+                      ),
+                    ),
+
+                    SizedBox(height: sizes.myProfileSectionGap),
+
+                    // ----------------------------------------------------
                     // 🔴 FIX (kifma tlab: "les services nhbhom fi des
                     // titre... ken yhb yzid service ekher") - categories
                     // accordion + "Autre" (ServiceCategorySelector, widget
@@ -498,7 +543,11 @@ class _UpdateProfileSitterScreenState extends State<UpdateProfileSitterScreen> {
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: AppColors.pinkpetsy.withOpacity(0.3)),
                       ),
-                      child: ServiceCategorySelector(key: _serviceSelectorKey, initialServices: p.services),
+                      child: ServiceCategorySelector(
+                        key: _serviceSelectorKey,
+                        initialServices: p.services,
+                        acceptedCategories: _acceptedCategories.toList(),
+                      ),
                     ),
 
                     SizedBox(height: sizes.myProfileSectionGap * 1.5),

@@ -43,6 +43,9 @@ class AddPetPhotoScreen extends StatefulWidget {
   final String? petBreed;
   final String? petSize;
   final String? petGender;
+  // 🔵 ZID (feature "compatibilite entre animaux"): 'small_dog' /
+  // 'guard_dog' / 'cat'.
+  final String? petCategory;
   final List<String> petBehaviors;
   final Map<String, bool> petCareInfo;
   final String? petVetClinicName;
@@ -64,6 +67,7 @@ class AddPetPhotoScreen extends StatefulWidget {
     this.petBreed,
     this.petSize,
     this.petGender,
+    this.petCategory,
     this.petBehaviors = const [],
     this.petCareInfo = const {},
     this.petVetClinicName,
@@ -222,6 +226,7 @@ class _AddPetPhotoScreenState extends State<AddPetPhotoScreen> {
         breed: widget.petBreed,
         size: widget.petSize,
         gender: widget.petGender,
+        category: widget.petCategory,
         behaviors: widget.petBehaviors,
         careInfo: widget.petCareInfo,
         vetClinicName: widget.petVetClinicName,
@@ -306,6 +311,7 @@ class _AddPetPhotoScreenState extends State<AddPetPhotoScreen> {
         breed: widget.petBreed,
         size: widget.petSize,
         gender: widget.petGender,
+        category: widget.petCategory,
         behaviors: widget.petBehaviors,
         careInfo: widget.petCareInfo,
         vetClinicName: widget.petVetClinicName,

@@ -7,6 +7,7 @@ import '../../../widgets/back_button.dart';
 import '../../../widgets/button.dart';
 import '../../../widgets/paw_widget.dart';
 import '../../../widgets/service_category_selector.dart';
+import '../../../widgets/accepted_categories_selector.dart';
 import '../../../controllers/create_sitter_profile_controller.dart';
 import 'create_sitter_profile_2.dart';
 import '../../../widgets/message_dialog.dart';
@@ -39,11 +40,29 @@ class CreateSitterProfileScreen extends StatefulWidget {
 
 class _CreateSitterProfileScreenState extends State<CreateSitterProfileScreen> {
   final GlobalKey<ServiceCategorySelectorState> _serviceSelectorKey = GlobalKey();
+  // 🔵 ZID (feature "compatibilite entre animaux")
+  final GlobalKey<AcceptedCategoriesSelectorState> _categoriesSelectorKey = GlobalKey();
+  // 🔵 ZID: el "live" state (mch ghir GlobalKey) - bch ServiceCategorySelector
+  // ynajjam yrebuild FORAN ki el user y3addel el categories (bla ha,
+  // ServiceCategorySelector ma3andouch 7atta wa7ed 3lem b'el categories
+  // el jdad 7atta l'submit).
+  Set<String> _acceptedCategories = {};
   final CreateSitterProfileController _controller = CreateSitterProfileController();
   bool _isSubmitting = false;
 
   Future<void> _onNextPressed() async {
     if (_isSubmitting) return;
+
+    // 🔵 ZID (feature "compatibilite entre animaux"): category 9BAL
+    // el services (kifma tlab) - el sitter ye5tar l'categories elli
+    // ye9bel w tarif kol wa7da 9bal ma ye5tar el services.
+    final categoriesState = _categoriesSelectorKey.currentState!;
+    categoriesState.markTriedSubmit();
+    final String? categoriesErrorKey = categoriesState.validate();
+    if (categoriesErrorKey != null) {
+      showMessageDialog(context, categoriesErrorKey.tr());
+      return;
+    }
 
     final selectorState = _serviceSelectorKey.currentState!;
     selectorState.markTriedSubmit();
@@ -55,10 +74,14 @@ class _CreateSitterProfileScreenState extends State<CreateSitterProfileScreen> {
     }
 
     final List<Map<String, dynamic>> servicesPayload = selectorState.getPayload();
+    final List<String> categoriesPayload = categoriesState.getPayload();
 
     setState(() => _isSubmitting = true);
 
-    final bool success = await _controller.submitServices(services: servicesPayload);
+    final bool success = await _controller.submitServices(
+      services: servicesPayload,
+      acceptedPetCategories: categoriesPayload,
+    );
 
     if (!mounted) return;
     setState(() => _isSubmitting = false);
@@ -182,13 +205,34 @@ class _CreateSitterProfileScreenState extends State<CreateSitterProfileScreen> {
                   SizedBox(height: sizes.sitterServicesTitleCardGap),
 
                   // ------------------------------------------------------
+                  // Box: "Accepted pet categories" (feature "compatibilite
+                  // entre animaux") - 9BAL "Services Offered" (kifma tlab).
+                  // ------------------------------------------------------
+                  _pillCard(
+                    sizes: sizes,
+                    pillText: 'sitter_accepted_categories_question'.tr(),
+                    content: AcceptedCategoriesSelector(
+                      key: _categoriesSelectorKey,
+                      // 🔵 ZID: kol ma el user y3addel el checkbox, hedhi
+                      // t7ill w ServiceCategorySelector ta7tha yerebuild
+                      // (yban/ya5fi el prix l'kol category FORAN).
+                      onChanged: (categories) => setState(() => _acceptedCategories = categories),
+                    ),
+                  ),
+
+                  SizedBox(height: sizes.sitterServicesRowGap * 2),
+
+                  // ------------------------------------------------------
                   // Box WA7DA bark: "Services Offered" (categories accordion
                   // + "Autre" - chraht fel ServiceCategorySelector)
                   // ------------------------------------------------------
                   _pillCard(
                     sizes: sizes,
                     pillText: 'sitter_services_offered_label'.tr(),
-                    content: ServiceCategorySelector(key: _serviceSelectorKey),
+                    content: ServiceCategorySelector(
+                      key: _serviceSelectorKey,
+                      acceptedCategories: _acceptedCategories.toList(),
+                    ),
                   ),
 
                   SizedBox(height: sizes.sitterServicesRowGap * 2),

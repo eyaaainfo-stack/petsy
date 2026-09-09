@@ -167,6 +167,22 @@ class _ProfileContent extends StatelessWidget {
   // 3al gender (AppColors.myProfileAccent, app_colors.dart).
   Color get _accentColor => AppColors.myProfileAccent(profile.gender);
 
+  // 🔵 ZID (feature "compatibilite entre animaux"): esm el category
+  // (small_dog/guard_dog/cat) traduit - kol service tawa 3andou barcha
+  // prix (wa7ed l'kol category), mch wa7ed bark.
+  String _categoryLabel(String category) {
+    switch (category) {
+      case 'small_dog':
+        return 'pet_category_small_dog_label'.tr();
+      case 'guard_dog':
+        return 'pet_category_guard_dog_label'.tr();
+      case 'cat':
+        return 'cat_label'.tr();
+      default:
+        return category;
+    }
+  }
+
   Widget _pillCard({required String pillText, required Widget content}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -369,19 +385,27 @@ class _ProfileContent extends StatelessWidget {
               children: [
                 for (final service in profile.services)
                   Padding(
-                    padding: EdgeInsets.symmetric(vertical: sizes.screenHeight * 0.006),
-                    child: Row(
+                    padding: EdgeInsets.symmetric(vertical: sizes.screenHeight * 0.008),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: EdgeInsets.symmetric(horizontal: sizes.screenWidth * 0.025, vertical: sizes.screenHeight * 0.004),
-                          decoration: BoxDecoration(color: _accentColor, borderRadius: BorderRadius.circular(8)),
-                          child: Text(
-                            '${service.price.toStringAsFixed(0)} DT',
-                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: sizes.myProfileBodyFontSize * 0.85),
-                          ),
+                        Text(serviceLabel(service), style: TextStyle(fontSize: sizes.myProfileBodyFontSize, fontWeight: FontWeight.w600)),
+                        SizedBox(height: sizes.screenHeight * 0.005),
+                        Wrap(
+                          spacing: sizes.screenWidth * 0.02,
+                          runSpacing: sizes.screenHeight * 0.005,
+                          children: [
+                            for (final p in service.prices)
+                              Container(
+                                padding: EdgeInsets.symmetric(horizontal: sizes.screenWidth * 0.022, vertical: sizes.screenHeight * 0.004),
+                                decoration: BoxDecoration(color: _accentColor, borderRadius: BorderRadius.circular(8)),
+                                child: Text(
+                                  '${_categoryLabel(p.category)}: ${p.price.toStringAsFixed(0)} DT',
+                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: sizes.myProfileBodyFontSize * 0.78),
+                                ),
+                              ),
+                          ],
                         ),
-                        SizedBox(width: sizes.screenWidth * 0.025),
-                        Expanded(child: Text(serviceLabel(service), style: TextStyle(fontSize: sizes.myProfileBodyFontSize))),
                       ],
                     ),
                   ),

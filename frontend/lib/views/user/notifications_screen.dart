@@ -120,11 +120,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Future<void> _onCandidateAnswer(NotificationItem item, bool accept) async {
     if (_processingIds.contains(item.id)) return;
     setState(() => _processingIds.add(item.id));
-    final bool ok = await _requestController.confirmCandidate(item.relatedBooking!, accept: accept);
+    final result = await _requestController.confirmCandidate(item.relatedBooking!, accept: accept);
     if (!mounted) return;
-    if (!ok) {
+    if (!result.success) {
       setState(() => _processingIds.remove(item.id));
-      showMessageDialog(context, 'profile_submit_error'.tr());
+      // 🔵 ZID (feature "compatibilite entre animaux"): el message
+      // el 7a9i9i mel backend (mathalan conflit category/capacite).
+      showMessageDialog(context, result.errorMessage ?? 'profile_submit_error'.tr());
       return;
     }
     _markActioned(item.id);

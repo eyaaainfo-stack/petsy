@@ -53,6 +53,10 @@ class _CreatePetProfileScreenState extends State<CreatePetProfileScreen> {
 
   PetType? _selectedPetType;
   String? _selectedGender; // 'female' wala 'male'
+  // 🔵 ZID (feature "compatibilite entre animaux"): 'small_dog' wala
+  // 'guard_dog' - ye5taj GHIR lel dogs (el chat category tou3ou 'cat'
+  // automatique, mch ye5taj input mel user - chraht fel backend).
+  String? _selectedCategory;
   bool _isSubmitting = false;
 
   @override
@@ -69,6 +73,13 @@ class _CreatePetProfileScreenState extends State<CreatePetProfileScreen> {
 
     if (_selectedPetType == null) {
       showMessageDialog(context, 'pet_type_required_error'.tr());
+      return;
+    }
+
+    // 🔵 ZID (feature "compatibilite entre animaux"): el category
+    // obligatoire lel dogs bark (el backend yerfudhha ken naqsa).
+    if (_selectedPetType == PetType.dog && _selectedCategory == null) {
+      showMessageDialog(context, 'pet_category_required_error'.tr());
       return;
     }
 
@@ -105,6 +116,8 @@ class _CreatePetProfileScreenState extends State<CreatePetProfileScreen> {
             petBreed: _breedController.text,
             petSize: _sizeController.text,
             petGender: _selectedGender,
+            // 🔵 ZID (feature "compatibilite entre animaux")
+            petCategory: _selectedPetType == PetType.cat ? 'cat' : _selectedCategory,
           ),
         ),
       );
@@ -159,7 +172,12 @@ class _CreatePetProfileScreenState extends State<CreatePetProfileScreen> {
     final bool isSelected = _selectedPetType == type;
 
     return GestureDetector(
-      onTap: () => setState(() => _selectedPetType = type),
+      onTap: () => setState(() {
+        _selectedPetType = type;
+        // 🔵 ZID: ken el user beddel l'cat, category (small_dog/
+        // guard_dog) ma3adech ye3ni chay - nfaraghouha.
+        if (type == PetType.cat) _selectedCategory = null;
+      }),
       child: Column(
         children: [
           Container(
@@ -277,6 +295,49 @@ class _CreatePetProfileScreenState extends State<CreatePetProfileScreen> {
                     ),
 
                     SizedBox(height: screenSize.height * 0.035),
+
+                    // ----------------------------------------------------
+                    // 🔵 ZID (feature "compatibilite entre animaux"):
+                    // ye5taj GHIR lel dogs - el chat category tou3ou
+                    // 'cat' automatique (bla input mel user).
+                    // ----------------------------------------------------
+                    if (_selectedPetType == PetType.dog) ...[
+                      _fieldLabel('pet_category_question'.tr(), screenSize.width),
+                      SizedBox(height: screenSize.height * 0.008),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: RadioListTile<String>(
+                              contentPadding: EdgeInsets.zero,
+                              dense: true,
+                              value: 'small_dog',
+                              groupValue: _selectedCategory,
+                              activeColor: AppColors.vertpetsy,
+                              title: Text(
+                                'pet_category_small_dog_label'.tr(),
+                                style: TextStyle(fontSize: screenSize.width * 0.032),
+                              ),
+                              onChanged: (value) => setState(() => _selectedCategory = value),
+                            ),
+                          ),
+                          Expanded(
+                            child: RadioListTile<String>(
+                              contentPadding: EdgeInsets.zero,
+                              dense: true,
+                              value: 'guard_dog',
+                              groupValue: _selectedCategory,
+                              activeColor: AppColors.vertpetsy,
+                              title: Text(
+                                'pet_category_guard_dog_label'.tr(),
+                                style: TextStyle(fontSize: screenSize.width * 0.032),
+                              ),
+                              onChanged: (value) => setState(() => _selectedCategory = value),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: screenSize.height * 0.02),
+                    ],
 
                     _fieldLabel('name_label'.tr(), screenSize.width),
                     SizedBox(height: screenSize.height * 0.008),

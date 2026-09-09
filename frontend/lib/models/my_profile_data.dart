@@ -6,10 +6,26 @@
 // pets) - GET /api/users/profile (backend, userController.js
 // getProfile) yrajja3 el kol f nefs el appel.
 // ============================================================================
+// 🔵 ZID (feature "compatibilite entre animaux"): {category, price} -
+// kol service tawa 3andou barcha prix (wa7ed l'kol category elli el
+// sitter ye9bel - small_dog/guard_dog/cat), mch price+petType wa7dania.
+class ServiceCategoryPrice {
+  final String category;
+  final double price;
+
+  const ServiceCategoryPrice({required this.category, required this.price});
+
+  factory ServiceCategoryPrice.fromJson(Map<String, dynamic> json) {
+    return ServiceCategoryPrice(
+      category: json['category'] as String? ?? '',
+      price: (json['price'] as num?)?.toDouble() ?? 0,
+    );
+  }
+}
+
 class SitterServiceEntry {
   final String serviceId; // 'grooming_full_bath' / 'walking_daily_walk' / 'custom' / ...
-  final double price;
-  final String petType; // 'cat' / 'dog' / 'both'
+  final List<ServiceCategoryPrice> prices;
   // 🔵 ZID (kifma tlab: "ken yhb yzid service ekher") - esm el service
   // "Autre" (custom, serviceId == 'custom') - el sitter kteb b ydik,
   // mafamech labelKey lel translation (mch mel catalogue - chraht fel
@@ -18,16 +34,16 @@ class SitterServiceEntry {
 
   const SitterServiceEntry({
     required this.serviceId,
-    required this.price,
-    required this.petType,
+    required this.prices,
     this.customLabel,
   });
 
   factory SitterServiceEntry.fromJson(Map<String, dynamic> json) {
     return SitterServiceEntry(
       serviceId: json['serviceId'] as String? ?? '',
-      price: (json['price'] as num?)?.toDouble() ?? 0,
-      petType: json['petType'] as String? ?? '',
+      prices: (json['prices'] as List<dynamic>? ?? [])
+          .map((e) => ServiceCategoryPrice.fromJson(e as Map<String, dynamic>))
+          .toList(),
       customLabel: json['customLabel'] as String?,
     );
   }
@@ -51,6 +67,10 @@ class MyProfileData {
   final bool? hasPetAtHome;
   final List<String> ownedPetTypes;
   final List<SitterServiceEntry> services;
+  // 🔵 ZID (feature "compatibilite entre animaux"): GHIR el categories
+  // (small_dog/guard_dog/cat), BLA prix (el prix per-service, mawjoud
+  // fel SitterServiceEntry.prices fou9).
+  final List<String> acceptedPetCategories;
   // 🔵 ZID (kifma tlab): "el rating ma waletach todhhor" - moyenne
   // 7a9i9iya (getSitterPublicProfile, backend) - null lowkan mafamech
   // 7atta review l'hin (mch 0 fake).
@@ -81,6 +101,7 @@ class MyProfileData {
     this.hasPetAtHome,
     this.ownedPetTypes = const [],
     this.services = const [],
+    this.acceptedPetCategories = const [],
     this.averageRating,
     this.reviewsCount = 0,
     this.recurringDaysOff = const [],
@@ -108,6 +129,7 @@ class MyProfileData {
       services: (json['services'] as List<dynamic>? ?? [])
           .map((e) => SitterServiceEntry.fromJson(e as Map<String, dynamic>))
           .toList(),
+      acceptedPetCategories: (json['acceptedPetCategories'] as List<dynamic>? ?? []).map((e) => e as String).toList(),
       averageRating: (json['averageRating'] as num?)?.toDouble(),
       reviewsCount: json['reviewsCount'] as int? ?? 0,
       recurringDaysOff: recurring.map((e) => (e as num).toInt()).toList(),

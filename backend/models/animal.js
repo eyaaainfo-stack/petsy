@@ -22,6 +22,17 @@ const animalSchema = new mongoose.Schema(
       enum: ['dog', 'cat'],
       required: true,
     },
+    // 🔵 ZID (feature "compatibilite entre animaux"): categorie mte3
+    // securite/scheduling - MCH nafs 7aja "petType". El chat ykoun
+    // dima 'cat' (auto, chraht fel petController.js). El dogs y5tarou
+    // el owner binethom 'small_dog' (calme, jaez ye5dem group) wela
+    // 'guard_dog' (garde/attaque, DIMA solo, ma yetla9ach m3a categorie
+    // okhra fel nefs el creneau 3and NAFS el sitter).
+    category: {
+      type: String,
+      enum: ['small_dog', 'guard_dog', 'cat'],
+      required: true,
+    },
     name: { type: String, required: true },
     // 🔵 ZID: el path/URL tel photo (mch el image nafsha, mel'ma7att
     // fel middleware/upload.js) - chrahtha fel réponse el text.

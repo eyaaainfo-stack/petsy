@@ -21,6 +21,9 @@ class SitterSearchResult {
   // mawjouda mel backend (CheckoutQuestionnaire) - houni ghir n-parsiha.
   final double rating;
   final int reviewsCount;
+  // 🔵 ZID (feature "filtres search: age/prestations")
+  final int? age;
+  final int completedBookingsCount;
 
   const SitterSearchResult({
     required this.id,
@@ -35,6 +38,8 @@ class SitterSearchResult {
     this.isVerified = false,
     this.rating = 0,
     this.reviewsCount = 0,
+    this.age,
+    this.completedBookingsCount = 0,
   });
 
   factory SitterSearchResult.fromJson(Map<String, dynamic> json) {
@@ -53,6 +58,8 @@ class SitterSearchResult {
       isVerified: json['isVerified'] as bool? ?? false,
       rating: (json['rating'] as num?)?.toDouble() ?? 0,
       reviewsCount: json['reviewsCount'] as int? ?? 0,
+      age: (json['age'] as num?)?.toInt(),
+      completedBookingsCount: (json['completedBookingsCount'] as num?)?.toInt() ?? 0,
     );
   }
 }
@@ -72,6 +79,11 @@ class SitterSearchFilters {
   // 🔴 FIX (kifma tlab: "les note mch deja dispo?") - filtre "Note"
   // 7a9i9i tawa (kan désactivé b'ghalta).
   final double? minRating;
+  // 🔵 ZID (feature "filtres search: age/disponibilite/categorie/prestations")
+  final int? minAge;
+  final bool onlyAvailable;
+  final String? acceptedPetCategory; // 'small_dog' / 'guard_dog' / 'cat'
+  final int? minCompletedBookings;
 
   const SitterSearchFilters({
     this.gender,
@@ -80,9 +92,23 @@ class SitterSearchFilters {
     this.maxDistanceKm,
     this.minMemberMonths,
     this.minRating,
+    this.minAge,
+    this.onlyAvailable = false,
+    this.acceptedPetCategory,
+    this.minCompletedBookings,
   });
 
-  bool get isEmpty => gender == null && city == null && residenceType == null && maxDistanceKm == null && minMemberMonths == null && minRating == null;
+  bool get isEmpty =>
+      gender == null &&
+      city == null &&
+      residenceType == null &&
+      maxDistanceKm == null &&
+      minMemberMonths == null &&
+      minRating == null &&
+      minAge == null &&
+      !onlyAvailable &&
+      acceptedPetCategory == null &&
+      minCompletedBookings == null;
 
   SitterSearchFilters copyWith({
     String? gender,
@@ -97,6 +123,13 @@ class SitterSearchFilters {
     bool clearMinMemberMonths = false,
     double? minRating,
     bool clearMinRating = false,
+    int? minAge,
+    bool clearMinAge = false,
+    bool? onlyAvailable,
+    String? acceptedPetCategory,
+    bool clearAcceptedPetCategory = false,
+    int? minCompletedBookings,
+    bool clearMinCompletedBookings = false,
   }) {
     return SitterSearchFilters(
       gender: clearGender ? null : (gender ?? this.gender),
@@ -105,6 +138,10 @@ class SitterSearchFilters {
       maxDistanceKm: clearMaxDistanceKm ? null : (maxDistanceKm ?? this.maxDistanceKm),
       minMemberMonths: clearMinMemberMonths ? null : (minMemberMonths ?? this.minMemberMonths),
       minRating: clearMinRating ? null : (minRating ?? this.minRating),
+      minAge: clearMinAge ? null : (minAge ?? this.minAge),
+      onlyAvailable: onlyAvailable ?? this.onlyAvailable,
+      acceptedPetCategory: clearAcceptedPetCategory ? null : (acceptedPetCategory ?? this.acceptedPetCategory),
+      minCompletedBookings: clearMinCompletedBookings ? null : (minCompletedBookings ?? this.minCompletedBookings),
     );
   }
 }
@@ -120,6 +157,10 @@ class SitterSearchController {
       if (filters.maxDistanceKm != null) params['maxDistanceKm'] = filters.maxDistanceKm!.toString();
       if (filters.minMemberMonths != null) params['minMemberMonths'] = filters.minMemberMonths!.toString();
       if (filters.minRating != null) params['minRating'] = filters.minRating!.toString();
+      if (filters.minAge != null) params['minAge'] = filters.minAge!.toString();
+      if (filters.onlyAvailable) params['isAvailable'] = 'true';
+      if (filters.acceptedPetCategory != null) params['acceptedPetCategory'] = filters.acceptedPetCategory!;
+      if (filters.minCompletedBookings != null) params['minCompletedBookings'] = filters.minCompletedBookings!.toString();
 
       final String queryString = params.entries.map((e) => '${Uri.encodeQueryComponent(e.key)}=${Uri.encodeQueryComponent(e.value)}').join('&');
       final String path = '/users/sitters/search${queryString.isNotEmpty ? '?$queryString' : ''}';

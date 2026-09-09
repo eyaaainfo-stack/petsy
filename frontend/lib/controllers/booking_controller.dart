@@ -1,6 +1,7 @@
 import 'dart:convert';
 import '../services/api_service.dart';
 import 'auth_session.dart';
+import '../models/booking_alternatives.dart';
 
 // ============================================================================
 // BookingController
@@ -8,11 +9,16 @@ import 'auth_session.dart';
 class BookingResult {
   final bool success;
   final String? errorMessage;
+  // 🔵 ZID (feature "compatibilite entre animaux"): 'category_mismatch'
+  // wala 'capacity_full' ki el erreur mel conflit scheduling (409) -
+  // null lel erreurs l'okhrin (400/500) - request_a_book.dart yeste5dem
+  // hedha bch ye3raf ya3rodh popup "alternatives" wala erreur 3adiya bark.
+  final String? reason;
 
-  const BookingResult._(this.success, this.errorMessage);
+  const BookingResult._(this.success, this.errorMessage, this.reason);
 
-  factory BookingResult.success() => const BookingResult._(true, null);
-  factory BookingResult.failure(String message) => BookingResult._(false, message);
+  factory BookingResult.success() => const BookingResult._(true, null, null);
+  factory BookingResult.failure(String message, {String? reason}) => BookingResult._(false, message, reason);
 }
 
 class BookingController {
@@ -49,9 +55,39 @@ class BookingController {
       if (response.statusCode == 201) return BookingResult.success();
 
       final Map<String, dynamic> data = jsonDecode(response.body) as Map<String, dynamic>;
-      return BookingResult.failure(data['message'] as String? ?? 'login_generic_error');
+      return BookingResult.failure(
+        data['message'] as String? ?? 'login_generic_error',
+        reason: data['reason'] as String?,
+      );
     } catch (_) {
       return BookingResult.failure('login_generic_error');
+    }
+  }
+
+  // 🔵 ZID (feature "compatibilite entre animaux"): ki createBooking
+  // yرجع "reason" mahouch null (409, conflit category/capacite), houni
+  // el appel elli yjib el propositions (Khyar A: horaire ekher 3and
+  // nefs el sitter, Khyar B: sitters okhrin).
+  Future<BookingAlternatives?> getAlternatives({
+    required String sitterId,
+    required List<String> petIds,
+    required DateTime checkIn,
+    required DateTime checkOut,
+  }) async {
+    try {
+      final query =
+          'sitterId=${Uri.encodeQueryComponent(sitterId)}'
+          '&checkIn=${Uri.encodeQueryComponent(checkIn.toUtc().toIso8601String())}'
+          '&checkOut=${Uri.encodeQueryComponent(checkOut.toUtc().toIso8601String())}'
+          '&petIds=${Uri.encodeQueryComponent(petIds.join(','))}';
+
+      final response = await ApiService.get('/bookings/alternatives?$query', token: AuthSession.token);
+      if (response.statusCode != 200) return null;
+
+      final Map<String, dynamic> data = jsonDecode(response.body) as Map<String, dynamic>;
+      return BookingAlternatives.fromJson(data);
+    } catch (_) {
+      return null;
     }
   }
 }

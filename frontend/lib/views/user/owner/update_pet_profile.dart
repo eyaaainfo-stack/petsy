@@ -44,6 +44,11 @@ class _UpdatePetProfileScreenState extends State<UpdatePetProfileScreen> {
   late final TextEditingController _clinicPhoneController;
 
   late String _selectedGender; // 'female' / 'male'
+  // 🔵 ZID (feature "compatibilite entre animaux"): 'small_dog' /
+  // 'guard_dog' - ye5taj GHIR lel dogs. Ken el pet 9dim (9bal el
+  // feature), category tenajjam tkoun null - el user ye5tar wa7da
+  // 9bal ma yenajjam y-update (chraht fel validation ta7t).
+  String? _selectedCategory;
   late Set<String> _selectedBehaviors;
   late Map<String, bool> _careInfo;
   Uint8List? _newPhotoBytes;
@@ -76,6 +81,8 @@ class _UpdatePetProfileScreenState extends State<UpdatePetProfileScreen> {
     _clinicNameController = TextEditingController(text: p.vetClinicName ?? '');
     _clinicPhoneController = TextEditingController(text: p.vetClinicPhone ?? '');
     _selectedGender = p.gender ?? 'female';
+    // 🔵 ZID (feature "compatibilite entre animaux")
+    _selectedCategory = p.petType == 'cat' ? 'cat' : p.category;
     _selectedBehaviors = Set.of(p.behaviors);
     _careInfo = {
       'microchipped': p.careInfo['microchipped'] ?? false,
@@ -146,6 +153,14 @@ class _UpdatePetProfileScreenState extends State<UpdatePetProfileScreen> {
     if (_isSubmitting) return;
     if (widget.pet.id == null) return; // 🔵 mafamech _id (ma yenajjamch ykoun) - safety net
 
+    // 🔵 ZID (feature "compatibilite entre animaux"): obligatoire lel
+    // dogs (el backend yerfudhha ken naqsa) - jeneralement déjà
+    // m3ammra (initState), ama pets 9dam (9bal el feature) mumkin null.
+    if (widget.pet.petType == 'dog' && _selectedCategory == null) {
+      showMessageDialog(context, 'pet_category_required_error'.tr());
+      return;
+    }
+
     setState(() => _isSubmitting = true);
 
     final bool success = await _controller.updatePet(
@@ -159,6 +174,7 @@ class _UpdatePetProfileScreenState extends State<UpdatePetProfileScreen> {
       careInfo: _careInfo,
       vetClinicName: _clinicNameController.text,
       vetClinicPhone: _clinicPhoneController.text,
+      category: widget.pet.petType == 'dog' ? _selectedCategory : null,
     );
 
     // 🔵 photo: appel mnfassel bark lowkan el user 5tar photo jdida.
@@ -196,6 +212,7 @@ class _UpdatePetProfileScreenState extends State<UpdatePetProfileScreen> {
       breed: _breedController.text,
       size: _sizeController.text,
       gender: _selectedGender,
+      category: _selectedCategory,
       behaviors: _selectedBehaviors.toList(),
       careInfo: _careInfo,
       vetClinicName: _clinicNameController.text,
@@ -351,6 +368,44 @@ class _UpdatePetProfileScreenState extends State<UpdatePetProfileScreen> {
 
                     _editableRow(label: 'name_label'.tr(), controller: _nameController),
                     _staticRow(label: 'pet_type_label'.tr(), value: widget.pet.petType == 'cat' ? 'Cat' : 'Dog'),
+
+                    // 🔵 ZID (feature "compatibilite entre animaux"):
+                    // ye5taj GHIR lel dogs - el chat category tou3ou
+                    // 'cat' automatique (mch éditable houni).
+                    if (widget.pet.petType == 'dog')
+                      Padding(
+                        padding: EdgeInsets.symmetric(vertical: sizes.updatePetFieldGap),
+                        child: Row(
+                          children: [
+                            SizedBox(
+                              width: sizes.screenWidth * 0.28,
+                              child: Text('pet_category_question'.tr(), style: TextStyle(color: AppColors.pinkpetsy, fontSize: sizes.updatePetLabelFontSize)),
+                            ),
+                            Expanded(
+                              child: Wrap(
+                                alignment: WrapAlignment.end,
+                                spacing: sizes.screenWidth * 0.02,
+                                runSpacing: sizes.screenHeight * 0.008,
+                                children: [
+                                  ChoiceChip(
+                                    label: Text('pet_category_small_dog_label'.tr()),
+                                    selected: _selectedCategory == 'small_dog',
+                                    onSelected: (_) => setState(() => _selectedCategory = 'small_dog'),
+                                    selectedColor: AppColors.pinkpetsy.withOpacity(0.25),
+                                  ),
+                                  ChoiceChip(
+                                    label: Text('pet_category_guard_dog_label'.tr()),
+                                    selected: _selectedCategory == 'guard_dog',
+                                    onSelected: (_) => setState(() => _selectedCategory = 'guard_dog'),
+                                    selectedColor: AppColors.pinkpetsy.withOpacity(0.25),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
                     _editableRow(label: 'pet_breed_label'.tr(), controller: _breedController),
 
                     // Sex: 2 boutons Female/Male (mch text 3adi, bch

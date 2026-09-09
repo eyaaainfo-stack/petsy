@@ -48,12 +48,29 @@ class _SearchScreenState extends State<SearchScreen> {
     'house': 'sitter_residence_house',
     'countryHouse': 'sitter_residence_country_house',
   };
+  // 🔵 ZID (feature "filtre categorie de pet")
+  String _petCategoryLabel(String category) {
+    switch (category) {
+      case 'small_dog':
+        return 'pet_category_small_dog_label'.tr();
+      case 'guard_dog':
+        return 'pet_category_guard_dog_label'.tr();
+      case 'cat':
+        return 'cat_label'.tr();
+      default:
+        return category;
+    }
+  }
   static const List<double> _distanceOptions = [5, 10, 20, 50];
   static const List<int> _memberSinceOptions = [3, 6, 12];
   // 🔴 FIX (kifma tlab: "les note mch deja dispo?") - filtre "Note"
   // 7a9i9i tawa (kan désactivé b'ghalta - el data el 7a9i9iya déjà
   // mawjouda mel backend, chraht fel userController.js/searchSitters).
   static const List<double> _ratingOptions = [4.5, 4.0, 3.5, 3.0];
+  // 🔵 ZID (feature "filtres search: age/categorie/prestations")
+  static const List<int> _ageOptions = [18, 25, 35, 45];
+  static const List<int> _completedBookingsOptions = [1, 5, 10, 20];
+  static const List<String> _petCategories = ['small_dog', 'guard_dog', 'cat'];
 
   @override
   void initState() {
@@ -109,6 +126,10 @@ class _SearchScreenState extends State<SearchScreen> {
     setState(() {
       final index = _results.indexWhere((s) => s.id == sitter.id);
       if (index != -1) {
+        // 🔴 FIX: kanet ma tab3athch "rating/reviewsCount" (w tawa
+        // "age/completedBookingsCount") - fa kol tap 3al favori kan
+        // ymassa7 hedhi el 9iem (yرجعو 0/null) mel UI (bla ma tban
+        // el bug 7ata l'ay wa9t el data ma3adech tetجدد mel backend).
         _results[index] = SitterSearchResult(
           id: sitter.id,
           fullName: sitter.fullName,
@@ -119,6 +140,11 @@ class _SearchScreenState extends State<SearchScreen> {
           memberSince: sitter.memberSince,
           distanceKm: sitter.distanceKm,
           isFavorite: !sitter.isFavorite,
+          isVerified: sitter.isVerified,
+          rating: sitter.rating,
+          reviewsCount: sitter.reviewsCount,
+          age: sitter.age,
+          completedBookingsCount: sitter.completedBookingsCount,
         );
       }
     });
@@ -350,6 +376,61 @@ class _SearchScreenState extends State<SearchScreen> {
                             for (final months in _memberSinceOptions) _FilterOption(months, 'member_since_months_value'.tr(namedArgs: {'months': months.toString()})),
                           ],
                           onSelected: (value) => _updateFilters(_filters.copyWith(minMemberMonths: value, clearMinMemberMonths: value == null)),
+                        ),
+                      ),
+                      // 🔵 ZID (feature "filtres search: age/disponibilite/
+                      // categorie/prestations") - 4 filtres jdad.
+                      _filterChip(
+                        sizes: sizes,
+                        label: _filters.minAge == null ? 'age_filter_label'.tr() : 'age_filter_value'.tr(namedArgs: {'age': _filters.minAge.toString()}),
+                        active: _filters.minAge != null,
+                        onTap: () => _showFilterSheet<int>(
+                          title: 'age_filter_label'.tr(),
+                          selected: _filters.minAge,
+                          options: [
+                            _FilterOption(null, 'filter_any_label'.tr()),
+                            for (final age in _ageOptions) _FilterOption(age, 'age_filter_value'.tr(namedArgs: {'age': age.toString()})),
+                          ],
+                          onSelected: (value) => _updateFilters(_filters.copyWith(minAge: value, clearMinAge: value == null)),
+                        ),
+                      ),
+                      _filterChip(
+                        sizes: sizes,
+                        label: 'availability_filter_label'.tr(),
+                        active: _filters.onlyAvailable,
+                        // 🔵 ZID: boolean simple (mch liste d'options) -
+                        // tap ye3mel toggle DIRECT (bla bottom sheet).
+                        onTap: () => _updateFilters(_filters.copyWith(onlyAvailable: !_filters.onlyAvailable)),
+                      ),
+                      _filterChip(
+                        sizes: sizes,
+                        label: _filters.acceptedPetCategory == null ? 'pet_category_filter_label'.tr() : _petCategoryLabel(_filters.acceptedPetCategory!),
+                        active: _filters.acceptedPetCategory != null,
+                        onTap: () => _showFilterSheet<String>(
+                          title: 'pet_category_filter_label'.tr(),
+                          selected: _filters.acceptedPetCategory,
+                          options: [
+                            _FilterOption(null, 'filter_any_label'.tr()),
+                            for (final cat in _petCategories) _FilterOption(cat, _petCategoryLabel(cat)),
+                          ],
+                          onSelected: (value) => _updateFilters(_filters.copyWith(acceptedPetCategory: value, clearAcceptedPetCategory: value == null)),
+                        ),
+                      ),
+                      _filterChip(
+                        sizes: sizes,
+                        label: _filters.minCompletedBookings == null
+                            ? 'completed_bookings_filter_label'.tr()
+                            : 'completed_bookings_filter_value'.tr(namedArgs: {'count': _filters.minCompletedBookings.toString()}),
+                        active: _filters.minCompletedBookings != null,
+                        onTap: () => _showFilterSheet<int>(
+                          title: 'completed_bookings_filter_label'.tr(),
+                          selected: _filters.minCompletedBookings,
+                          options: [
+                            _FilterOption(null, 'filter_any_label'.tr()),
+                            for (final count in _completedBookingsOptions)
+                              _FilterOption(count, 'completed_bookings_filter_value'.tr(namedArgs: {'count': count.toString()})),
+                          ],
+                          onSelected: (value) => _updateFilters(_filters.copyWith(minCompletedBookings: value, clearMinCompletedBookings: value == null)),
                         ),
                       ),
                     ],

@@ -33,6 +33,8 @@ class PetRepository {
           breed: p['breed'] as String?,
           size: p['size']?.toString(),
           gender: p['gender'] as String?,
+          // 🔵 ZID (feature "compatibilite entre animaux")
+          category: p['category'] as String?,
           behaviors: (p['behaviors'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
           careInfo: (p['careInfo'] as Map<String, dynamic>?)?.map((k, v) => MapEntry(k, v == true)) ?? {},
           vetClinicName: p['vetClinicName'] as String?,

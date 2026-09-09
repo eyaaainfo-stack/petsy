@@ -2,6 +2,8 @@
 const User = require('../models/user');
 const Sitter = require('../models/sitter');
 const CheckoutQuestionnaire = require('../models/checkoutQuestionnaire');
+// 🔵 ZID (feature "filtre nombre de prestations effectuees")
+const Booking = require('../models/booking');
 const { computeChecklist } = require('../services/verificationService');
 // 🔴 FIX (bug: "compte déjà mawjoud yerja3 lel UserCreateProfileScreen
 // bدal ProfileOwnerScreen") - chraht kaملa fel services/onboardingService.js.
@@ -67,6 +69,9 @@ exports.getProfile = async (req, res) => {
       responseUser.hasTransportation = sitterUser.hasTransportation;
       responseUser.hasPetAtHome = sitterUser.hasPetAtHome;
       responseUser.ownedPetTypes = sitterUser.ownedPetTypes;
+      // 🔵 ZID (feature "compatibilite entre animaux"): el categories
+      // (small_dog/guard_dog/cat) elli had sitter ye9bel ye5dem m3ahom.
+      responseUser.acceptedPetCategories = sitterUser.acceptedPetCategories;
       // 🔵 ZID (kifma tlab): "disponibilité" - bch sitter_calender.dart
       // ynajjam yjib el état el 7ali (ki yefte7 mode "Availability").
       responseUser.recurringDaysOff = sitterUser.recurringDaysOff;
@@ -187,7 +192,7 @@ exports.updateSitterDetails = async (req, res) => {
   console.log(`🟢 [SITTER-DETAILS] userId (mel token): ${req.userId}`);
   console.log(`🟢 [SITTER-DETAILS] Body mawsoul: ${JSON.stringify(req.body)}`);
   try {
-    const { services, residenceType, hasTransportation, hasPetAtHome, ownedPetTypes, recurringDaysOff, specificDatesOff } = req.body;
+    const { services, residenceType, hasTransportation, hasPetAtHome, ownedPetTypes, recurringDaysOff, specificDatesOff, acceptedPetCategories } = req.body;
 
     // 🔵 n7ottou GHIR el 7ou9oul elli 7a9i9atan tzadou fel body (mch
     // undefined) - bch PATCH mel écran 1 (services bark) ma ymassa7ch
@@ -198,6 +203,9 @@ exports.updateSitterDetails = async (req, res) => {
     if (hasTransportation !== undefined) updates.hasTransportation = hasTransportation;
     if (hasPetAtHome !== undefined) updates.hasPetAtHome = hasPetAtHome;
     if (ownedPetTypes !== undefined) updates.ownedPetTypes = ownedPetTypes;
+    // 🔵 ZID (feature "compatibilite entre animaux"): el categories
+    // elli el sitter ye9bel ye5dem m3ahom (small_dog/guard_dog/cat).
+    if (acceptedPetCategories !== undefined) updates.acceptedPetCategories = acceptedPetCategories;
     // 🔵 ZID (kifma tlab): "disponibilité" (signup w sitter_calender.dart)
     if (recurringDaysOff !== undefined) updates.recurringDaysOff = recurringDaysOff;
     if (specificDatesOff !== undefined) updates.specificDatesOff = specificDatesOff.map((d) => new Date(d));
@@ -226,6 +234,7 @@ exports.updateSitterDetails = async (req, res) => {
         hasTransportation: sitter.hasTransportation,
         hasPetAtHome: sitter.hasPetAtHome,
         ownedPetTypes: sitter.ownedPetTypes,
+        acceptedPetCategories: sitter.acceptedPetCategories,
         recurringDaysOff: sitter.recurringDaysOff,
         specificDatesOff: sitter.specificDatesOff,
       },
@@ -275,6 +284,9 @@ exports.getSitterPublicProfile = async (req, res) => {
         hasTransportation: sitter.hasTransportation,
         hasPetAtHome: sitter.hasPetAtHome,
         ownedPetTypes: sitter.ownedPetTypes,
+        // 🔵 ZID (feature "compatibilite entre animaux"): l'owner lezmou
+        // ychouf hedhi 9bal ma yebaath talab (request_a_book.dart).
+        acceptedPetCategories: sitter.acceptedPetCategories,
         services: sitter.services,
         averageRating,
         reviewsCount,
@@ -556,9 +568,29 @@ exports.checkNameAvailability = async (req, res) => {
 // sitter.dart, "Reviews (0)" dima) - lowkan el front yeb3ath "minRating"
 // nzidouha wa9tha, lakin tawa ma3andhach me3na (kol sitter "0").
 // ============================================================================
+// 🔵 ZID (feature "filtres search: age/disponibilite/categorie/prestations"):
+// "birthday" mخزona kifma STRING "DD/MM/YYYY" (mch Date) - lezem
+// n-parsiwha yedwiya bch ne7sbou el 3omor.
+function computeAgeFromBirthday(birthday) {
+  if (!birthday || typeof birthday !== 'string') return null;
+  const parts = birthday.split('/');
+  if (parts.length !== 3) return null;
+  const [day, month, year] = parts.map(Number);
+  if (!day || !month || !year) return null;
+  const birthDate = new Date(year, month - 1, day);
+  if (Number.isNaN(birthDate.getTime())) return null;
+  const now = new Date();
+  let age = now.getFullYear() - birthDate.getFullYear();
+  const hasHadBirthdayThisYear =
+    now.getMonth() > birthDate.getMonth() || (now.getMonth() === birthDate.getMonth() && now.getDate() >= birthDate.getDate());
+  if (!hasHadBirthdayThisYear) age -= 1;
+  return age;
+}
+
 exports.searchSitters = async (req, res) => {
   try {
-    const { q, gender, city, residenceType, maxDistanceKm, minMemberMonths, minRating } = req.query;
+    const { q, gender, city, residenceType, maxDistanceKm, minMemberMonths, minRating, minAge, isAvailable, acceptedPetCategory, minCompletedBookings } =
+      req.query;
 
     const owner = await User.findById(req.userId).select('location favorites');
     const ownerLat = owner?.location?.lat;
@@ -574,6 +606,12 @@ exports.searchSitters = async (req, res) => {
     if (gender) filter.gender = gender;
     if (city) filter.city = city;
     if (residenceType) filter.residenceType = residenceType;
+    // 🔵 ZID: "disponibilite" - el sitter 7ott rou7ou "disponible" (toggle
+    // mte3ou howa, mch b'relation mel calendrier/creneaux).
+    if (isAvailable === 'true') filter.isAvailable = true;
+    // 🔵 ZID: "categorie de pet" - el sitter ye9bel ye5dem m3ah (feature
+    // "compatibilite entre animaux", acceptedPetCategories: [String]).
+    if (acceptedPetCategory) filter.acceptedPetCategories = acceptedPetCategory;
 
     // 🔵 "kadeh 3ndou fel app" - sitters elli sجلو (createdAt) 9bal
     // "cutoff" (mathalan minMemberMonths=6 -> mawjoudin fel app men
@@ -588,7 +626,7 @@ exports.searchSitters = async (req, res) => {
     }
 
     const sitters = await User.find(filter)
-      .select('fullName city photoUrl location gender residenceType createdAt isVerified')
+      .select('fullName city photoUrl location gender residenceType createdAt isVerified birthday')
       .limit(30);
 
     // 🔴 FIX (kifma tlab: "les note mch deja dispo?") - el rating
@@ -603,6 +641,15 @@ exports.searchSitters = async (req, res) => {
       { $group: { _id: '$reviewee', avg: { $avg: '$averageRating' }, count: { $sum: 1 } } },
     ]);
     const ratingMap = new Map(ratingAgg.map((r) => [r._id.toString(), { avg: Math.round(r.avg * 10) / 10, count: r.count }]));
+
+    // 🔵 ZID (feature "filtre nombre de prestations effectuees"): "3adad
+    // el prestations effectuées" = bookings "accepted" w el checkOut
+    // tou3hom déjà 3ada (yaani el service SAR 7a9i9atan, mch ghir mfassel).
+    const completedAgg = await Booking.aggregate([
+      { $match: { sitter: { $in: sitterIds }, status: 'accepted', checkOut: { $lt: new Date() } } },
+      { $group: { _id: '$sitter', count: { $sum: 1 } } },
+    ]);
+    const completedMap = new Map(completedAgg.map((c) => [c._id.toString(), c.count]));
 
     let results = sitters.map((sitter) => {
       let distanceKm = null;
@@ -628,6 +675,9 @@ exports.searchSitters = async (req, res) => {
         isVerified: sitter.isVerified === true,
         rating: ratingInfo?.avg ?? 0,
         reviewsCount: ratingInfo?.count ?? 0,
+        // 🔵 ZID (feature "filtres search: age/prestations")
+        age: computeAgeFromBirthday(sitter.birthday),
+        completedBookingsCount: completedMap.get(sitter._id.toString()) ?? 0,
       };
     });
 
@@ -635,6 +685,24 @@ exports.searchSitters = async (req, res) => {
       const maxKm = Number(maxDistanceKm);
       if (!Number.isNaN(maxKm) && maxKm > 0) {
         results = results.filter((s) => s.distanceKm == null || s.distanceKm <= maxKm);
+      }
+    }
+
+    // 🔵 ZID (feature "filtres search: age"): sitters bla birthday
+    // (age=null) ma yban-ouch ken el owner ye5tar "≥ X ans" (nafs mant9
+    // tel distance/rating fou9).
+    if (minAge) {
+      const minA = Number(minAge);
+      if (!Number.isNaN(minA) && minA > 0) {
+        results = results.filter((s) => s.age != null && s.age >= minA);
+      }
+    }
+
+    // 🔵 ZID (feature "filtres search: nombre de prestations effectuees")
+    if (minCompletedBookings) {
+      const minC = Number(minCompletedBookings);
+      if (!Number.isNaN(minC) && minC > 0) {
+        results = results.filter((s) => s.completedBookingsCount >= minC);
       }
     }
 

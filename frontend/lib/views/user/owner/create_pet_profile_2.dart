@@ -32,6 +32,9 @@ class CreatePetProfile2Screen extends StatefulWidget {
   final String? petBreed;
   final String? petSize;
   final String? petGender;
+  // 🔵 ZID (feature "compatibilite entre animaux"): 'small_dog' /
+  // 'guard_dog' / 'cat'.
+  final String? petCategory;
 
   const CreatePetProfile2Screen({
     super.key,
@@ -45,6 +48,7 @@ class CreatePetProfile2Screen extends StatefulWidget {
     this.petBreed,
     this.petSize,
     this.petGender,
+    this.petCategory,
   });
 
   @override
@@ -117,6 +121,7 @@ class _CreatePetProfile2ScreenState extends State<CreatePetProfile2Screen> {
       breed: widget.petBreed,
       size: widget.petSize,
       gender: widget.petGender,
+      category: widget.petCategory,
       behaviors: _selectedBehaviors,
       careInfo: _careInfo,
       clinicName: _clinicNameController.text,
@@ -144,6 +149,7 @@ class _CreatePetProfile2ScreenState extends State<CreatePetProfile2Screen> {
           petBreed: widget.petBreed,
           petSize: widget.petSize,
           petGender: widget.petGender,
+          petCategory: widget.petCategory,
           petBehaviors: _selectedBehaviors.toList(),
           petCareInfo: _careInfo,
           petVetClinicName: _clinicNameController.text,

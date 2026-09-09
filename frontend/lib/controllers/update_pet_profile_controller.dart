@@ -19,6 +19,10 @@ class UpdatePetProfileController {
     required Map<String, bool> careInfo,
     required String vetClinicName,
     required String vetClinicPhone,
+    // 🔵 ZID (feature "compatibilite entre animaux"): 'small_dog' /
+    // 'guard_dog' - null ken el pet 'cat' (category ma tetbeddelch,
+    // el backend yfaraq 3ala 7sab petType tou3ha).
+    String? category,
   }) async {
     try {
       final response = await ApiService.patch(
@@ -33,6 +37,7 @@ class UpdatePetProfileController {
           'careInfo': careInfo,
           'vetClinicName': vetClinicName,
           'vetClinicPhone': vetClinicPhone,
+          if (category != null) 'category': category,
         },
         token: AuthSession.token,
       );

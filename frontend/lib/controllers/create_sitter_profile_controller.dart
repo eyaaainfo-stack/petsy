@@ -17,11 +17,15 @@ import 'auth_session.dart';
 class CreateSitterProfileController {
   Future<bool> submitServices({
     required List<Map<String, dynamic>> services,
+    // 🔵 ZID (feature "compatibilite entre animaux"): GHIR el categories
+    // (small_dog/guard_dog/cat), BLA prix (el prix houwa per-service,
+    // fel "services" fou9 - chraht fel widgets/service_category_selector.dart).
+    required List<String> acceptedPetCategories,
   }) async {
     try {
       final response = await ApiService.patch(
         '/users/sitter-details',
-        {'services': services},
+        {'services': services, 'acceptedPetCategories': acceptedPetCategories},
         token: AuthSession.token,
       );
 

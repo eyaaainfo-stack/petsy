@@ -2,11 +2,40 @@
 const Animal = require('../models/animal');
 
 // ============================================================================
+// RESOLVE PET CATEGORY (feature "compatibilite entre animaux")
+// ============================================================================
+// 🔵 ZID: el chat ykoun DIMA 'cat' (automatique, el owner ma ye5tarhach) -
+// el choix "small_dog / guard_dog" ye5taj ghir lel dogs. Ken petType
+// 'dog' w category mahouch wa7ed mel zoùj wa7dat el mumkina -> erreur
+// wodh7a (mch nkhalliw data ghalta tetzad, defense en profondeur).
+// ============================================================================
+function resolvePetCategory(petType, category) {
+  if (petType === 'cat') {
+    return { category: 'cat' };
+  }
+  if (petType === 'dog') {
+    if (!['small_dog', 'guard_dog'].includes(category)) {
+      return { error: "For a dog, category must be 'small_dog' or 'guard_dog'" };
+    }
+    return { category };
+  }
+  return { error: 'Invalid petType' };
+}
+
+// ============================================================================
 // 1. CREATE (Zid pet jdid, bla photo l'hin)
 // ============================================================================
 exports.createPet = async (req, res) => {
   try {
-    const { petType, name, age, breed, size, gender, behaviors, careInfo, vetClinicName, vetClinicPhone } = req.body;
+    const { petType, name, age, breed, size, gender, behaviors, careInfo, vetClinicName, vetClinicPhone, category } = req.body;
+    console.log(`🟢 [CREATE-PET] Bda - ownerId=${req.userId} petType=${petType} category=${category} name=${name}`);
+    console.log(`🟢 [CREATE-PET] Body mawsoul kaملou: ${JSON.stringify(req.body)}`);
+
+    const resolved = resolvePetCategory(petType, category);
+    if (resolved.error) {
+      console.log(`🔴 [CREATE-PET] rafedh (400): ${resolved.error}`);
+      return res.status(400).json({ message: resolved.error });
+    }
 
     const pet = await Animal.create({
       owner: req.userId, // 🔵 sa77e7t: mel token (protect middleware), MCH mel body
@@ -20,10 +49,13 @@ exports.createPet = async (req, res) => {
       careInfo,
       vetClinicName,
       vetClinicPhone,
+      category: resolved.category,
     });
 
+    console.log(`✅ [CREATE-PET] khlas - petId=${pet._id}`);
     res.status(201).json({ message: 'Pet created successfully', pet });
   } catch (error) {
+    console.log(`🔴 [CREATE-PET] EXCEPTION (500): ${error.message}`);
     res.status(500).json({ error: error.message });
   }
 };
@@ -93,7 +125,7 @@ exports.getPetsByOwner = async (req, res) => {
 exports.updatePet = async (req, res) => {
   try {
     const { petId } = req.params;
-    const { name, age, breed, size, gender, behaviors, careInfo, vetClinicName, vetClinicPhone } = req.body;
+    const { name, age, breed, size, gender, behaviors, careInfo, vetClinicName, vetClinicPhone, category } = req.body;
 
     const updates = {};
     if (name !== undefined) updates.name = name;
@@ -105,6 +137,23 @@ exports.updatePet = async (req, res) => {
     if (careInfo !== undefined) updates.careInfo = careInfo;
     if (vetClinicName !== undefined) updates.vetClinicName = vetClinicName;
     if (vetClinicPhone !== undefined) updates.vetClinicPhone = vetClinicPhone;
+
+    // 🔵 ZID (feature "compatibilite entre animaux"): category ynajjam
+    // yetbeddel (mathalan owner sawweb ghalta ki zad el pet). petType
+    // ma yetbeddelch mel écran hedha (mch fel body) - fa njibou l'pet
+    // el 7ali bch na3rfou petType tou3ou w n confirmiw category jdida
+    // valide (small_dog/guard_dog lel dog, cat lel chat).
+    if (category !== undefined) {
+      const existingPet = await Animal.findOne({ _id: petId, owner: req.userId }).select('petType');
+      if (!existingPet) {
+        return res.status(404).json({ message: 'Pet not found' });
+      }
+      const resolved = resolvePetCategory(existingPet.petType, category);
+      if (resolved.error) {
+        return res.status(400).json({ message: resolved.error });
+      }
+      updates.category = resolved.category;
+    }
 
     const pet = await Animal.findOneAndUpdate(
       { _id: petId, owner: req.userId }, // 🔴 IMPORTANT: owner zeda, mch ghir _id

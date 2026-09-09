@@ -281,12 +281,15 @@ class _RequestScreenState extends State<RequestScreen> {
   Future<void> _respond(bool accept) async {
     if (_isResponding || _booking == null) return;
     setState(() => _isResponding = true);
-    final success = await _controller.respond(_booking!.id, accept: accept);
+    final result = await _controller.respond(_booking!.id, accept: accept);
     if (!mounted) return;
 
-    if (!success) {
+    if (!result.success) {
       setState(() => _isResponding = false);
-      showMessageDialog(context, 'profile_submit_error'.tr());
+      // 🔵 ZID (feature "compatibilite entre animaux"): el message
+      // el 7a9i9i mel backend (mathalan conflit category/capacite) -
+      // MCH el message générique ('profile_submit_error') ken mawjoud.
+      showMessageDialog(context, result.errorMessage ?? 'profile_submit_error'.tr());
       return;
     }
 

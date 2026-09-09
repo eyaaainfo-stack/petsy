@@ -175,19 +175,6 @@ class _ViewProfileSitterScreenState extends State<ViewProfileSitterScreen> {
     }
   }
 
-  String _petTypeLabel(String petType) {
-    switch (petType) {
-      case 'cat':
-        return 'sitter_pet_type_cat'.tr();
-      case 'dog':
-        return 'sitter_pet_type_dog'.tr();
-      case 'both':
-        return 'sitter_pet_type_both'.tr();
-      default:
-        return '-';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final sizes = AppSizes.of(context);
@@ -283,7 +270,7 @@ class _ViewProfileSitterScreenState extends State<ViewProfileSitterScreen> {
                                 curve: Curves.easeInOut,
                                 alignment: Alignment.topCenter,
                                 child: _showDetailsTab
-                                    ? _DetailsTabContent(profile: _profile!, sizes: sizes, mutedTextColor: mutedTextColor, serviceLabel: _serviceLabel, petTypeLabel: _petTypeLabel, residenceLabel: _residenceLabel)
+                                    ? _DetailsTabContent(profile: _profile!, sizes: sizes, mutedTextColor: mutedTextColor, serviceLabel: _serviceLabel, residenceLabel: _residenceLabel)
                                     : _ReviewsTabContent(sizes: sizes, mutedTextColor: mutedTextColor, isLoading: _isLoadingReviews, reviews: _reviews, highlightReviewId: widget.highlightReviewId),
                               ),
                             ),
@@ -513,7 +500,6 @@ class _DetailsTabContent extends StatelessWidget {
   // "custom" (nafs serviceId='custom' lel kol) - tawa el entry el
   // KAMLA (bch nel9aw "customLabel").
   final String Function(SitterServiceEntry) serviceLabel;
-  final String Function(String) petTypeLabel;
   final String Function(String?) residenceLabel;
 
   const _DetailsTabContent({
@@ -521,9 +507,34 @@ class _DetailsTabContent extends StatelessWidget {
     required this.sizes,
     required this.mutedTextColor,
     required this.serviceLabel,
-    required this.petTypeLabel,
     required this.residenceLabel,
   });
+
+  // 🔵 ZID (feature "compatibilite entre animaux"): esm el category
+  // traduit - kol service tawa 3andou barcha prix (wa7ed l'kol
+  // category), mch wa7ed bark m3a "petType" (cat/dog/both).
+  String _categoryLabel(String category) {
+    switch (category) {
+      case 'small_dog':
+        return 'pet_category_small_dog_label'.tr();
+      case 'guard_dog':
+        return 'pet_category_guard_dog_label'.tr();
+      case 'cat':
+        return 'cat_label'.tr();
+      default:
+        return category;
+    }
+  }
+
+  // 🔵 ZID (kifma tlab): "si le sitter ando pet f dar mteou" - kanet
+  // manقصة kaملement mel écran hedha (mch mel my_profile_sitter.dart
+  // tel sitter nafsou bark) - el owner lezmou ye3raf 9bal ma yحجز.
+  String _petAtHomeValue() {
+    if (profile.hasPetAtHome != true) return 'no_label'.tr();
+    if (profile.ownedPetTypes.isEmpty) return 'yes_label'.tr();
+    final labels = profile.ownedPetTypes.map((t) => t == 'cat' ? 'cat_label'.tr() : 'dog_label'.tr()).toSet();
+    return labels.join(', ');
+  }
 
   Widget _miniInfoCard({required IconData icon, required String label, required String value}) {
     return Expanded(
@@ -557,6 +568,13 @@ class _DetailsTabContent extends StatelessWidget {
               label: 'means_of_transportation_label'.tr(),
               value: profile.hasTransportation == true ? 'has_car_label'.tr() : 'no_car_label'.tr(),
             ),
+            SizedBox(width: sizes.screenWidth * 0.03),
+            // 🔵 ZID (kifma tlab): "si le sitter ando pet f dar mteou"
+            _miniInfoCard(
+              icon: profile.hasPetAtHome == true ? Icons.pets : Icons.pets_outlined,
+              label: 'has_pet_at_home_label'.tr(),
+              value: _petAtHomeValue(),
+            ),
           ],
         ),
 
@@ -579,27 +597,33 @@ class _DetailsTabContent extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Expanded(child: Text(serviceLabel(service), style: TextStyle(fontSize: sizes.myProfileBodyFontSize, fontWeight: FontWeight.w600))),
-                            SizedBox(width: sizes.screenWidth * 0.025),
-                            Container(
-                              padding: EdgeInsets.symmetric(horizontal: sizes.screenWidth * 0.025, vertical: sizes.screenHeight * 0.004),
-                              decoration: BoxDecoration(color: AppColors.pinkpetsy, borderRadius: BorderRadius.circular(8)),
-                              child: Text(
-                                '${service.price.toStringAsFixed(0)} DT',
-                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: sizes.myProfileBodyFontSize * 0.85),
-                              ),
-                            ),
-                          ],
-                        ),
+                        Text(serviceLabel(service), style: TextStyle(fontSize: sizes.myProfileBodyFontSize, fontWeight: FontWeight.w600)),
                         Padding(
-                          padding: EdgeInsets.only(left: sizes.screenWidth * 0.02, top: sizes.screenHeight * 0.004),
-                          child: Row(
+                          padding: EdgeInsets.only(top: sizes.screenHeight * 0.008),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              Icon(Icons.pets, size: sizes.myProfileBodyFontSize * 0.75, color: mutedTextColor),
-                              SizedBox(width: sizes.screenWidth * 0.015),
-                              Text(petTypeLabel(service.petType), style: TextStyle(fontSize: sizes.myProfileBodyFontSize * 0.85, color: mutedTextColor)),
+                              for (final p in service.prices)
+                                Padding(
+                                  padding: EdgeInsets.symmetric(vertical: sizes.screenHeight * 0.004),
+                                  child: Row(
+                                    children: [
+                                      Text(
+                                        _categoryLabel(p.category),
+                                        style: TextStyle(fontSize: sizes.myProfileBodyFontSize * 0.85, color: mutedTextColor),
+                                      ),
+                                      const Spacer(),
+                                      Text(
+                                        '${p.price.toStringAsFixed(0)} DT',
+                                        style: TextStyle(
+                                          fontSize: sizes.myProfileBodyFontSize * 0.85,
+                                          fontWeight: FontWeight.w700,
+                                          color: AppColors.vertpetsy,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                             ],
                           ),
                         ),

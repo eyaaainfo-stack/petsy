@@ -278,12 +278,14 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
   Future<void> _onConfirmCandidate(bool accept) async {
     if (_isResponding) return;
     setState(() => _isResponding = true);
-    final success = await _requestController.confirmCandidate(booking.id, accept: accept);
+    final result = await _requestController.confirmCandidate(booking.id, accept: accept);
     if (!mounted) return;
 
-    if (!success) {
+    if (!result.success) {
       setState(() => _isResponding = false);
-      showMessageDialog(context, 'profile_submit_error'.tr());
+      // 🔵 ZID (feature "compatibilite entre animaux"): el message
+      // el 7a9i9i mel backend (mathalan conflit category/capacite).
+      showMessageDialog(context, result.errorMessage ?? 'profile_submit_error'.tr());
       return;
     }
 

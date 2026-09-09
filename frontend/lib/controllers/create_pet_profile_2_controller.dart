@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import '../services/api_service.dart';
 import 'auth_session.dart';
 
@@ -18,6 +19,9 @@ class CreatePetProfile2Controller {
     String? breed,
     String? size,
     String? gender,
+    // 🔵 ZID (feature "compatibilite entre animaux"): 'small_dog' /
+    // 'guard_dog' / 'cat' - el backend yestenneha (required).
+    String? category,
     required Set<String> behaviors,
     required Map<String, bool> careInfo,
     required String clinicName,
@@ -36,6 +40,7 @@ class CreatePetProfile2Controller {
           'breed': breed,
           'size': (size != null && size.isNotEmpty) ? double.tryParse(size) : null,
           'gender': gender,
+          'category': category,
           'behaviors': behaviors.toList(),
           'careInfo': careInfo,
           'vetClinicName': clinicName,
@@ -44,13 +49,20 @@ class CreatePetProfile2Controller {
         token: AuthSession.token,
       );
 
+      debugPrint('🟢 [submitPetBehaviorAndCare] POST /pets -> status=${response.statusCode}');
       if (response.statusCode == 201) {
         final Map<String, dynamic> data = jsonDecode(response.body) as Map<String, dynamic>;
         final Map<String, dynamic> pet = data['pet'] as Map<String, dynamic>;
         return pet['_id'] as String?;
       }
+      // 🔴 FIX: kanet "return null" bark (bla ma nchoufou el erreur el
+      // 7a9i9iya mel backend) - tawa debugPrint el body kollou (bch
+      // fel Flutter console tban el message el 7a9i9i, mch bark
+      // "pet_save_error" générique).
+      debugPrint('🔴 [submitPetBehaviorAndCare] FAILED - body: ${response.body}');
       return null;
-    } catch (_) {
+    } catch (error) {
+      debugPrint('🔴 [submitPetBehaviorAndCare] EXCEPTION: $error');
       return null;
     }
   }
