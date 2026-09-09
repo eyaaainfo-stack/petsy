@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_sizes.dart';
+import '../controllers/availability_controller.dart';
 import 'message_dialog.dart';
 
 // ============================================================================
@@ -13,16 +14,30 @@ import 'message_dialog.dart';
 //   1) chips el ayem fel jom3a (recurring - mathalan "kol el a7ad")
 //   2) bouton "Mark public holidays" (a3yed tounsiya, dates fixa)
 //   3) dass direct 3al calendrier (youm b'youm, mo7addad)
+// 🔵 ZID (kifma tlab: "el disponibilité tzid horaire zeda") - zdt 2
+// tri9at (heures, mch bark youmet kaملin):
+//   4) plage horaire récurrente (mathalan "kol lil mel 22h l 7h")
+//   5) créneaux ponctuels (youm mo7addad + heure mo7addda bark)
 // ============================================================================
 class AvailabilityPicker extends StatefulWidget {
   final Set<int> initialRecurringDaysOff; // 1=Mon..7=Sun
   final Set<DateTime> initialSpecificDatesOff;
-  final ValueChanged<({Set<int> recurringDaysOff, Set<DateTime> specificDatesOff})> onChanged;
+  final RecurringHoursOff initialRecurringHoursOff;
+  final List<SpecificHoursOffEntry> initialSpecificHoursOff;
+  final ValueChanged<
+      ({
+        Set<int> recurringDaysOff,
+        Set<DateTime> specificDatesOff,
+        RecurringHoursOff recurringHoursOff,
+        List<SpecificHoursOffEntry> specificHoursOff,
+      })> onChanged;
 
   const AvailabilityPicker({
     super.key,
     this.initialRecurringDaysOff = const {},
     this.initialSpecificDatesOff = const {},
+    this.initialRecurringHoursOff = const RecurringHoursOff(),
+    this.initialSpecificHoursOff = const [],
     required this.onChanged,
   });
 
@@ -34,6 +49,12 @@ class _AvailabilityPickerState extends State<AvailabilityPicker> {
   late Set<int> _recurringDaysOff;
   late Set<DateTime> _specificDatesOff;
   late DateTime _displayedMonth;
+  // 🔵 ZID (kifma tlab): "horaire zeda" - plage récurrente (nullable
+  // l'kol zouj bounds - "mafamech blocage") + liste tel blocages
+  // ponctuels (youm+heure).
+  int? _recurringStartMinutes;
+  int? _recurringEndMinutes;
+  late List<SpecificHoursOffEntry> _specificHoursOff;
 
   static const List<String> _monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -61,13 +82,21 @@ class _AvailabilityPickerState extends State<AvailabilityPicker> {
     super.initState();
     _recurringDaysOff = {...widget.initialRecurringDaysOff};
     _specificDatesOff = {...widget.initialSpecificDatesOff.map(_dateOnly)};
+    _recurringStartMinutes = widget.initialRecurringHoursOff.startMinutes;
+    _recurringEndMinutes = widget.initialRecurringHoursOff.endMinutes;
+    _specificHoursOff = [...widget.initialSpecificHoursOff];
     final now = DateTime.now();
     _displayedMonth = DateTime(now.year, now.month, 1);
   }
 
   DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
 
-  void _notify() => widget.onChanged((recurringDaysOff: _recurringDaysOff, specificDatesOff: _specificDatesOff));
+  void _notify() => widget.onChanged((
+        recurringDaysOff: _recurringDaysOff,
+        specificDatesOff: _specificDatesOff,
+        recurringHoursOff: RecurringHoursOff(startMinutes: _recurringStartMinutes, endMinutes: _recurringEndMinutes),
+        specificHoursOff: _specificHoursOff,
+      ));
 
   void _toggleRecurringDay(int weekday) {
     setState(() {
@@ -93,6 +122,140 @@ class _AvailabilityPickerState extends State<AvailabilityPicker> {
         _specificDatesOff.add(d);
       }
     });
+    _notify();
+  }
+
+  // 🔵 ZID (kifma tlab: "el disponibilité tzid horaire zeda") - "HH:mm"
+  // mel d9ay9 (0-1439) - esta3malha l'el résumé w l'el initialTime tel
+  // showTimePicker.
+  String _formatMinutes(int minutes) {
+    final h = (minutes ~/ 60).toString().padLeft(2, '0');
+    final m = (minutes % 60).toString().padLeft(2, '0');
+    return '$h:$m';
+  }
+
+  Future<void> _pickRecurringTime({required bool isStart}) async {
+    final int initialMinutes = (isStart ? _recurringStartMinutes : _recurringEndMinutes) ?? (isStart ? 22 * 60 : 7 * 60);
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(hour: initialMinutes ~/ 60, minute: initialMinutes % 60),
+    );
+    if (picked == null) return;
+    setState(() {
+      final minutes = picked.hour * 60 + picked.minute;
+      if (isStart) {
+        _recurringStartMinutes = minutes;
+      } else {
+        _recurringEndMinutes = minutes;
+      }
+    });
+    _notify();
+  }
+
+  void _clearRecurringHours() {
+    setState(() {
+      _recurringStartMinutes = null;
+      _recurringEndMinutes = null;
+    });
+    _notify();
+  }
+
+  // 🔵 ZID (kifma tlab: "wla 1h/wa9t mo7addad fi nhar mo7addad") -
+  // dialog sghira: date + heure debut + heure fin -> tzid fel liste.
+  Future<void> _addSpecificHoursEntry() async {
+    DateTime? tempDate;
+    int? tempStartMinutes;
+    int? tempEndMinutes;
+
+    await showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (dialogContext, setDialogState) {
+            final sizes = AppSizes.of(dialogContext);
+            return AlertDialog(
+              title: Text('specific_hours_off_dialog_title'.tr()),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  InkWell(
+                    onTap: () async {
+                      final now = DateTime.now();
+                      final picked = await showDatePicker(context: dialogContext, initialDate: tempDate ?? now, firstDate: now, lastDate: now.add(const Duration(days: 365)));
+                      if (picked != null) setDialogState(() => tempDate = picked);
+                    },
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: sizes.screenHeight * 0.01),
+                      child: Row(
+                        children: [
+                          Icon(Icons.calendar_today, size: sizes.myProfileBodyFontSize * 0.85, color: AppColors.pinkpetsy),
+                          SizedBox(width: sizes.screenWidth * 0.025),
+                          Text(tempDate != null ? '${tempDate!.day}/${tempDate!.month}/${tempDate!.year}' : 'availability_pick_date_placeholder'.tr()),
+                        ],
+                      ),
+                    ),
+                  ),
+                  InkWell(
+                    onTap: () async {
+                      final picked = await showTimePicker(context: dialogContext, initialTime: const TimeOfDay(hour: 14, minute: 0));
+                      if (picked != null) setDialogState(() => tempStartMinutes = picked.hour * 60 + picked.minute);
+                    },
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: sizes.screenHeight * 0.01),
+                      child: Row(
+                        children: [
+                          Icon(Icons.access_time, size: sizes.myProfileBodyFontSize * 0.85, color: AppColors.pinkpetsy),
+                          SizedBox(width: sizes.screenWidth * 0.025),
+                          Text('${'specific_hours_off_from_label'.tr()}: ${tempStartMinutes != null ? _formatMinutes(tempStartMinutes!) : 'availability_pick_time_placeholder'.tr()}'),
+                        ],
+                      ),
+                    ),
+                  ),
+                  InkWell(
+                    onTap: () async {
+                      final picked = await showTimePicker(context: dialogContext, initialTime: const TimeOfDay(hour: 15, minute: 0));
+                      if (picked != null) setDialogState(() => tempEndMinutes = picked.hour * 60 + picked.minute);
+                    },
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: sizes.screenHeight * 0.01),
+                      child: Row(
+                        children: [
+                          Icon(Icons.access_time_filled, size: sizes.myProfileBodyFontSize * 0.85, color: AppColors.pinkpetsy),
+                          SizedBox(width: sizes.screenWidth * 0.025),
+                          Text('${'specific_hours_off_to_label'.tr()}: ${tempEndMinutes != null ? _formatMinutes(tempEndMinutes!) : 'availability_pick_time_placeholder'.tr()}'),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text('cancel_button'.tr())),
+                TextButton(
+                  onPressed: () {
+                    if (tempDate == null || tempStartMinutes == null || tempEndMinutes == null || tempStartMinutes == tempEndMinutes) {
+                      showMessageDialog(dialogContext, 'specific_hours_off_invalid_error'.tr());
+                      return;
+                    }
+                    setState(() {
+                      _specificHoursOff.add(SpecificHoursOffEntry(date: _dateOnly(tempDate!), startMinutes: tempStartMinutes!, endMinutes: tempEndMinutes!));
+                    });
+                    _notify();
+                    Navigator.pop(dialogContext);
+                  },
+                  child: Text('apply_button'.tr()),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _removeSpecificHoursEntry(int index) {
+    setState(() => _specificHoursOff.removeAt(index));
     _notify();
   }
 
@@ -247,6 +410,129 @@ class _AvailabilityPickerState extends State<AvailabilityPicker> {
             SizedBox(width: sizes.screenWidth * 0.015),
             Text('day_off_legend_label'.tr(), style: TextStyle(fontSize: sizes.myProfileBodyFontSize * 0.7, color: mutedTextColor)),
           ],
+        ),
+
+        SizedBox(height: sizes.screenHeight * 0.024),
+
+        // --------------------------------------------------------
+        // 4) Plage horaire récurrente (kifma tlab: "mel 22h hatta
+        // l 7h ma ye5demch")
+        // --------------------------------------------------------
+        Text('recurring_hours_off_label'.tr(), style: TextStyle(fontWeight: FontWeight.bold, fontSize: sizes.myProfileBodyFontSize * 0.9)),
+        SizedBox(height: sizes.screenHeight * 0.004),
+        Text('recurring_hours_off_hint'.tr(), style: TextStyle(fontSize: sizes.myProfileBodyFontSize * 0.72, color: mutedTextColor)),
+        SizedBox(height: sizes.screenHeight * 0.01),
+        Row(
+          children: [
+            Expanded(
+              child: InkWell(
+                onTap: () => _pickRecurringTime(isStart: true),
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: sizes.screenWidth * 0.03, vertical: sizes.screenHeight * 0.012),
+                  decoration: BoxDecoration(color: AppColors.pinkpetsy.withOpacity(0.08), borderRadius: BorderRadius.circular(12)),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.access_time, size: sizes.myProfileBodyFontSize * 0.8, color: AppColors.pinkpetsy),
+                      SizedBox(width: sizes.screenWidth * 0.02),
+                      Text(
+                        _recurringStartMinutes != null ? _formatMinutes(_recurringStartMinutes!) : 'availability_pick_time_placeholder'.tr(),
+                        style: TextStyle(fontSize: sizes.myProfileBodyFontSize * 0.82),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(width: sizes.screenWidth * 0.03),
+            Icon(Icons.arrow_forward, size: sizes.myProfileBodyFontSize * 0.8, color: mutedTextColor),
+            SizedBox(width: sizes.screenWidth * 0.03),
+            Expanded(
+              child: InkWell(
+                onTap: () => _pickRecurringTime(isStart: false),
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: sizes.screenWidth * 0.03, vertical: sizes.screenHeight * 0.012),
+                  decoration: BoxDecoration(color: AppColors.pinkpetsy.withOpacity(0.08), borderRadius: BorderRadius.circular(12)),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.access_time_filled, size: sizes.myProfileBodyFontSize * 0.8, color: AppColors.pinkpetsy),
+                      SizedBox(width: sizes.screenWidth * 0.02),
+                      Text(
+                        _recurringEndMinutes != null ? _formatMinutes(_recurringEndMinutes!) : 'availability_pick_time_placeholder'.tr(),
+                        style: TextStyle(fontSize: sizes.myProfileBodyFontSize * 0.82),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            if (_recurringStartMinutes != null || _recurringEndMinutes != null) ...[
+              SizedBox(width: sizes.screenWidth * 0.02),
+              IconButton(
+                onPressed: _clearRecurringHours,
+                icon: Icon(Icons.close, color: AppColors.error, size: sizes.myProfileBodyFontSize * 0.9),
+                tooltip: 'availability_clear_button'.tr(),
+              ),
+            ],
+          ],
+        ),
+
+        SizedBox(height: sizes.screenHeight * 0.024),
+
+        // --------------------------------------------------------
+        // 5) Créneaux ponctuels (kifma tlab: "wla 1h/wa9t mo7addad
+        // fi nhar mo7addad")
+        // --------------------------------------------------------
+        Text('specific_hours_off_label'.tr(), style: TextStyle(fontWeight: FontWeight.bold, fontSize: sizes.myProfileBodyFontSize * 0.9)),
+        SizedBox(height: sizes.screenHeight * 0.01),
+        if (_specificHoursOff.isEmpty)
+          Text('no_specific_hours_off_label'.tr(), style: TextStyle(fontSize: sizes.myProfileBodyFontSize * 0.78, color: mutedTextColor))
+        else
+          for (int i = 0; i < _specificHoursOff.length; i++)
+            Padding(
+              padding: EdgeInsets.only(bottom: sizes.screenHeight * 0.008),
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: sizes.screenWidth * 0.03, vertical: sizes.screenHeight * 0.01),
+                decoration: BoxDecoration(color: AppColors.error.withOpacity(0.08), borderRadius: BorderRadius.circular(12)),
+                child: Row(
+                  children: [
+                    Icon(Icons.event_busy, size: sizes.myProfileBodyFontSize * 0.85, color: AppColors.error),
+                    SizedBox(width: sizes.screenWidth * 0.025),
+                    Expanded(
+                      child: Text(
+                        '${_specificHoursOff[i].date.day}/${_specificHoursOff[i].date.month}: ${_formatMinutes(_specificHoursOff[i].startMinutes)} - ${_formatMinutes(_specificHoursOff[i].endMinutes)}',
+                        style: TextStyle(fontSize: sizes.myProfileBodyFontSize * 0.8),
+                      ),
+                    ),
+                    InkWell(
+                      onTap: () => _removeSpecificHoursEntry(i),
+                      child: Icon(Icons.close, size: sizes.myProfileBodyFontSize * 0.85, color: AppColors.error),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        SizedBox(height: sizes.screenHeight * 0.008),
+        InkWell(
+          onTap: _addSpecificHoursEntry,
+          borderRadius: BorderRadius.circular(14),
+          child: Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(vertical: sizes.screenHeight * 0.013),
+            decoration: BoxDecoration(color: AppColors.vertpetsy.withOpacity(0.12), borderRadius: BorderRadius.circular(14)),
+            alignment: Alignment.center,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.add_circle_outline, color: AppColors.vertpetsy, size: sizes.myProfileBodyFontSize),
+                SizedBox(width: sizes.screenWidth * 0.02),
+                Text('add_specific_hours_off_button'.tr(), style: TextStyle(color: AppColors.vertpetsy, fontWeight: FontWeight.bold, fontSize: sizes.myProfileBodyFontSize * 0.85)),
+              ],
+            ),
+          ),
         ),
       ],
     );

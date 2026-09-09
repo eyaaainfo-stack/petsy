@@ -84,6 +84,19 @@ class SitterSearchFilters {
   final bool onlyAvailable;
   final String? acceptedPetCategory; // 'small_dog' / 'guard_dog' / 'cat'
   final int? minCompletedBookings;
+  // 🔴 FIX (kifma tlab: "les filtres lkol khallihomli fi boutons filtres
+  // tht el recherche" - el user y7eb Date/Heure/Animaux ykounou 3 boutons
+  // MFAR9IN fi nefs el sef tel filtres el o5rin, mch ghir chip WA7DA
+  // "disponibilité" tefte7 sheet fiha el 3 7ajet mjam3in) - "availabilityAt"
+  // (DateTime wa7ed) etna77a, tawa "availabilityDate" (youm bark, heure
+  // = 00:00 dima) + "availabilityHour"/"availabilityMinute" (mنفصلين -
+  // bch "l'heure ma tetkhtaretch" ma yetle5belch m3a "l'heure 00:00
+  // mkhtara 7a9i9atan").
+  final DateTime? availabilityDate;
+  final int? availabilityHour;
+  final int? availabilityMinute;
+  final Set<String> availabilityPetIds;
+  final List<String> availabilityPetCategories;
 
   const SitterSearchFilters({
     this.gender,
@@ -96,6 +109,11 @@ class SitterSearchFilters {
     this.onlyAvailable = false,
     this.acceptedPetCategory,
     this.minCompletedBookings,
+    this.availabilityDate,
+    this.availabilityHour,
+    this.availabilityMinute,
+    this.availabilityPetIds = const {},
+    this.availabilityPetCategories = const [],
   });
 
   bool get isEmpty =>
@@ -108,7 +126,10 @@ class SitterSearchFilters {
       minAge == null &&
       !onlyAvailable &&
       acceptedPetCategory == null &&
-      minCompletedBookings == null;
+      minCompletedBookings == null &&
+      availabilityDate == null &&
+      availabilityHour == null &&
+      availabilityPetIds.isEmpty;
 
   SitterSearchFilters copyWith({
     String? gender,
@@ -130,6 +151,13 @@ class SitterSearchFilters {
     bool clearAcceptedPetCategory = false,
     int? minCompletedBookings,
     bool clearMinCompletedBookings = false,
+    DateTime? availabilityDate,
+    bool clearAvailabilityDate = false,
+    int? availabilityHour,
+    int? availabilityMinute,
+    bool clearAvailabilityTime = false,
+    Set<String>? availabilityPetIds,
+    List<String>? availabilityPetCategories,
   }) {
     return SitterSearchFilters(
       gender: clearGender ? null : (gender ?? this.gender),
@@ -142,6 +170,11 @@ class SitterSearchFilters {
       onlyAvailable: onlyAvailable ?? this.onlyAvailable,
       acceptedPetCategory: clearAcceptedPetCategory ? null : (acceptedPetCategory ?? this.acceptedPetCategory),
       minCompletedBookings: clearMinCompletedBookings ? null : (minCompletedBookings ?? this.minCompletedBookings),
+      availabilityDate: clearAvailabilityDate ? null : (availabilityDate ?? this.availabilityDate),
+      availabilityHour: clearAvailabilityTime ? null : (availabilityHour ?? this.availabilityHour),
+      availabilityMinute: clearAvailabilityTime ? null : (availabilityMinute ?? this.availabilityMinute),
+      availabilityPetIds: availabilityPetIds ?? this.availabilityPetIds,
+      availabilityPetCategories: availabilityPetCategories ?? this.availabilityPetCategories,
     );
   }
 }
@@ -161,6 +194,23 @@ class SitterSearchController {
       if (filters.onlyAvailable) params['isAvailable'] = 'true';
       if (filters.acceptedPetCategory != null) params['acceptedPetCategory'] = filters.acceptedPetCategory!;
       if (filters.minCompletedBookings != null) params['minCompletedBookings'] = filters.minCompletedBookings!.toString();
+      // 🔵 ZID (kifma tlab): "filtre disponible - date/wa9t/pets" (tawa
+      // 3 boutons mfar9in, mch chip wa7da) - njam3ou "availabilityDate"
+      // + "availabilityHour/Minute" (ken el heure mkhtara zeda) f DateTime
+      // wa7ed l'backend (el categories el kol tel pets el mkhtarin, mch
+      // wa7da bark - el backend ye5dem b AND ($all), mch OR).
+      if (filters.availabilityDate != null) {
+        final d = filters.availabilityDate!;
+        final combined = DateTime(d.year, d.month, d.day, filters.availabilityHour ?? 0, filters.availabilityMinute ?? 0);
+        params['date'] = combined.toIso8601String();
+        // 🔵 ZID (kifma tlab: "el disponibilité tzid horaire zeda") -
+        // "hasTime" ye3allem el backend ken el owner 5tar HEURE 7a9i9iya
+        // (mch bark date, elli tji b minuit b default lowkan heure ma
+        // tkhtaretch) - bla hedha, blocages horaire (recurringHoursOff/
+        // specificHoursOff) ynajjmou yeb3thou ghalat 3ala minuit implicite.
+        params['hasTime'] = (filters.availabilityHour != null).toString();
+      }
+      if (filters.availabilityPetCategories.isNotEmpty) params['petCategories'] = filters.availabilityPetCategories.join(',');
 
       final String queryString = params.entries.map((e) => '${Uri.encodeQueryComponent(e.key)}=${Uri.encodeQueryComponent(e.value)}').join('&');
       final String path = '/users/sitters/search${queryString.isNotEmpty ? '?$queryString' : ''}';

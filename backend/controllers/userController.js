@@ -76,6 +76,11 @@ exports.getProfile = async (req, res) => {
       // ynajjam yjib el état el 7ali (ki yefte7 mode "Availability").
       responseUser.recurringDaysOff = sitterUser.recurringDaysOff;
       responseUser.specificDatesOff = sitterUser.specificDatesOff;
+      // 🔵 ZID (kifma tlab): "disponibilité - horaire zeda" (recurring
+      // wla ponctuel) - bch AvailabilityPicker ynajjam yjib el état
+      // el 7ali (ki yefte7 mode "Availability", nafs mant9 el youmet).
+      responseUser.recurringHoursOff = sitterUser.recurringHoursOff;
+      responseUser.specificHoursOff = sitterUser.specificHoursOff;
     }
 
     res.status(200).json({ user: responseUser });
@@ -192,7 +197,20 @@ exports.updateSitterDetails = async (req, res) => {
   console.log(`🟢 [SITTER-DETAILS] userId (mel token): ${req.userId}`);
   console.log(`🟢 [SITTER-DETAILS] Body mawsoul: ${JSON.stringify(req.body)}`);
   try {
-    const { services, residenceType, hasTransportation, hasPetAtHome, ownedPetTypes, recurringDaysOff, specificDatesOff, acceptedPetCategories } = req.body;
+    const {
+      services,
+      residenceType,
+      hasTransportation,
+      hasPetAtHome,
+      ownedPetTypes,
+      recurringDaysOff,
+      specificDatesOff,
+      acceptedPetCategories,
+      // 🔵 ZID (kifma tlab): "disponibilité - horaire zeda" (recurring
+      // wla ponctuel).
+      recurringHoursOff,
+      specificHoursOff,
+    } = req.body;
 
     // 🔵 n7ottou GHIR el 7ou9oul elli 7a9i9atan tzadou fel body (mch
     // undefined) - bch PATCH mel écran 1 (services bark) ma ymassa7ch
@@ -209,6 +227,13 @@ exports.updateSitterDetails = async (req, res) => {
     // 🔵 ZID (kifma tlab): "disponibilité" (signup w sitter_calender.dart)
     if (recurringDaysOff !== undefined) updates.recurringDaysOff = recurringDaysOff;
     if (specificDatesOff !== undefined) updates.specificDatesOff = specificDatesOff.map((d) => new Date(d));
+    // 🔵 ZID (kifma tlab): "el disponibilité tzid horaire zeda" - nafs
+    // mant9 partiel (undefined = ma tbeddletch), "specificHoursOff"
+    // fih "date" (Date) - lezmou new Date() zeda (nafs "specificDatesOff").
+    if (recurringHoursOff !== undefined) updates.recurringHoursOff = recurringHoursOff;
+    if (specificHoursOff !== undefined) {
+      updates.specificHoursOff = specificHoursOff.map((h) => ({ ...h, date: new Date(h.date) }));
+    }
 
     console.log(`🟢 [SITTER-DETAILS] updates elli bch ndouzou: ${JSON.stringify(updates)}`);
 
@@ -237,6 +262,8 @@ exports.updateSitterDetails = async (req, res) => {
         acceptedPetCategories: sitter.acceptedPetCategories,
         recurringDaysOff: sitter.recurringDaysOff,
         specificDatesOff: sitter.specificDatesOff,
+        recurringHoursOff: sitter.recurringHoursOff,
+        specificHoursOff: sitter.specificHoursOff,
       },
     });
   } catch (error) {
@@ -587,10 +614,46 @@ function computeAgeFromBirthday(birthday) {
   return age;
 }
 
+// 🔵 ZID (kifma tlab: "el disponibilité tzid horaire zeda... mel 22h
+// hatta l 7h ma ye5demch") - "minutes" = d9ay9 mel nos el lil (0-1439)
+// tel wa9t el metlaوb, "startMinutes"/"endMinutes" nafs l'wa7da (blocage
+// tel sitter). Lowkan "end < start" (mathalan 22h(1320) -> 7h(420)),
+// el blocage y3adi nos el lil - el check ye5dem b'rou7ou b OR bدal AND.
+function isMinuteInBlockedRange(minutes, startMinutes, endMinutes) {
+  if (startMinutes == null || endMinutes == null) return false;
+  if (startMinutes === endMinutes) return false; // 0 d9i9a - ye3ni "mafamech blocage"
+  if (startMinutes < endMinutes) return minutes >= startMinutes && minutes < endMinutes;
+  return minutes >= startMinutes || minutes < endMinutes; // y3adi nos el lil
+}
+
 exports.searchSitters = async (req, res) => {
   try {
-    const { q, gender, city, residenceType, maxDistanceKm, minMemberMonths, minRating, minAge, isAvailable, acceptedPetCategory, minCompletedBookings } =
-      req.query;
+    const {
+      q,
+      gender,
+      city,
+      residenceType,
+      maxDistanceKm,
+      minMemberMonths,
+      minRating,
+      minAge,
+      isAvailable,
+      acceptedPetCategory,
+      // 🔵 ZID (kifma tlab: "el filtre disponible - date/wa9t/pets, ken
+      // 2 categories differentes lezem el sitter ye9bel EL 2 - AND, mch
+      // OR"): "date" (yawm el booking eli el owner y7eb), "petCategories"
+      // (comma-separated - EL categories el kol tel pets el mekhtarin,
+      // mch category wa7da bark kifma "acceptedPetCategory" el 9dim).
+      date,
+      // 🔵 ZID (kifma tlab: "el disponibilité tzid horaire zeda") -
+      // "hasTime" ye3allmna el owner 5tar HEURE 7a9i9iya (mch bark
+      // date bla heure, elli el frontend yeb3ath b minuit b default -
+      // bla "hasTime" ma nnajjmouch nfar9ou "minuit mkhtar 7a9i9atan"
+      // 3an "heure ma tkhtaretch khales").
+      hasTime,
+      petCategories,
+      minCompletedBookings,
+    } = req.query;
 
     const owner = await User.findById(req.userId).select('location favorites');
     const ownerLat = owner?.location?.lat;
@@ -609,9 +672,32 @@ exports.searchSitters = async (req, res) => {
     // 🔵 ZID: "disponibilite" - el sitter 7ott rou7ou "disponible" (toggle
     // mte3ou howa, mch b'relation mel calendrier/creneaux).
     if (isAvailable === 'true') filter.isAvailable = true;
-    // 🔵 ZID: "categorie de pet" - el sitter ye9bel ye5dem m3ah (feature
-    // "compatibilite entre animaux", acceptedPetCategories: [String]).
+    // 🔵 ZID: "categorie de pet" (filtre el 9dim, category WA7DA bark -
+    // mazel yeخdem kifma houwa, mch tna77a).
     if (acceptedPetCategory) filter.acceptedPetCategories = acceptedPetCategory;
+
+    // 🔵 ZID (kifma tlab): "ken el selection mtaa el pets kenou de 2 cat
+    // differentes ma tjibli el sitters eli dispo soit pour pet x wle pet
+    // y" - AND (el sitter LEZMOU acceptedPetCategories fiha EL categories
+    // el kol el metlouba), mch OR ($in eli kan ywarri sitter ye9bel WA7DA
+    // menhom bark). $all yesta3mel houni exactement l'hedhi el raison.
+    let requestedCategories = [];
+    if (petCategories && petCategories.trim()) {
+      requestedCategories = [...new Set(petCategories.split(',').map((c) => c.trim()).filter(Boolean))];
+      if (requestedCategories.length) {
+        filter.acceptedPetCategories = { $all: requestedCategories };
+      }
+    }
+
+    // 🔵 ZID (kifma tlab): "date w wkt" - youm mo7addad, el sitter ma
+    // yban-ch ken 3andou "jour off" (recurring wla date spécifique) -
+    // nafs mant9 el "_isDateUnavailable" (request_a_book.dart, frontend).
+    let requestedDate = null;
+    if (date) {
+      const parsed = new Date(date);
+      if (!Number.isNaN(parsed.getTime())) requestedDate = parsed;
+    }
+    const requestedHasTime = hasTime === 'true';
 
     // 🔵 "kadeh 3ndou fel app" - sitters elli sجلو (createdAt) 9bal
     // "cutoff" (mathalan minMemberMonths=6 -> mawjoudin fel app men
@@ -626,10 +712,13 @@ exports.searchSitters = async (req, res) => {
     }
 
     const sitters = await User.find(filter)
-      .select('fullName city photoUrl location gender residenceType createdAt isVerified birthday')
+      .select(
+        'fullName city photoUrl location gender residenceType createdAt isVerified birthday recurringDaysOff specificDatesOff recurringHoursOff specificHoursOff'
+      )
       .limit(30);
 
     // 🔴 FIX (kifma tlab: "les note mch deja dispo?") - el rating
+
     // 7a9i9i (averageRating mel questionnaires "completed") KANOU
     // MAWJOUDIN déjà (getSittersByCity, CheckoutQuestionnaire) - ghir
     // el filtre "Note" hedha (search.dart) kan ma yesta3malhomch, w
@@ -686,6 +775,52 @@ exports.searchSitters = async (req, res) => {
       if (!Number.isNaN(maxKm) && maxKm > 0) {
         results = results.filter((s) => s.distanceKm == null || s.distanceKm <= maxKm);
       }
+    }
+
+    // 🔵 ZID (kifma tlab): "date w wkt" - na77i sitters eli 3andhom
+    // "jour off" (recurring - 1=Lundi...7=Dimanche - wla date specifique)
+    // f had el youm el metlaوb. sitterDaysOffMap mabnia mel query el
+    // wa7da el fou9 (mafamech N+1).
+    if (requestedDate) {
+      const jsWeekday = requestedDate.getDay(); // 0=Dim...6=Sam
+      const weekday = jsWeekday === 0 ? 7 : jsWeekday; // -> 1=Lundi...7=Dimanche
+      // 🔵 ZID (kifma tlab): "el disponibilité tzid horaire zeda" -
+      // GHIR lowkan el owner 5tar heure 7a9i9iya (requestedHasTime),
+      // mch bark date bla heure (elli tji b minuit b default).
+      const requestedMinutes = requestedDate.getHours() * 60 + requestedDate.getMinutes();
+      const sitterById = new Map(sitters.map((s) => [s._id.toString(), s]));
+      results = results.filter((s) => {
+        const sitterDoc = sitterById.get(s._id.toString());
+        if (!sitterDoc) return true;
+        if ((sitterDoc.recurringDaysOff || []).includes(weekday)) return false;
+        const isSpecificDateOff = (sitterDoc.specificDatesOff || []).some((d) => {
+          const off = new Date(d);
+          return (
+            off.getFullYear() === requestedDate.getFullYear() &&
+            off.getMonth() === requestedDate.getMonth() &&
+            off.getDate() === requestedDate.getDate()
+          );
+        });
+        if (isSpecificDateOff) return false;
+
+        if (requestedHasTime) {
+          const rec = sitterDoc.recurringHoursOff;
+          if (rec && isMinuteInBlockedRange(requestedMinutes, rec.startMinutes, rec.endMinutes)) return false;
+
+          const isSpecificHourOff = (sitterDoc.specificHoursOff || []).some((h) => {
+            const hDate = new Date(h.date);
+            const sameDay =
+              hDate.getFullYear() === requestedDate.getFullYear() &&
+              hDate.getMonth() === requestedDate.getMonth() &&
+              hDate.getDate() === requestedDate.getDate();
+            if (!sameDay) return false;
+            return isMinuteInBlockedRange(requestedMinutes, h.startMinutes, h.endMinutes);
+          });
+          if (isSpecificHourOff) return false;
+        }
+
+        return true;
+      });
     }
 
     // 🔵 ZID (feature "filtres search: age"): sitters bla birthday

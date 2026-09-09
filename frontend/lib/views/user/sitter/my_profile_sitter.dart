@@ -376,6 +376,11 @@ class _ProfileContent extends StatelessWidget {
         // 🔴 FIX (kifma tlabt): "Rates" w "Services Offered" tawa
         // BOX WA7DA bark (mch mnfassleen) - kol service m3ah el
         // prix mte3ou 9damou, bla ma nkarrar el liste marratayn.
+        // 🎨 REDESIGN (kifma tlab: "el services ywalliw liste kima eli
+        // fi view sitter profile") - kanou pills roses (Wrap, Container
+        // b3ad b3ad) - tawa nafs style "view_profile_sitter.dart":
+        // esm el category 3al YESAR (muted), prix 3AL YEMIN (bold,
+        // _accentColor), sef/Row l'kol category, divider bin services.
         // ---------------------------------------------------------
         if (profile.services.isNotEmpty)
           _pillCard(
@@ -385,27 +390,45 @@ class _ProfileContent extends StatelessWidget {
               children: [
                 for (final service in profile.services)
                   Padding(
-                    padding: EdgeInsets.symmetric(vertical: sizes.screenHeight * 0.008),
+                    padding: EdgeInsets.symmetric(vertical: sizes.screenHeight * 0.01),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(serviceLabel(service), style: TextStyle(fontSize: sizes.myProfileBodyFontSize, fontWeight: FontWeight.w600)),
-                        SizedBox(height: sizes.screenHeight * 0.005),
-                        Wrap(
-                          spacing: sizes.screenWidth * 0.02,
-                          runSpacing: sizes.screenHeight * 0.005,
-                          children: [
-                            for (final p in service.prices)
-                              Container(
-                                padding: EdgeInsets.symmetric(horizontal: sizes.screenWidth * 0.022, vertical: sizes.screenHeight * 0.004),
-                                decoration: BoxDecoration(color: _accentColor, borderRadius: BorderRadius.circular(8)),
-                                child: Text(
-                                  '${_categoryLabel(p.category)}: ${p.price.toStringAsFixed(0)} DT',
-                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: sizes.myProfileBodyFontSize * 0.78),
+                        Padding(
+                          padding: EdgeInsets.only(top: sizes.screenHeight * 0.008),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              for (final p in service.prices)
+                                Padding(
+                                  padding: EdgeInsets.symmetric(vertical: sizes.screenHeight * 0.004),
+                                  child: Row(
+                                    children: [
+                                      Text(
+                                        _categoryLabel(p.category),
+                                        style: TextStyle(fontSize: sizes.myProfileBodyFontSize * 0.85, color: mutedTextColor),
+                                      ),
+                                      const Spacer(),
+                                      Text(
+                                        '${p.price.toStringAsFixed(0)} DT',
+                                        style: TextStyle(
+                                          fontSize: sizes.myProfileBodyFontSize * 0.85,
+                                          fontWeight: FontWeight.w700,
+                                          color: _accentColor,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                          ],
+                            ],
+                          ),
                         ),
+                        if (service != profile.services.last)
+                          Padding(
+                            padding: EdgeInsets.only(top: sizes.screenHeight * 0.01),
+                            child: Divider(color: _accentColor.withOpacity(0.2), height: 1),
+                          ),
                       ],
                     ),
                   ),

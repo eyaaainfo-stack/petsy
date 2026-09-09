@@ -42,6 +42,9 @@ class _SitterCalenderScreenState extends State<SitterCalenderScreen> {
   bool _isSavingAvailability = false;
   Set<int> _recurringDaysOff = {};
   Set<DateTime> _specificDatesOff = {};
+  // 🔵 ZID (kifma tlab: "el disponibilité tzid horaire zeda")
+  RecurringHoursOff _recurringHoursOff = const RecurringHoursOff();
+  List<SpecificHoursOffEntry> _specificHoursOff = [];
   final AvailabilityController _availabilityController = AvailabilityController();
 
   static const List<String> _monthNames = [
@@ -86,6 +89,8 @@ class _SitterCalenderScreenState extends State<SitterCalenderScreen> {
         if (availability != null) {
           _recurringDaysOff = availability.recurringDaysOff.toSet();
           _specificDatesOff = availability.specificDatesOff.map((d) => DateTime(d.year, d.month, d.day)).toSet();
+          _recurringHoursOff = availability.recurringHoursOff;
+          _specificHoursOff = availability.specificHoursOff;
         }
         _hasLoadedAvailability = true;
         _isLoadingAvailability = false;
@@ -99,6 +104,8 @@ class _SitterCalenderScreenState extends State<SitterCalenderScreen> {
     final success = await _availabilityController.submitAvailability(
       recurringDaysOff: _recurringDaysOff.toList(),
       specificDatesOff: _specificDatesOff.toList(),
+      recurringHoursOff: _recurringHoursOff,
+      specificHoursOff: _specificHoursOff,
     );
     if (!mounted) return;
     setState(() => _isSavingAvailability = false);
@@ -260,9 +267,13 @@ class _SitterCalenderScreenState extends State<SitterCalenderScreen> {
       AvailabilityPicker(
         initialRecurringDaysOff: _recurringDaysOff,
         initialSpecificDatesOff: _specificDatesOff,
+        initialRecurringHoursOff: _recurringHoursOff,
+        initialSpecificHoursOff: _specificHoursOff,
         onChanged: (value) {
           _recurringDaysOff = value.recurringDaysOff;
           _specificDatesOff = value.specificDatesOff;
+          _recurringHoursOff = value.recurringHoursOff;
+          _specificHoursOff = value.specificHoursOff;
         },
       ),
       SizedBox(height: sizes.calendarSectionGap * 1.4),

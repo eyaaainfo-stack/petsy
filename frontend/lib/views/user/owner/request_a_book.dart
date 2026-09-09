@@ -607,9 +607,20 @@ class _RequestABookScreenState extends State<RequestABookScreen> {
     return null;
   }
 
-  // 🔵 ZID (kifma tlab): chip SGHIRA (bla photo) - bch tab9a compacte
-  // ki tban TA7T KOL service (mch chip kbira kifma "_petChip" el 9dima
-  // elli kanet fel section globale "Service for" - tna77at).
+  // 🎨 REDESIGN v4 (kifma tlab: "hott el bouton kad 9edd el espace") -
+  // el chip ma3adech yfrodh 9eddou HOWA (kan yfaydi/yoverflowi ki el
+  // text tawil, "non disponible" mathalan) - tawa yakhod WESSAA eli
+  // ya3tih el parent: Expanded ki el pets ma3andhomch bezzef fel row,
+  // wala SizedBox fixe ki el scroll horizontal (chraht ta7t el Row).
+  // Ghir el height baqya fixe ("kadkad" f el 3oulou).
+  static const double _petChipHeightRatio = 0.052;
+
+  // 🎨 REDESIGN v3 (kifma tlab: "ken el service mch dispo l category
+  // tel pet ama dispo l category lokhra" - had el chip specifiquement,
+  // mch el service kollou) - price == null ye3ni had el pet (category
+  // tou3ha) ma3andhech prix l'had el service -> chip DISABLED (grisée,
+  // "non disponible" flou el prix, ma tetnajjamch tetlams). El chips
+  // el o5rin (price != null) yeb9aou normal/selectable kifma 9bal.
   Widget _miniPetChip({
     required AppSizes sizes,
     required PetSummary pet,
@@ -617,41 +628,60 @@ class _RequestABookScreenState extends State<RequestABookScreen> {
     required VoidCallback onTap,
     double? price,
   }) {
+    final bool isAvailable = price != null;
+    final Color textColor = isSelected ? Colors.white : (Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black87);
     return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: sizes.screenWidth * 0.025, vertical: sizes.screenHeight * 0.006),
+      onTap: isAvailable ? onTap : null,
+      borderRadius: BorderRadius.circular(14),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        width: double.infinity,
+        height: sizes.screenHeight * _petChipHeightRatio,
+        alignment: Alignment.center,
+        padding: EdgeInsets.symmetric(horizontal: sizes.screenWidth * 0.015),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.vertpetsy.withOpacity(0.18) : Colors.grey.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: isSelected ? AppColors.vertpetsy : Colors.transparent, width: 1.4),
+          color: !isAvailable ? Colors.grey.withOpacity(0.06) : (isSelected ? AppColors.vertpetsy : Theme.of(context).cardColor),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: !isAvailable ? Colors.grey.withOpacity(0.2) : (isSelected ? AppColors.vertpetsy : Colors.grey.withOpacity(0.3)),
+            width: 1.2,
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              isSelected ? Icons.check_circle : Icons.circle_outlined,
-              size: sizes.screenWidth * 0.032,
-              color: isSelected ? AppColors.vertpetsy : Colors.grey,
-            ),
-            SizedBox(width: sizes.screenWidth * 0.012),
-            // 🔵 ZID (kifma tlab): el prix KODEM el esm (mch ba3dou).
-            if (price != null)
-              Text(
-                '${price.toStringAsFixed(0)} DT  ',
+            // 🔵 ZID (kifma tlab): el prix (wala "non disponible")
+            // KODEM el esm (mch ba3dou).
+            Flexible(
+              child: Text(
+                isAvailable ? '${price.toStringAsFixed(0)} DT' : 'service_not_offered_short_label'.tr(),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
                 style: TextStyle(
-                  fontSize: sizes.myProfileBodyFontSize * 0.78,
-                  fontWeight: FontWeight.w700,
-                  color: isSelected ? AppColors.vertpetsy : AppColors.pinkpetsy,
+                  fontSize: sizes.myProfileBodyFontSize * (isAvailable ? 0.78 : 0.66),
+                  fontWeight: isAvailable ? FontWeight.w700 : FontWeight.normal,
+                  fontStyle: isAvailable ? FontStyle.normal : FontStyle.italic,
+                  color: !isAvailable ? Colors.grey.shade500 : (isSelected ? Colors.white : AppColors.pinkpetsy),
                 ),
               ),
-            Text(
-              pet.name,
-              style: TextStyle(
-                fontSize: sizes.myProfileBodyFontSize * 0.78,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal,
-                color: isSelected ? AppColors.vertpetsy : null,
+            ),
+            SizedBox(width: sizes.screenWidth * 0.014),
+            Container(
+              width: 1,
+              height: sizes.screenHeight * 0.014,
+              color: !isAvailable ? Colors.grey.withOpacity(0.2) : (isSelected ? Colors.white.withOpacity(0.5) : Colors.grey.withOpacity(0.35)),
+            ),
+            SizedBox(width: sizes.screenWidth * 0.014),
+            Flexible(
+              child: Text(
+                pet.name,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+                style: TextStyle(
+                  fontSize: sizes.myProfileBodyFontSize * 0.78,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal,
+                  color: !isAvailable ? Colors.grey.shade500 : textColor,
+                ),
               ),
             ),
           ],
@@ -660,9 +690,10 @@ class _RequestABookScreenState extends State<RequestABookScreen> {
     );
   }
 
-  // 🔵 ZID (kifma tlab el a5ir): kol service tawa 3andou selection tel
-  // pets mte3ou HOWA (mnghir "Service for" global) - esm+prix fou9,
-  // w ta7tou chips tel pets (tap = zid/na77i mel service hedha bark).
+  // 🎨 REDESIGN (nafs el logique/concept, ghir el look): kol service
+  // tawa fi card mnajma (border + radius) mch ghir Row/Column mfattah -
+  // isolation visuelle a7sen bin les services, icon + badge lel prix.
+  // El logique (category/price/unavailable/pet selection) ma tbeddletch.
   Widget _serviceCheckRow({required AppSizes sizes, required SitterServiceEntry service}) {
     final Set<String> assignedPetIds = _servicePetIds[service.serviceId] ?? {};
     // 🔴 FIX (bug "deadlock": kol service yban 'Non propose pour cet
@@ -691,50 +722,115 @@ class _RequestABookScreenState extends State<RequestABookScreen> {
     }
 
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: sizes.screenHeight * 0.01),
+      padding: EdgeInsets.only(bottom: sizes.screenHeight * 0.014),
       child: Opacity(
         opacity: isUnavailable ? 0.45 : 1,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(_serviceLabel(service), style: TextStyle(fontWeight: FontWeight.w600, fontSize: sizes.myProfileBodyFontSize)),
-                ),
-                Text(
-                  priceText,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: isUnavailable ? Colors.grey : AppColors.pinkpetsy,
-                    fontStyle: isUnavailable ? FontStyle.italic : FontStyle.normal,
+        child: Container(
+          padding: EdgeInsets.all(sizes.screenWidth * 0.035),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.withOpacity(0.18)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.pets, size: sizes.screenWidth * 0.045, color: AppColors.pinkpetsy.withOpacity(0.7)),
+                  SizedBox(width: sizes.screenWidth * 0.022),
+                  Expanded(
+                    child: Text(_serviceLabel(service), style: TextStyle(fontWeight: FontWeight.w600, fontSize: sizes.myProfileBodyFontSize)),
+                  ),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: sizes.screenWidth * 0.022, vertical: sizes.screenHeight * 0.004),
+                    decoration: BoxDecoration(
+                      color: isUnavailable ? Colors.grey.withOpacity(0.15) : AppColors.pinkpetsy.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      priceText,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: sizes.myProfileBodyFontSize * 0.85,
+                        color: isUnavailable ? Colors.grey.shade700 : AppColors.pinkpetsy,
+                        fontStyle: isUnavailable ? FontStyle.italic : FontStyle.normal,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              // 🔴 FIX: "!isUnavailable" tawa sa7i7 (chips yebanou dima
+              // GHIR ken el category ma3roufa 7a9i9atan w had service
+              // ma yesnedhech biha - mch bark ken price mazel null 7it
+              // mafamech pet mkhtar l'hin).
+              if (!isUnavailable) ...[
+                SizedBox(height: sizes.screenHeight * 0.012),
+                // 🎨 REDESIGN v4 (kifma tlab: "hott el bouton kad chtar
+                // l'espace" - el chip ma3adech 9eddou fixe zghir eli
+                // kan yfaydi ("RIGHT OVERFLOWED") - tawa: lowkan el pets
+                // yedخlou kollhom mfar9in b'level (>= _minPetChipWidth
+                // l'kol wa7ed), Row+Expanded ya5dou el espace el kol b
+                // TSAWI (kad chtar l'espace, nafs 9edd bin b3adhom).
+                // Lowkan aktar men elli yedخol (kifma tlab 9bal: "swipe
+                // 3al janb") -> ListView horizontal, chip b _minPetChipWidth
+                // (9edd fixe kafi bch "non disponible" ma yfaydich).
+                SizedBox(
+                  height: sizes.screenHeight * _petChipHeightRatio,
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final pets = _pets.where((p) => p.id != null).toList();
+                      const double minPetChipWidth = 150;
+                      const double gap = 8;
+                      final double evenWidth = pets.isEmpty
+                          ? minPetChipWidth
+                          : (constraints.maxWidth - gap * (pets.length - 1)) / pets.length;
+                      final bool fitsEvenly = evenWidth >= minPetChipWidth;
+
+                      if (fitsEvenly) {
+                        return Row(
+                          children: [
+                            for (int i = 0; i < pets.length; i++) ...[
+                              if (i > 0) const SizedBox(width: gap),
+                              Expanded(
+                                child: _miniPetChip(
+                                  sizes: sizes,
+                                  pet: pets[i],
+                                  isSelected: assignedPetIds.contains(pets[i].id),
+                                  onTap: () => _onServicePetTap(service, pets[i]),
+                                  price: _priceForPetInService(service, pets[i]),
+                                ),
+                              ),
+                            ],
+                          ],
+                        );
+                      }
+
+                      return ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        itemCount: pets.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: gap),
+                        itemBuilder: (context, index) {
+                          final pet = pets[index];
+                          return SizedBox(
+                            width: minPetChipWidth,
+                            child: _miniPetChip(
+                              sizes: sizes,
+                              pet: pet,
+                              isSelected: assignedPetIds.contains(pet.id),
+                              onTap: () => _onServicePetTap(service, pet),
+                              price: _priceForPetInService(service, pet),
+                            ),
+                          );
+                        },
+                      );
+                    },
                   ),
                 ),
               ],
-            ),
-            // 🔴 FIX: "!isUnavailable" tawa sa7i7 (chips yebanou dima
-            // GHIR ken el category ma3roufa 7a9i9atan w had service
-            // ma yesnedhech biha - mch bark ken price mazel null 7it
-            // mafamech pet mkhtar l'hin).
-            if (!isUnavailable) ...[
-              SizedBox(height: sizes.screenHeight * 0.008),
-              Wrap(
-                spacing: sizes.screenWidth * 0.02,
-                runSpacing: sizes.screenHeight * 0.006,
-                children: [
-                  for (final pet in _pets)
-                    if (pet.id != null)
-                      _miniPetChip(
-                        sizes: sizes,
-                        pet: pet,
-                        isSelected: assignedPetIds.contains(pet.id),
-                        onTap: () => _onServicePetTap(service, pet),
-                        price: _priceForPetInService(service, pet),
-                      ),
-                ],
-              ),
             ],
-          ],
+          ),
         ),
       ),
     );

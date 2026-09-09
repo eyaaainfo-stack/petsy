@@ -8,6 +8,8 @@ import '../../../widgets/verified_badge.dart';
 import '../../../controllers/sitter_search_controller.dart';
 import '../../../controllers/favorites_controller.dart';
 import '../../../controllers/user_create_profile_controller.dart' show tunisiaGovernorates;
+import '../../../models/pet_summary.dart';
+import '../../../repositories/pet_repository.dart';
 import '../sitter/view_profile_sitter.dart';
 
 // ============================================================================
@@ -41,6 +43,13 @@ class _SearchScreenState extends State<SearchScreen> {
   bool _isLoading = false;
   bool _hasSearchedOnce = false;
   SitterSearchFilters _filters = const SitterSearchFilters();
+  // 🔵 ZID (kifma tlab): "filtre disponible - nekhtar date/wa9t/pets" -
+  // pets el owner, mjabdin lazy (ghir ki el user yeftah el sheet lel
+  // premiere fois - bla ma na3mlou appel API ma3andouch lezmtou fel
+  // écran search kollou).
+  List<PetSummary> _ownerPets = [];
+  bool _ownerPetsLoaded = false;
+  bool _isLoadingOwnerPets = false;
 
   static const List<String> _residenceTypes = ['apartment', 'house', 'countryHouse'];
   static const Map<String, String> _residenceLabelKeys = {
@@ -149,6 +158,183 @@ class _SearchScreenState extends State<SearchScreen> {
       }
     });
     await _favoritesController.toggleFavorite(sitter.id);
+  }
+
+  // 🔵 ZID (kifma tlab): pets el owner (lel sheet "disponibilité") -
+  // lazy, tetجab GHIR ken el user yeftah el sheet lel premiere marra.
+  Future<void> _ensureOwnerPetsLoaded() async {
+    if (_ownerPetsLoaded || _isLoadingOwnerPets) return;
+    setState(() => _isLoadingOwnerPets = true);
+    final pets = await PetRepository.fetchOwnerPets();
+    if (!mounted) return;
+    setState(() {
+      _ownerPets = pets;
+      _ownerPetsLoaded = true;
+      _isLoadingOwnerPets = false;
+    });
+  }
+
+  // --------------------------------------------------------------------
+  // 🔴 FIX (kifma tlab: "les filtres lkol khallihomli fi boutons filtres
+  // tht el recherche") - Date/Heure/Animaux tawa 3 BOUTONS mfar9in (nafs
+  // sef el filtres el o5rin), mch chip WA7DA tefte7 sheet fiha el 3
+  // hajet. Date w Heure: picker natif DIRECT (bla sheet, kifma "gender"/
+  // "distance" ye3malou toggle direct). Animaux: sheet sghira (multi-
+  // select bark, mafamech date/heure fiha). El "AND" (mch OR) baqi ye5dem
+  // fel backend (searchSitters, filter.acceptedPetCategories = { $all:
+  // [...] }) - houni ghir njam3ou el categories mel pets el mkhtarin.
+  // --------------------------------------------------------------------
+  Future<void> _pickAvailabilityDate() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _filters.availabilityDate ?? now,
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 365)),
+    );
+    if (picked == null) return;
+    _updateFilters(_filters.copyWith(availabilityDate: picked));
+  }
+
+  Future<void> _pickAvailabilityTime() async {
+    final initial = (_filters.availabilityHour != null && _filters.availabilityMinute != null)
+        ? TimeOfDay(hour: _filters.availabilityHour!, minute: _filters.availabilityMinute!)
+        : TimeOfDay.now();
+    final picked = await showTimePicker(context: context, initialTime: initial);
+    if (picked == null) return;
+    _updateFilters(_filters.copyWith(availabilityHour: picked.hour, availabilityMinute: picked.minute));
+  }
+
+  Future<void> _showAvailabilityPetsSheet() async {
+    await _ensureOwnerPetsLoaded();
+    if (!mounted) return;
+    final sizes = AppSizes.of(context);
+    Set<String> tempPetIds = {..._filters.availabilityPetIds};
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (sheetContext, setSheetState) {
+            // 🔵 el categories el mfar9a mel pets el mkhtarin (bla doublons)
+            // - houni ghir lel hint eli twarri lel user "AND" active wla la.
+            final Set<String> selectedCategories = {
+              for (final pet in _ownerPets)
+                if (tempPetIds.contains(pet.id) && pet.category != null) pet.category!,
+            };
+
+            return DraggableScrollableSheet(
+              initialChildSize: 0.5,
+              minChildSize: 0.3,
+              maxChildSize: 0.85,
+              expand: false,
+              builder: (context, scrollController) {
+                return SafeArea(
+                  child: ListView(
+                    controller: scrollController,
+                    padding: EdgeInsets.symmetric(vertical: sizes.screenHeight * 0.02, horizontal: sizes.bookingHorizontalPadding),
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          margin: EdgeInsets.only(bottom: sizes.screenHeight * 0.015),
+                          decoration: BoxDecoration(color: Colors.grey.withOpacity(0.4), borderRadius: BorderRadius.circular(2)),
+                        ),
+                      ),
+                      Text('availability_pets_label'.tr(), style: TextStyle(fontWeight: FontWeight.bold, fontSize: sizes.myProfileBodyFontSize)),
+                      SizedBox(height: sizes.screenHeight * 0.015),
+                      if (_isLoadingOwnerPets)
+                        const Center(child: CircularProgressIndicator())
+                      else if (_ownerPets.isEmpty)
+                        Text('availability_no_pets_hint'.tr(), style: TextStyle(color: Colors.grey.shade600, fontSize: sizes.myProfileBodyFontSize * 0.85))
+                      else
+                        Wrap(
+                          spacing: sizes.screenWidth * 0.02,
+                          runSpacing: sizes.screenHeight * 0.008,
+                          children: [
+                            for (final pet in _ownerPets)
+                              if (pet.id != null)
+                                InkWell(
+                                  onTap: () => setSheetState(() {
+                                    if (tempPetIds.contains(pet.id)) {
+                                      tempPetIds.remove(pet.id);
+                                    } else {
+                                      tempPetIds.add(pet.id!);
+                                    }
+                                  }),
+                                  borderRadius: BorderRadius.circular(20),
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(horizontal: sizes.screenWidth * 0.032, vertical: sizes.screenHeight * 0.008),
+                                    decoration: BoxDecoration(
+                                      color: tempPetIds.contains(pet.id) ? AppColors.pinkpetsy : Colors.grey.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(color: tempPetIds.contains(pet.id) ? AppColors.pinkpetsy : Colors.transparent),
+                                    ),
+                                    child: Text(
+                                      pet.name,
+                                      style: TextStyle(
+                                        color: tempPetIds.contains(pet.id) ? Colors.white : null,
+                                        fontWeight: tempPetIds.contains(pet.id) ? FontWeight.w700 : FontWeight.normal,
+                                        fontSize: sizes.myProfileBodyFontSize * 0.85,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                          ],
+                        ),
+                      // 🔵 ZID: n3allmou el user b'transparence "3lech
+                      // el résultats na9sou" ki ye5tar pets mel 2
+                      // categories differentes (AND, mch OR).
+                      if (selectedCategories.length > 1) ...[
+                        SizedBox(height: sizes.screenHeight * 0.012),
+                        Text(
+                          'availability_multi_category_hint'.tr(),
+                          style: TextStyle(fontSize: sizes.myProfileBodyFontSize * 0.75, color: AppColors.pinkpetsy, fontStyle: FontStyle.italic),
+                        ),
+                      ],
+
+                      SizedBox(height: sizes.screenHeight * 0.03),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () {
+                                Navigator.of(sheetContext).pop();
+                                _updateFilters(_filters.copyWith(availabilityPetIds: {}, availabilityPetCategories: []));
+                              },
+                              child: Text('availability_clear_button'.tr()),
+                            ),
+                          ),
+                          SizedBox(width: sizes.screenWidth * 0.03),
+                          Expanded(
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(backgroundColor: AppColors.pinkpetsy),
+                              onPressed: () {
+                                final categories = <String>{
+                                  for (final pet in _ownerPets)
+                                    if (tempPetIds.contains(pet.id) && pet.category != null) pet.category!,
+                                }.toList();
+                                Navigator.of(sheetContext).pop();
+                                _updateFilters(_filters.copyWith(availabilityPetIds: tempPetIds, availabilityPetCategories: categories));
+                              },
+                              child: Text('apply_button'.tr(), style: const TextStyle(color: Colors.white)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        );
+      },
+    );
   }
 
   // --------------------------------------------------------------------
@@ -394,13 +580,33 @@ class _SearchScreenState extends State<SearchScreen> {
                           onSelected: (value) => _updateFilters(_filters.copyWith(minAge: value, clearMinAge: value == null)),
                         ),
                       ),
+                      // 🔴 FIX (kifma tlab: "les filtres lkol khallihomli
+                      // fi boutons filtres tht el recherche") - 3 boutons
+                      // mfar9in (Date/Heure/Animaux), mch chip wa7da tefte7
+                      // sheet fiha el 3. Date/Heure: picker natif DIRECT.
                       _filterChip(
                         sizes: sizes,
-                        label: 'availability_filter_label'.tr(),
-                        active: _filters.onlyAvailable,
-                        // 🔵 ZID: boolean simple (mch liste d'options) -
-                        // tap ye3mel toggle DIRECT (bla bottom sheet).
-                        onTap: () => _updateFilters(_filters.copyWith(onlyAvailable: !_filters.onlyAvailable)),
+                        label: _filters.availabilityDate == null
+                            ? 'availability_date_label'.tr()
+                            : '${_filters.availabilityDate!.day}/${_filters.availabilityDate!.month}',
+                        active: _filters.availabilityDate != null,
+                        onTap: _pickAvailabilityDate,
+                      ),
+                      _filterChip(
+                        sizes: sizes,
+                        label: (_filters.availabilityHour == null || _filters.availabilityMinute == null)
+                            ? 'availability_time_label'.tr()
+                            : TimeOfDay(hour: _filters.availabilityHour!, minute: _filters.availabilityMinute!).format(context),
+                        active: _filters.availabilityHour != null,
+                        onTap: _pickAvailabilityTime,
+                      ),
+                      _filterChip(
+                        sizes: sizes,
+                        label: _filters.availabilityPetIds.isEmpty
+                            ? 'availability_pets_label'.tr()
+                            : 'availability_pets_count_label'.tr(namedArgs: {'count': _filters.availabilityPetIds.length.toString()}),
+                        active: _filters.availabilityPetIds.isNotEmpty,
+                        onTap: _showAvailabilityPetsSheet,
                       ),
                       _filterChip(
                         sizes: sizes,

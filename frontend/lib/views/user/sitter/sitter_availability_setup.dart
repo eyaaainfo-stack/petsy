@@ -34,6 +34,9 @@ class _SitterAvailabilitySetupScreenState extends State<SitterAvailabilitySetupS
   final AvailabilityController _controller = AvailabilityController();
   Set<int> _recurringDaysOff = {};
   Set<DateTime> _specificDatesOff = {};
+  // 🔵 ZID (kifma tlab: "el disponibilité tzid horaire zeda")
+  RecurringHoursOff _recurringHoursOff = const RecurringHoursOff();
+  List<SpecificHoursOffEntry> _specificHoursOff = [];
   bool _isSubmitting = false;
 
   Future<void> _onSave() async {
@@ -43,6 +46,8 @@ class _SitterAvailabilitySetupScreenState extends State<SitterAvailabilitySetupS
     final success = await _controller.submitAvailability(
       recurringDaysOff: _recurringDaysOff.toList(),
       specificDatesOff: _specificDatesOff.toList(),
+      recurringHoursOff: _recurringHoursOff,
+      specificHoursOff: _specificHoursOff,
     );
 
     if (!mounted) return;
@@ -91,6 +96,8 @@ class _SitterAvailabilitySetupScreenState extends State<SitterAvailabilitySetupS
                     onChanged: (value) {
                       _recurringDaysOff = value.recurringDaysOff;
                       _specificDatesOff = value.specificDatesOff;
+                      _recurringHoursOff = value.recurringHoursOff;
+                      _specificHoursOff = value.specificHoursOff;
                     },
                   ),
                   SizedBox(height: sizes.bookingSectionGap * 1.4),

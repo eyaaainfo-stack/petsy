@@ -62,6 +62,30 @@ const Sitter = User.discriminator(
     //   ayemet zadhom el sitter b'rou7ou mel calendrier).
     recurringDaysOff: { type: [Number], default: [] },
     specificDatesOff: { type: [Date], default: [] },
+    // 🔵 ZID (kifma tlab: "el disponibilité tzid horaire zeda - ken mel
+    // 22h l 7h ma ye5demch, wla 1h/wa9t mo7addad fi nhar mo7addad") -
+    // "startMinutes"/"endMinutes" = d9ay9 mel nos el lil (0-1439, mathalan
+    // 22h=1320, 7h=420) - lowkan "end < start" ye3ni el blocage y3adi
+    // nos el lil (mathalan 22h -> 7h el ghad, ye5dem b'rou7ou fel logique
+    // el checking, mch besoin 7a9el "wraps" mنفصل).
+    // - recurringHoursOff: sa3at fixa KOL youm (mathalan "kol lil mel
+    //   22h l 7h") - null/null lowkan mafamech.
+    // - specificHoursOff: liste de blocages PONCTUELS (youm mo7addad +
+    //   sa3a mo7addda, mathalan "12 sept mel 14h l 15h" bark).
+    recurringHoursOff: {
+      startMinutes: { type: Number, default: null },
+      endMinutes: { type: Number, default: null },
+    },
+    specificHoursOff: {
+      type: [
+        {
+          date: { type: Date, required: true },
+          startMinutes: { type: Number, required: true },
+          endMinutes: { type: Number, required: true },
+        },
+      ],
+      default: [],
+    },
     // Ajoute les autres attributs spécifiques du Sitter selon ton diagramme de classe
   })
 );

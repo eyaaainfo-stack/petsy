@@ -86,7 +86,14 @@ class ServiceCategorySelectorState extends State<ServiceCategorySelector> {
   // el mkhtarin fel box el fou9 yetbedlou).
   final Map<String, Map<String, TextEditingController>> _priceControllers = {};
   final List<_CustomServiceEntry> _customEntries = [];
-  final Set<String> _expandedCategories = {};
+  // 🔴 FIX (kifma tlab: "les cat des services yjiwni msakrin ki hakka,
+  // w el cat el hachty biha tw nhelha" - accordion 7a9i9i, category
+  // WA7DA tefte7 fi nefs el wa9t, mch barcha) - kanet "Set<String>"
+  // (multi-open, w ma tetجدd-ch ba3d el build el loula - ExpansionTile
+  // uncontrolled). Tawa "String?" (category wa7da bark) - ki tefte7
+  // wa7da, el 9dima teglè9 automatique (chouf _categoryTile: el trick
+  // "Key" el yet3awad l'ExpansionTile yetجدd ki "isExpanded" yetbeddel).
+  String? _expandedCategoryKey;
   bool triedSubmit = false;
 
   TextEditingController _ctrl(String serviceId, String category) {
@@ -112,9 +119,12 @@ class ServiceCategorySelectorState extends State<ServiceCategorySelector> {
       for (final p in entry.prices) {
         _ctrl(entry.serviceId, p.category).text = _formatPrice(p.price);
       }
-      final category = sitterServiceCatalog.firstWhere((c) => c.services.any((s) => s.id == entry.serviceId));
-      _expandedCategories.add(category.titleKey);
     }
+    // 🔴 FIX (kifma tlab: "nhbhom lkol msakrin") - kanet category WA7DA
+    // tefte7 automatique (l'oula elli fiha service mkhtar deja) - tawa
+    // "_expandedCategoryKey" yeb9a null fel bidaya, EL CATEGORIES EL
+    // KOL msakrin (7atta lowkan fihom services mkhtarin déjà) - el
+    // sitter yefte7 bidou el wa7da eli yhb ye7rer fiha.
   }
 
   String _formatPrice(double price) => price.toStringAsFixed(price.truncateToDouble() == price ? 0 : 2);
@@ -231,12 +241,25 @@ class ServiceCategorySelectorState extends State<ServiceCategorySelector> {
 
   Widget _categoryTile(SitterServiceCategory cat, AppSizes sizes) {
     final int selectedCount = cat.services.where((s) => _selected[s.id] == true).length;
+    final bool isExpanded = _expandedCategoryKey == cat.titleKey;
 
     return Theme(
       data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
       child: ExpansionTile(
-        key: ValueKey(cat.titleKey),
-        initiallyExpanded: _expandedCategories.contains(cat.titleKey),
+        // 🔴 FIX (kifma tlab: "el cat el hachty biha tw nhelha, el ba9i
+        // msakrin") - ExpansionTile "uncontrolled" b'tabi3tou (el
+        // initiallyExpanded ye5dem GHIR fel build el loula) - el trick:
+        // "Key" fiha "isExpanded" - ki category okhra tefte7 (w
+        // _expandedCategoryKey yetbeddel), el Key t'hedhi el category
+        // tetbeddel (true->false) fa Flutter yhassbha widget JDID
+        // (mch update) w yerkebha men jdid b "initiallyExpanded: false"
+        // - yaani teglè9 automatique, bla ma nsta3mlou ExpansionTileController
+        // (elli me7taj Flutter version a7dath).
+        key: ValueKey('${cat.titleKey}-$isExpanded'),
+        initiallyExpanded: isExpanded,
+        onExpansionChanged: (expanded) {
+          setState(() => _expandedCategoryKey = expanded ? cat.titleKey : null);
+        },
         tilePadding: EdgeInsets.zero,
         childrenPadding: EdgeInsets.only(left: sizes.screenWidth * 0.02),
         leading: Icon(cat.icon, color: AppColors.vertpetsy),

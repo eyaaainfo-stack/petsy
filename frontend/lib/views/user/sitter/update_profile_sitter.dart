@@ -14,6 +14,7 @@ import '../../../widgets/accepted_categories_selector.dart';
 import '../../../controllers/auth_session.dart';
 import '../../../controllers/user_create_profile_controller.dart';
 import '../../../controllers/create_sitter_profile_controller.dart';
+import '../../../controllers/create_sitter_profile_2_controller.dart';
 import '../../../models/my_profile_data.dart';
 import '../../../services/api_service.dart';
 import '../../../widgets/message_dialog.dart';
@@ -51,12 +52,28 @@ class _UpdateProfileSitterScreenState extends State<UpdateProfileSitterScreen> {
 
   final UserCreateProfileController _profileController = UserCreateProfileController();
   final CreateSitterProfileController _servicesController = CreateSitterProfileController();
+  // 🔵 ZID (kifma tlab: "zidni les 3 champs win toskon w andk krhba
+  // wlle w andk pet f dar wlle") - nafs endpoint/controller tel
+  // create_sitter_profile_2.dart (PATCH /users/sitter-details, partiel
+  // - houni ghir residenceType/hasTransportation/hasPetAtHome/
+  // ownedPetTypes, el services yeb9aw ye3ديو mel _servicesController).
+  final CreateSitterProfile2Controller _homeController = CreateSitterProfile2Controller();
   Uint8List? _newPhotoBytes; // 🔵 lowkan el user 5tar photo jdida (null = 5alli el 9dima)
   double? _selectedLat;
   double? _selectedLng;
   String? _locationName;
   String? _selectedGender;
   bool _isSubmitting = false;
+
+  // 🔵 ZID (kifma tlab): "win toskon"/"3andek krhba"/"3andek pet f dar"
+  // - radio/checkbox COMPACTS (msakrin, ghir el wa7ed elli el user
+  // yehki bih tawa yefte7 - "_expandedFieldKey" bark, mch Set, bch wa7ed
+  // wa7ed yefte7 fi nefs el wa9t, kifma el categories tel services).
+  String? _residenceType; // 'apartment' / 'house' / 'countryHouse'
+  bool? _hasTransportation;
+  bool? _hasPetAtHome;
+  final Set<String> _ownedPetTypes = {}; // 'dog' / 'cat'
+  String? _expandedFieldKey; // 'residence' / 'transport' / 'pet' / null
 
   // 🔴 FIX (kifma tlab: "les services nhbhom fi des titre...") -
   // ServiceCategorySelector (widgets/service_category_selector.dart)
@@ -86,6 +103,12 @@ class _UpdateProfileSitterScreenState extends State<UpdateProfileSitterScreen> {
     _locationController = TextEditingController(text: p.locationName ?? '');
     _locationName = p.locationName;
     _selectedGender = p.gender;
+    // 🔵 ZID (kifma tlab): "win toskon/krhba/pet f dar" - m3ammrin mel
+    // data el 7aliya (nafs mant9 el ba9i tel champs).
+    _residenceType = p.residenceType;
+    _hasTransportation = p.hasTransportation;
+    _hasPetAtHome = p.hasPetAtHome;
+    _ownedPetTypes.addAll(p.ownedPetTypes);
     // 🔵 ZID (feature "compatibilite entre animaux")
     _acceptedCategories = Set.of(p.acceptedPetCategories);
   }
@@ -236,6 +259,26 @@ class _UpdateProfileSitterScreenState extends State<UpdateProfileSitterScreen> {
       return;
     }
 
+    // 🔵 ZID (kifma tlab: "zidni les 3 champs...") - nafs validation
+    // tel create_sitter_profile_2.dart (obligatoires, l'a9al reponse
+    // wa7da l'kol wa7ed).
+    if (_residenceType == null) {
+      showMessageDialog(context, 'sitter_residence_required_error'.tr());
+      return;
+    }
+    if (_hasTransportation == null) {
+      showMessageDialog(context, 'sitter_transportation_required_error'.tr());
+      return;
+    }
+    if (_hasPetAtHome == null) {
+      showMessageDialog(context, 'sitter_has_pet_required_error'.tr());
+      return;
+    }
+    if (_hasPetAtHome == true && _ownedPetTypes.isEmpty) {
+      showMessageDialog(context, 'sitter_own_pet_type_required_error'.tr());
+      return;
+    }
+
     setState(() => _isSubmitting = true);
 
     final bool profileSuccess = await _profileController.submitProfile(
@@ -263,6 +306,17 @@ class _UpdateProfileSitterScreenState extends State<UpdateProfileSitterScreen> {
       acceptedPetCategories: categoriesPayload,
     );
 
+    // 🔵 ZID (kifma tlab: "zidni les 3 champs win toskon w andk krhba
+    // wlle w andk pet f dar wlle") - PATCH mnfassel (nafs endpoint,
+    // partiel - "sitter-details"), nafs controller tel
+    // create_sitter_profile_2.dart (bla duplication).
+    final bool homeSuccess = await _homeController.submitHomeAndTransport(
+      residenceType: _residenceType!,
+      hasTransportation: _hasTransportation!,
+      hasPetAtHome: _hasPetAtHome!,
+      ownedPetTypes: _ownedPetTypes.toList(),
+    );
+
     // 🔵 photo: appel MNFASSEL bark lowkan el user 5tar photo jdida
     // (bla ma nab3thou el photo el 9dima mel jdid).
     bool photoSuccess = true;
@@ -282,7 +336,7 @@ class _UpdateProfileSitterScreenState extends State<UpdateProfileSitterScreen> {
     if (!mounted) return;
     setState(() => _isSubmitting = false);
 
-    if (!profileSuccess || !servicesSuccess || !photoSuccess) {
+    if (!profileSuccess || !servicesSuccess || !homeSuccess || !photoSuccess) {
       showMessageDialog(context, 'login_generic_error'.tr());
       return;
     }
@@ -295,6 +349,133 @@ class _UpdateProfileSitterScreenState extends State<UpdateProfileSitterScreen> {
     return Text(
       text,
       style: TextStyle(fontSize: sizes.screenWidth * 0.037, fontWeight: FontWeight.bold, color: AppColors.pinkpetsy),
+    );
+  }
+
+  String _residenceLabel(String? value) {
+    switch (value) {
+      case 'apartment':
+        return 'sitter_residence_apartment'.tr();
+      case 'house':
+        return 'sitter_residence_house'.tr();
+      case 'countryHouse':
+        return 'sitter_residence_country_house'.tr();
+      default:
+        return 'filter_any_label'.tr();
+    }
+  }
+
+  // --------------------------------------------------------------------
+  // 🔵 ZID (kifma tlab: "khallihom fi radio button wle check box kif
+  // nenzel ala haja w hiya tethall el choix mte3ha... bch ma ntawlouch
+  // fel interface barcha") - box COMPACT: sef WA7ED (esm + el choix
+  // el mkhtar tawa) ki msakra, w ki tdouss tefte7 el options (radio/
+  // checkbox). "_expandedFieldKey" (fel state el barrani) ye5alli GHIR
+  // WA7ED mel 3 boxes (résidence/transport/pet) maftou7 fi nefs el
+  // wa9t - nafs mant9 el accordion tel services (service_category_
+  // selector.dart).
+  // --------------------------------------------------------------------
+  Widget _compactChoiceField({
+    required String fieldKey,
+    required String label,
+    required String valueSummary,
+    required Widget optionsContent,
+    required AppSizes sizes,
+  }) {
+    final bool isExpanded = _expandedFieldKey == fieldKey;
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: AppColors.pinkpetsy.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.pinkpetsy.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: () => setState(() => _expandedFieldKey = isExpanded ? null : fieldKey),
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: sizes.screenWidth * 0.04, vertical: sizes.screenHeight * 0.016),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(label, style: TextStyle(fontWeight: FontWeight.w600, fontSize: sizes.screenWidth * 0.037)),
+                        SizedBox(height: sizes.screenHeight * 0.002),
+                        Text(
+                          valueSummary,
+                          style: TextStyle(color: AppColors.pinkpetsy, fontWeight: FontWeight.w600, fontSize: sizes.screenWidth * 0.032),
+                        ),
+                      ],
+                    ),
+                  ),
+                  AnimatedRotation(
+                    turns: isExpanded ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 200),
+                    child: Icon(Icons.keyboard_arrow_down, color: AppColors.pinkpetsy),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 200),
+            alignment: Alignment.topCenter,
+            child: isExpanded
+                ? Padding(
+                    padding: EdgeInsets.fromLTRB(sizes.screenWidth * 0.04, 0, sizes.screenWidth * 0.04, sizes.screenHeight * 0.016),
+                    child: optionsContent,
+                  )
+                : const SizedBox(width: double.infinity, height: 0),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _radioOptionRow({required String label, required bool selected, required VoidCallback onTap, required AppSizes sizes}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: sizes.screenHeight * 0.008),
+        child: Row(
+          children: [
+            Icon(
+              selected ? Icons.radio_button_checked : Icons.radio_button_off,
+              color: selected ? AppColors.pinkpetsy : Colors.grey,
+              size: sizes.screenWidth * 0.05,
+            ),
+            SizedBox(width: sizes.screenWidth * 0.025),
+            Text(label, style: TextStyle(fontSize: sizes.screenWidth * 0.034)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _checkboxOptionRow({required String label, required bool selected, required VoidCallback onTap, required AppSizes sizes}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: sizes.screenHeight * 0.008),
+        child: Row(
+          children: [
+            Icon(
+              selected ? Icons.check_box : Icons.check_box_outline_blank,
+              color: selected ? AppColors.pinkpetsy : Colors.grey,
+              size: sizes.screenWidth * 0.05,
+            ),
+            SizedBox(width: sizes.screenWidth * 0.025),
+            Text(label, style: TextStyle(fontSize: sizes.screenWidth * 0.034)),
+          ],
+        ),
+      ),
     );
   }
 
@@ -499,6 +680,137 @@ class _UpdateProfileSitterScreenState extends State<UpdateProfileSitterScreen> {
                       maxLines: 4,
                       validator: (value) => ProfileValidators.aboutYou(value, widget.currentProfile.role),
                       decoration: _fieldDecoration(context: context),
+                    ),
+
+                    SizedBox(height: sizes.myProfileSectionGap),
+
+                    // ----------------------------------------------------
+                    // 🔵 ZID (kifma tlab: "zidni les 3 champs win toskon
+                    // w andk krhba wlle w andk pet f dar wlle") - 3 boxes
+                    // compacts (radio/checkbox), msakrin, ki tdouss 3ala
+                    // wa7ed yefte7 (el ba9i yeglè9 automatique).
+                    // ----------------------------------------------------
+                    _compactChoiceField(
+                      fieldKey: 'residence',
+                      label: 'i_live_in_label'.tr(),
+                      valueSummary: _residenceLabel(_residenceType),
+                      sizes: sizes,
+                      optionsContent: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _radioOptionRow(
+                            label: 'sitter_residence_apartment'.tr(),
+                            selected: _residenceType == 'apartment',
+                            onTap: () => setState(() => _residenceType = 'apartment'),
+                            sizes: sizes,
+                          ),
+                          _radioOptionRow(
+                            label: 'sitter_residence_house'.tr(),
+                            selected: _residenceType == 'house',
+                            onTap: () => setState(() => _residenceType = 'house'),
+                            sizes: sizes,
+                          ),
+                          _radioOptionRow(
+                            label: 'sitter_residence_country_house'.tr(),
+                            selected: _residenceType == 'countryHouse',
+                            onTap: () => setState(() => _residenceType = 'countryHouse'),
+                            sizes: sizes,
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    SizedBox(height: sizes.screenHeight * 0.014),
+
+                    _compactChoiceField(
+                      fieldKey: 'transport',
+                      label: 'means_of_transportation_label'.tr(),
+                      valueSummary: _hasTransportation == null
+                          ? 'filter_any_label'.tr()
+                          : (_hasTransportation == true ? 'has_car_label'.tr() : 'no_car_label'.tr()),
+                      sizes: sizes,
+                      optionsContent: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _radioOptionRow(
+                            label: 'yes_label'.tr(),
+                            selected: _hasTransportation == true,
+                            onTap: () => setState(() => _hasTransportation = true),
+                            sizes: sizes,
+                          ),
+                          _radioOptionRow(
+                            label: 'no_label'.tr(),
+                            selected: _hasTransportation == false,
+                            onTap: () => setState(() => _hasTransportation = false),
+                            sizes: sizes,
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    SizedBox(height: sizes.screenHeight * 0.014),
+
+                    _compactChoiceField(
+                      fieldKey: 'pet',
+                      label: 'sitter_has_pet_question'.tr(),
+                      valueSummary: _hasPetAtHome == null
+                          ? 'filter_any_label'.tr()
+                          : (_hasPetAtHome == true
+                              ? (_ownedPetTypes.isEmpty
+                                  ? 'yes_label'.tr()
+                                  : '${'yes_label'.tr()} · ${_ownedPetTypes.map((t) => t == 'dog' ? 'sitter_pet_type_dog'.tr() : 'sitter_pet_type_cat'.tr()).join(' & ')}')
+                              : 'no_label'.tr()),
+                      sizes: sizes,
+                      optionsContent: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _radioOptionRow(
+                            label: 'yes_label'.tr(),
+                            selected: _hasPetAtHome == true,
+                            onTap: () => setState(() => _hasPetAtHome = true),
+                            sizes: sizes,
+                          ),
+                          _radioOptionRow(
+                            label: 'no_label'.tr(),
+                            selected: _hasPetAtHome == false,
+                            onTap: () => setState(() {
+                              _hasPetAtHome = false;
+                              // 🔵 ken el user ybaddel l"No", nmasso7 el
+                              // selection (bla data "orpheline") - nafs
+                              // mant9 create_sitter_profile_2.dart.
+                              _ownedPetTypes.clear();
+                            }),
+                            sizes: sizes,
+                          ),
+                          if (_hasPetAtHome == true) ...[
+                            SizedBox(height: sizes.screenHeight * 0.006),
+                            Padding(
+                              padding: EdgeInsets.only(left: sizes.screenWidth * 0.02),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _checkboxOptionRow(
+                                    label: 'sitter_pet_type_dog'.tr(),
+                                    selected: _ownedPetTypes.contains('dog'),
+                                    onTap: () => setState(() {
+                                      if (!_ownedPetTypes.remove('dog')) _ownedPetTypes.add('dog');
+                                    }),
+                                    sizes: sizes,
+                                  ),
+                                  _checkboxOptionRow(
+                                    label: 'sitter_pet_type_cat'.tr(),
+                                    selected: _ownedPetTypes.contains('cat'),
+                                    onTap: () => setState(() {
+                                      if (!_ownedPetTypes.remove('cat')) _ownedPetTypes.add('cat');
+                                    }),
+                                    sizes: sizes,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
 
                     SizedBox(height: sizes.myProfileSectionGap),
