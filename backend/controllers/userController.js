@@ -53,6 +53,11 @@ exports.getProfile = async (req, res) => {
       // bدal el flag el 5am (elli ynajjam yeb9a "false" ghalat lowkan
       // l'appel PATCH /complete-onboarding fechel marra).
       isProfileComplete: await ensureProfileComplete(baseUser),
+      // 🔵 ZID (kifma tlab: "el email ykoun réellement mawjoud -
+      // vérification bloquante") - splash_decider.dart ye7bes el user
+      // 3and écran "Vérifier l'email" ken "false" ("?? true" fel front -
+      // comptes 9dam grandfathered, mch متبلوكيين ghalat).
+      isEmailVerified: baseUser.isEmailVerified,
     };
 
     // 🔴 FIX: el 7ou9oul el 5assa bel sitter (services/residenceType/...)

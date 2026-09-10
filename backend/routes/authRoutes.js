@@ -16,4 +16,9 @@ router.post('/forgot-password', authController.forgotPassword);
 router.post('/verify-reset-code', authController.verifyPasswordResetCode);
 router.post('/reset-password', authController.resetPassword);
 
+// 🔵 ZID (kifma tlab: "el email ykoun réellement mawjoud" - vérification
+// bloquante ba3d el signup)
+router.post('/verify-email', authController.verifyEmail);
+router.post('/resend-verification-email', authController.resendVerificationEmail);
+
 module.exports = router;

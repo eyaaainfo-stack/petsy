@@ -7,7 +7,7 @@ import '../../widgets/button.dart';
 import '../../widgets/paw_widget.dart';
 import '../../controllers/validators.dart';
 import '../../controllers/auth_controller.dart';
-import 'user_create_profile.dart';
+import 'verify_email_screen.dart';
 import '../../widgets/message_dialog.dart';
 
 // ============================================================================
@@ -84,11 +84,13 @@ class _UserSignInScreenState extends State<UserSignInScreen> {
     if (!mounted) return;
     setState(() => _isSubmitting = false);
 
-    // 🔵 ZID houni: kif el signup yenja7, nemchiw l'écran UserCreateProfile
-    // (nafs role elli 5tarha el user mel account_type.dart)
+    // 🔵 ZID houni: kif el signup yenja7, nemchiw l'écran VerifyEmailScreen
+    // 9BAL (kifma tlab: "el email ykoun réellement mawjoud - vérification
+    // bloquante") - UserCreateProfileScreen (nafs role) yeji GHIR ba3d
+    // ma el user yconfirmi el code.
     if (result.success) {
       Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => UserCreateProfileScreen(role: widget.role)),
+        MaterialPageRoute(builder: (_) => VerifyEmailScreen(email: _emailController.text.trim())),
       );
     } else if (result.errorMessage == 'signup_email_exists_error'.tr()) {
       // 🔴 FIX: red INLINE ta7t el 7a9el email (mch popup) - setState

@@ -9,6 +9,39 @@ const crypto = require('crypto');
 // 🔴 FIX (bug: "compte déjà mawjoud yerja3 lel UserCreateProfileScreen
 // bدal ProfileOwnerScreen") - chraht kaملa fel services/onboardingService.js.
 const { ensureProfileComplete } = require('../services/onboardingService');
+// 🔵 ZID (kifma tlab: "el mails elli nestamlhom mch virtuelle") - email
+// 7a9i9i (SMTP), badalna el console.log el TODO 9dim.
+const { sendEmail } = require('../services/emailService');
+
+// 🔵 ZID (kifma tlab: "el email ykoun réellement mawjoud - vérification
+// bloquante") - nafs mant9 "code 5 ra9mat" tel forgot-password, ghir
+// houni l'confirmation el email nafsou (mch reset password).
+function buildVerificationEmail(code) {
+  return {
+    subject: 'Petsy - Confirmez votre e-mail',
+    text: `Votre code de vérification Petsy est : ${code}\n\nCe code expire dans 15 minutes.`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
+        <h2 style="color: #EC407A;">Petsy</h2>
+        <p>Bienvenue ! Voici votre code pour confirmer votre e-mail :</p>
+        <p style="font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #EC407A; text-align: center; padding: 16px 0;">${code}</p>
+        <p style="color: #888;">Ce code expire dans 15 minutes.</p>
+      </div>
+    `,
+  };
+}
+
+async function sendVerificationCode(user) {
+  const code = Math.floor(10000 + Math.random() * 90000).toString(); // 5 ra9mat
+  user.emailVerificationCode = code;
+  user.emailVerificationCodeExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 d9i9a
+  await user.save({ validateBeforeSave: false });
+
+  const emailSent = await sendEmail({ to: user.email, ...buildVerificationEmail(code) });
+  if (!emailSent) {
+    console.log(`\n📧 [VERIFY-EMAIL] (dev fallback) Code el verification lel "${user.email}": ${code} (yesse7 15 d9i9a)\n`);
+  }
+}
 
 // ==========================================
 // 1. LOGIN (Mo-waḥḥad lil-acteurs el-koll)
@@ -73,6 +106,10 @@ exports.login = async (req, res) => {
         // yethallich el home") - el front (user_login.dart) yestenna
         // 3ala hedha bch ye5tar ykhalliه ykammel el signup, mch home.
         isProfileComplete,
+        // 🔵 ZID (kifma tlab: "el email ykoun réellement mawjoud -
+        // vérification bloquante") - "?? true" fel front (mch "?? false")
+        // - comptes 9dam (undefined) grandfathered, mch متبلوكيين ghalat.
+        isEmailVerified: user.isEmailVerified,
       },
     });
   } catch (error) {
@@ -138,6 +175,12 @@ exports.register = async (req, res) => {
     await newUser.save();
     console.log(`🟡 [REGISTER] newUser.save() khlas (${Date.now() - startTime}ms) - _id: ${newUser._id}`);
 
+    // 🔵 ZID (kifma tlab: "el email ykoun réellement mawjoud - vérification
+    // bloquante") - neb3thou code el verification MBACHER (bla ha, el
+    // user ynajjam ye39od b email fake w ma yerja3ch abadan yconfirmih).
+    await sendVerificationCode(newUser);
+    console.log(`🟡 [REGISTER] sendVerificationCode khlas (${Date.now() - startTime}ms)`);
+
     // 🔵 ZID: token mel register zadit (kifha kif el login) - bch el
     // app tnajjam testa3mel el routes "protégées" (update profile...)
     // MBACHER ba3d el signup, bla ma te7taj écran login mnfassel.
@@ -160,6 +203,10 @@ exports.register = async (req, res) => {
         fullName: newUser.fullName,
         phone: newUser.phone,
         role: newUser.role,
+        // 🔵 ZID (kifma tlab): "vérification bloquante" - el front
+        // (user_signin.dart) yestenna 3ala hedha, dima "false" mbacher
+        // ba3d signup (el code mba3outh déjà, chraht fou9).
+        isEmailVerified: newUser.isEmailVerified,
       },
     });
     console.log(`✅ [REGISTER] res.status(201) mba3atha (${Date.now() - startTime}ms) - KHLAS\n`);
@@ -179,9 +226,9 @@ exports.register = async (req, res) => {
 
 // 🔵 3a-1: el user yekteb el email -> nchekkou mawjoud W men NEFS
 // el role (kifma tlab: "mch ydakhal mail mta3 sitter fel account
-// type owner") -> ken sa7i7, ن3امро code (5 ra9mat) + n"eb3thouh"
-// (console.log houni - mafamech service email 7a9i9i mrakez tawa,
-// TODO lel production).
+// type owner") -> ken sa7i7, ن3امро code (5 ra9mat) + neb3thouh
+// 7a9i9atan (emailService.js, SMTP) - lowkan mafamech config .env
+// mazal, yban fel terminal (dev fallback, chraht fel emailService.js).
 exports.forgotPassword = async (req, res) => {
   try {
     const { email, role } = req.body;
@@ -205,10 +252,28 @@ exports.forgotPassword = async (req, res) => {
     user.passwordResetCodeExpiry = new Date(Date.now() + 5 * 60 * 1000); // 5 dqi9a
     await user.save({ validateBeforeSave: false });
 
-    // 🔴 TODO: appel service email 7a9i9i (mathalan nodemailer/SendGrid)
-    // - mazel mch mrakez, fa n7ottou el code fel terminal bark (bch
-    // tenjjam tjarreb el flow kaملou tawa bla email 7a9i9i).
-    console.log(`\n📧 [FORGOT-PASSWORD] Code el verification lel "${email}" (role: ${role}): ${code} (yesse7 5 d9ay9)\n`);
+    // 🔴 FIX (kifma tlab: "el mails elli nestamlhom mch virtuelle") -
+    // email 7a9i9i (SMTP, emailService.js) bدal el console.log el TODO
+    // el 9dim. Lowkan el .env mazal ma fihech EMAIL_HOST/USER/PASS,
+    // sendEmail() rajja3 "false" w ykammel yban fel terminal (dev
+    // fallback) - el flow ma yertimch (forgot-password ye5dem dima,
+    // 7ata 9bal ma tzid el config SMTP).
+    const emailSent = await sendEmail({
+      to: email,
+      subject: 'Petsy - Code de vérification',
+      text: `Votre code de vérification Petsy est : ${code}\n\nCe code expire dans 5 minutes. Si vous n'avez pas demandé cette réinitialisation, ignorez cet e-mail.`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
+          <h2 style="color: #EC407A;">Petsy</h2>
+          <p>Voici votre code de vérification pour réinitialiser votre mot de passe :</p>
+          <p style="font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #EC407A; text-align: center; padding: 16px 0;">${code}</p>
+          <p style="color: #888;">Ce code expire dans 5 minutes. Si vous n'avez pas demandé cette réinitialisation, ignorez cet e-mail.</p>
+        </div>
+      `,
+    });
+    if (!emailSent) {
+      console.log(`\n📧 [FORGOT-PASSWORD] (dev fallback) Code el verification lel "${email}" (role: ${role}): ${code} (yesse7 5 d9ay9)\n`);
+    }
 
     res.status(200).json({ message: 'Verification code sent' });
   } catch (error) {
@@ -282,6 +347,72 @@ exports.resetPassword = async (req, res) => {
     res.status(200).json({ message: 'Password reset successfully' });
   } catch (error) {
     console.error('❌ RESET-PASSWORD ERROR:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// ==========================================
+// 4. VERIFY EMAIL (kifma tlab: "el email ykoun réellement mawjoud" -
+// vérification bloquante ba3d el signup, écran jdid ba3d
+// user_signin.dart, 9BAL UserCreateProfileScreen)
+// ==========================================
+// 🔵 nafs mant9 verifyPasswordResetCode (fou9) - ghir houni "isEmail
+// Verified = true" direct (mafamech resetToken mo2a99at, mafamech
+// écran ekher yeji ba3dha - "confirmation" bark, mch "reset").
+exports.verifyEmail = async (req, res) => {
+  try {
+    const { email, code } = req.body;
+
+    const user = await User.findOne({ email }).select('+emailVerificationCode +emailVerificationCodeExpiry');
+    if (!user || !user.emailVerificationCode) {
+      return res.status(400).json({ message: 'Invalid or expired code' });
+    }
+
+    if (user.emailVerificationCode !== code) {
+      return res.status(400).json({ message: 'Invalid code' });
+    }
+
+    if (!user.emailVerificationCodeExpiry || user.emailVerificationCodeExpiry < new Date()) {
+      return res.status(400).json({ message: 'Code expired' });
+    }
+
+    user.isEmailVerified = true;
+    user.emailVerificationCode = null;
+    user.emailVerificationCodeExpiry = null;
+    await user.save({ validateBeforeSave: false });
+
+    res.status(200).json({ message: 'Email verified' });
+  } catch (error) {
+    console.error('❌ VERIFY-EMAIL ERROR:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// ==========================================
+// 5. RESEND VERIFICATION EMAIL (bouton "Resend" fel écran, nafs mant9
+// forgotPassword - code jdid, expiry jdida)
+// ==========================================
+exports.resendVerificationEmail = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'No account found with this email' });
+    }
+
+    if (user.isEmailVerified) {
+      return res.status(200).json({ message: 'Email already verified' });
+    }
+
+    await sendVerificationCode(user);
+
+    res.status(200).json({ message: 'Verification code sent' });
+  } catch (error) {
+    console.error('❌ RESEND-VERIFICATION-EMAIL ERROR:', error);
     res.status(500).json({ error: error.message });
   }
 };

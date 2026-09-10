@@ -33,8 +33,17 @@ class LoginResult {
   // ye5tar ykhalliه ykammel el signup (UserCreateProfileScreen), mch
   // home direct.
   final bool isProfileComplete;
+  // 🔵 ZID (kifma tlab: "el email ykoun réellement mawjoud - vérification
+  // bloquante") - "true" par défaut (bla ha, ay comportement mch metwaqqa3
+  // lowkan el backend ma yeb3athch had field - mafhouma "verified"
+  // GHIR ken el backend ye9oul EXPLICITEMENT "false").
+  final bool isEmailVerified;
+  // 🔵 ye7taj-ha VerifyEmailScreen (email el user - déjà 3andna fel
+  // formulaire, ama nzidouha houni zeda l'consistency/reuse mel
+  // splash_decider.dart, elli ma3andouch el TextEditingController).
+  final String? email;
 
-  const LoginResult._(this.success, this.errorType, [this.token, this.fullName, this.city, this.role, this.photoUrl, this.isVerified = false, this.gender, this.isProfileComplete = true]);
+  const LoginResult._(this.success, this.errorType, [this.token, this.fullName, this.city, this.role, this.photoUrl, this.isVerified = false, this.gender, this.isProfileComplete = true, this.isEmailVerified = true, this.email]);
 
   factory LoginResult.success(
     String token, {
@@ -45,8 +54,10 @@ class LoginResult {
     bool isVerified = false,
     String? gender,
     bool isProfileComplete = true,
+    bool isEmailVerified = true,
+    String? email,
   }) =>
-      LoginResult._(true, LoginErrorType.none, token, fullName, city, role, photoUrl, isVerified, gender, isProfileComplete);
+      LoginResult._(true, LoginErrorType.none, token, fullName, city, role, photoUrl, isVerified, gender, isProfileComplete, isEmailVerified, email);
   factory LoginResult.emailNotFound() => const LoginResult._(false, LoginErrorType.invalidEmail);
   factory LoginResult.wrongPassword() => const LoginResult._(false, LoginErrorType.invalidPassword);
   factory LoginResult.genericError() => const LoginResult._(false, LoginErrorType.generic);
@@ -118,6 +129,10 @@ class AuthController {
           isVerified: user['isVerified'] as bool? ?? false,
           gender: user['gender'] as String?,
           isProfileComplete: user['isProfileComplete'] as bool? ?? true,
+          // 🔵 ZID (kifma tlab): "?? true" (mch "?? false") - comptes
+          // 9dam (backend ma yeb3athch had field) grandfathered.
+          isEmailVerified: user['isEmailVerified'] as bool? ?? true,
+          email: user['email'] as String?,
         );
       } else if (response.statusCode == 404) {
         // el backend yrajja3 404 kif el email mch mawjoud

@@ -49,6 +49,21 @@ const userSchema = new mongoose.Schema(
       lat: { type: Number, default: null },
       lng: { type: Number, default: null },
     },
+    // 🔵 ZID (kifma tlab: "el email ykoun réellement mawjoud, mch
+    // virtuelle" - vérification bloquante) - code el verification (5
+    // ra9mat, nafs style "Forgot Password") mba3thi lel email ki el
+    // user ye39od - "isEmailVerified" false l'DEFAUT, w el front (splash_
+    // decider.dart/user_login.dart) ye7bes el user 3and écran "Vérifier
+    // l'email" 7atta yconfirmi (mch ynajjam yousel l'app).
+    //
+    // 🔴 BACKWARD-COMPAT: comptes 9dam (9bal had el feature) MA 3andhomch
+    // had field khales (undefined fel Mongo, mch "false") - el front
+    // ye5dem b "?? true" (mch "?? false") ki ye9ra had field, bch el
+    // comptes el 9dam ma yet7absouch b'ghalta (grandfathered - verified
+    // implicitement, 7it el email tou3hom déjà connu w mesta3mel).
+    isEmailVerified: { type: Boolean, default: false },
+    emailVerificationCode: { type: String, select: false, default: null },
+    emailVerificationCodeExpiry: { type: Date, select: false, default: null },
     // 🔵 ZID: "Forgot Password" flow (mdp_oublier_1/2/3.dart) - code el
     // verification (5 ra9mat) + expiry, mba3d token mo2a99at (ba3d ma
     // el code yet2akked, bch el user ynajjam ye5dem "Set New Password"

@@ -11,6 +11,7 @@ import '../../services/power_save_service.dart';
 import 'language.dart';
 import 'account_type.dart';
 import 'user_create_profile.dart';
+import 'verify_email_screen.dart';
 import 'owner/profile_owner.dart';
 import 'sitter/sitter_profile.dart';
 import 'admin/admin_home.dart';
@@ -115,6 +116,19 @@ class _SplashDeciderState extends State<SplashDecider> {
       final Map<String, dynamic> data = jsonDecode(response.body) as Map<String, dynamic>;
       final Map<String, dynamic> user = data['user'] as Map<String, dynamic>;
       final String role = user['role'] as String? ?? '';
+
+      // 🔴 FIX (kifma tlab: "el email ykoun réellement mawjoud -
+      // vérification bloquante") - ken el session mahfoudha (el user
+      // 3amel ghir signup w 5arej 9bal ma yconfirmi el code, wela
+      // 3awad login mel jdid mel session el jdida) w mazel ma
+      // confirmech, el splash ye7bsou 3and VerifyEmailScreen (mch
+      // home, mch 7atta UserCreateProfileScreen) - "?? true" (mch
+      // "?? false") bch comptes 9dam (backend ma yeb3athch had field)
+      // ma yet7absouch b'ghalta.
+      final bool isEmailVerified = user['isEmailVerified'] as bool? ?? true;
+      if (!isEmailVerified) {
+        return VerifyEmailScreen(email: user['email'] as String? ?? '');
+      }
 
       // 🔴 FIX (kifma tlab: "idha el creation du compte mch fini ma
       // yethallich el home") - ken el profile mazel ma kammelch (el
