@@ -585,6 +585,14 @@ exports.respondToBooking = async (req, res) => {
         // - MCH 3adad global tel pets (booking.pets.length) - kol
         // service, el 3adad houwa "s.petIds.length" (chraht fel
         // bookingServiceSchema, models/booking.js).
+        // 🔴 FIX (kifma tlab: "el checkout mta3 service hebergement...
+        // tethseb b prix nhar bark") - "sitting_long_term_boarding"
+        // (per jour) lezmou *nb nights (checkOut - checkIn, days) -
+        // el ba9i el services (per visite) ma yetbeddlouch (nafs
+        // mant9 el frontend, request_a_book.dart, _nightsCount/_total).
+        const PER_DAY_SERVICE_ID = 'sitting_long_term_boarding';
+        const nightsCount = Math.max(1, Math.round((booking.checkOut - booking.checkIn) / (1000 * 60 * 60 * 24)));
+
         let newTotal = 0;
         booking.services = booking.services.map((s) => {
           // 🔵 fallback: lowkan (7ala nadra) had sitter ma3andouch had
@@ -592,7 +600,8 @@ exports.respondToBooking = async (req, res) => {
           // (bch ma tsirch "0 DT" bla ma3na).
           const price = candidatePriceMap.has(s.serviceId) ? candidatePriceMap.get(s.serviceId) : s.price;
           const petCount = (s.petIds || []).length || booking.pets.length; // fallback: data 9dima (9bal el feature)
-          newTotal += price * petCount;
+          const multiplier = s.serviceId === PER_DAY_SERVICE_ID ? nightsCount : 1;
+          newTotal += price * petCount * multiplier;
           return { serviceId: s.serviceId, price, petIds: s.petIds };
         });
         booking.total = newTotal;

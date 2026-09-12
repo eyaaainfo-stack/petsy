@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../../constants/app_colors.dart';
+import '../../../constants/app_sizes.dart';
 import '../../../models/pet_summary.dart';
 import '../../../services/api_service.dart';
 import '../../../controllers/auth_session.dart';
@@ -196,7 +197,8 @@ class _ProfileOwnerScreenState extends State<ProfileOwnerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size;
+    final sizes = AppSizes.of(context);
+    final screenSize = MediaQuery.of(context).size; // 🔵 lezمha l’el _SitterCard/_HeaderIconButton (parametrized widgets, ye5dhou screenWidth kel param, mch AppSizes direct).
     final Color mutedTextColor =
         Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.65) ?? Colors.grey;
 
@@ -215,11 +217,11 @@ class _ProfileOwnerScreenState extends State<ProfileOwnerScreen> {
         // t5alli "Available for urgence sitting" (w el screen kaملها)
         // tنجم tetsecrolli lowkan el sitters aktar mel blasa el fadhya.
         child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: screenSize.width * 0.06),
+          padding: EdgeInsets.symmetric(horizontal: sizes.profileOwnerHorizontalPadding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SizedBox(height: screenSize.height * 0.02),
+              SizedBox(height: sizes.profileOwnerTopGap),
 
               // ------------------------------------------------------
               // Header: photo (mrabba3) + esm/blasa + menu + notif
@@ -237,8 +239,8 @@ class _ProfileOwnerScreenState extends State<ProfileOwnerScreen> {
                       ClipRRect(
                         borderRadius: BorderRadius.circular(14),
                         child: Container(
-                          width: screenSize.width * 0.13,
-                          height: screenSize.width * 0.13,
+                          width: sizes.profileOwnerAvatarSize,
+                          height: sizes.profileOwnerAvatarSize,
                           color: AppColors.vertpetsy.withOpacity(0.15),
                           // 🔵 ZID: el photo el 7a9i9iya - bytes (mémoire,
                           // ba3d signup direct) awalan, wala URL (mel
@@ -249,19 +251,19 @@ class _ProfileOwnerScreenState extends State<ProfileOwnerScreen> {
                               ? Image.memory(widget.ownerPhotoBytes!, fit: BoxFit.cover)
                               : widget.ownerPhotoUrl != null
                                   ? Image.network(widget.ownerPhotoUrl!, fit: BoxFit.cover)
-                                  : Icon(Icons.person, color: AppColors.vertpetsy, size: screenSize.width * 0.08),
+                                  : Icon(Icons.person, color: AppColors.vertpetsy, size: sizes.profileOwnerAvatarIcon),
                         ),
                       ),
                       if (widget.isVerified)
                         Positioned(
                           right: -3,
                           bottom: -3,
-                          child: VerifiedBadge(size: screenSize.width * 0.038),
+                          child: VerifiedBadge(size: sizes.profileOwnerAvatarBadge),
                         ),
                     ],
                   ),
 
-                  SizedBox(width: screenSize.width * 0.03),
+                  SizedBox(width: sizes.profileOwnerAvatarNameGap),
 
                   Expanded(
                     child: Column(
@@ -270,7 +272,7 @@ class _ProfileOwnerScreenState extends State<ProfileOwnerScreen> {
                         Text(
                           'home_greeting'.tr(namedArgs: {'name': widget.ownerName}),
                           style: TextStyle(
-                            fontSize: screenSize.width * 0.042,
+                            fontSize: sizes.profileOwnerGreetingFontSize,
                             fontWeight: FontWeight.bold,
                             color: Theme.of(context).textTheme.bodyLarge?.color,
                           ),
@@ -278,7 +280,7 @@ class _ProfileOwnerScreenState extends State<ProfileOwnerScreen> {
                         Text(
                           '${widget.ownerCity}, ${'tunisia_label'.tr()}',
                           style: TextStyle(
-                            fontSize: screenSize.width * 0.032,
+                            fontSize: sizes.profileOwnerCityFontSize,
                             color: mutedTextColor,
                           ),
                         ),
@@ -291,7 +293,7 @@ class _ProfileOwnerScreenState extends State<ProfileOwnerScreen> {
                   _HeaderIconButton(
                     icon: Icons.menu,
                     backgroundColor: AppColors.pinkpetsy,
-                    size: screenSize.width * 0.10,
+                    size: sizes.profileOwnerHeaderIconSize,
                     onTap: () {
                       // 🔴 FIX: kanet TODO - tawa yeftah SidebarOwner
                       // (widgets/drawers/sidebar_owner.dart).
@@ -299,14 +301,14 @@ class _ProfileOwnerScreenState extends State<ProfileOwnerScreen> {
                     },
                   ),
 
-                  SizedBox(width: screenSize.width * 0.02),
+                  SizedBox(width: sizes.profileOwnerHeaderIconGap),
 
                   // 🔵 ZID: bouton notification jdid, b no9ta 7amra
                   // lowkan fama notification jdida.
                   _HeaderIconButton(
                     icon: Icons.notifications_outlined,
                     backgroundColor: AppColors.vertpetsy,
-                    size: screenSize.width * 0.10,
+                    size: sizes.profileOwnerHeaderIconSize,
                     showBadge: _hasUnreadNotifications,
                     onTap: () {
                       setState(() => _hasUnreadNotifications = false);
@@ -319,7 +321,7 @@ class _ProfileOwnerScreenState extends State<ProfileOwnerScreen> {
                 ],
               ),
 
-              SizedBox(height: screenSize.height * 0.03),
+              SizedBox(height: sizes.profileOwnerHeaderPetsGap),
 
               // ------------------------------------------------------
               // "Your Pets"
@@ -329,7 +331,7 @@ class _ProfileOwnerScreenState extends State<ProfileOwnerScreen> {
                   Text(
                     'your_pets_label'.tr(),
                     style: TextStyle(
-                      fontSize: screenSize.width * 0.042,
+                      fontSize: sizes.profileOwnerSectionTitleFontSize,
                       fontWeight: FontWeight.bold,
                       color: Theme.of(context).textTheme.bodyLarge?.color,
                     ),
@@ -351,7 +353,7 @@ class _ProfileOwnerScreenState extends State<ProfileOwnerScreen> {
                     child: Text(
                       'see_all_label'.tr(),
                       style: TextStyle(
-                        fontSize: screenSize.width * 0.032,
+                        fontSize: sizes.profileOwnerSeeAllFontSize,
                         fontWeight: FontWeight.w600,
                         color: AppColors.vertpetsy,
                       ),
@@ -360,15 +362,15 @@ class _ProfileOwnerScreenState extends State<ProfileOwnerScreen> {
                 ],
               ),
 
-              SizedBox(height: screenSize.height * 0.015),
+              SizedBox(height: sizes.profileOwnerPetsRowGap),
 
               SizedBox(
-                height: screenSize.width * 0.24,
+                height: sizes.profileOwnerPetsRowHeight,
                 child: ListView(
                   scrollDirection: Axis.horizontal,
                   children: [
                     AddPetTile(
-                      size: screenSize.width * 0.18,
+                      size: sizes.profileOwnerAddPetTileSize,
                       onTap: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
@@ -382,24 +384,24 @@ class _ProfileOwnerScreenState extends State<ProfileOwnerScreen> {
                         );
                       },
                     ),
-                    SizedBox(width: screenSize.width * 0.04),
+                    SizedBox(width: sizes.profileOwnerPetTileGap),
                     for (int i = 0; i < widget.pets.length; i++) ...[
                       PetTile(
                         pet: widget.pets[i],
-                        size: screenSize.width * 0.18,
+                        size: sizes.profileOwnerAddPetTileSize,
                         onTap: () {
                           Navigator.of(context).push(
                             MaterialPageRoute(builder: (_) => PetProfileScreen(pet: widget.pets[i])),
                           );
                         },
                       ),
-                      if (i != widget.pets.length - 1) SizedBox(width: screenSize.width * 0.04),
+                      if (i != widget.pets.length - 1) SizedBox(width: sizes.profileOwnerPetTileGap),
                     ],
                   ],
                 ),
               ),
 
-              SizedBox(height: screenSize.height * 0.03),
+              SizedBox(height: sizes.profileOwnerPetsSearchGap),
 
               // ------------------------------------------------------
               // 🔵 ZID (kifma tlab): "kif nznel ala el search" -> ymchi
@@ -421,15 +423,15 @@ class _ProfileOwnerScreenState extends State<ProfileOwnerScreen> {
                   },
                   decoration: InputDecoration(
                     hintText: 'search_hint'.tr(),
-                    hintStyle: TextStyle(color: mutedTextColor, fontSize: screenSize.width * 0.035),
+                    hintStyle: TextStyle(color: mutedTextColor, fontSize: sizes.profileOwnerSearchFontSize),
                     prefixIcon: Icon(Icons.search, color: AppColors.vertpetsy),
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(vertical: screenSize.height * 0.018),
+                    contentPadding: EdgeInsets.symmetric(vertical: sizes.profileOwnerSearchPaddingV),
                   ),
                 ),
               ),
 
-              SizedBox(height: screenSize.height * 0.03),
+              SizedBox(height: sizes.profileOwnerSearchSectionGap),
 
               // ------------------------------------------------------
               // "Available for urgence sitting"
@@ -437,36 +439,36 @@ class _ProfileOwnerScreenState extends State<ProfileOwnerScreen> {
               Text(
                 'available_urgent_sitting_label'.tr(),
                 style: TextStyle(
-                  fontSize: screenSize.width * 0.04,
+                  fontSize: sizes.profileOwnerUrgentTitleFontSize,
                   fontWeight: FontWeight.bold,
                   color: Theme.of(context).textTheme.bodyLarge?.color,
                 ),
               ),
 
-              SizedBox(height: screenSize.height * 0.015),
+              SizedBox(height: sizes.profileOwnerUrgentTitleGap),
 
               // 🔵 3 7alet mumkina: mazel el appel ye5dem (loading) -
               // wala el appel khlas w el list fadhya (empty state,
               // mch data fake) - wala 3andna sitters 7a9i9iyin (Grid).
               if (_isLoadingSitters)
                 Padding(
-                  padding: EdgeInsets.symmetric(vertical: screenSize.height * 0.06),
+                  padding: EdgeInsets.symmetric(vertical: sizes.profileOwnerLoadingPaddingV),
                   child: Center(
                     child: CircularProgressIndicator(color: AppColors.vertpetsy),
                   ),
                 )
               else if (_sittersInMyCity.isEmpty)
                 Padding(
-                  padding: EdgeInsets.symmetric(vertical: screenSize.height * 0.04),
+                  padding: EdgeInsets.symmetric(vertical: sizes.profileOwnerEmptyPaddingV),
                   child: Center(
                     child: Column(
                       children: [
-                        Icon(Icons.pets, color: mutedTextColor.withOpacity(0.5), size: screenSize.width * 0.12),
-                        SizedBox(height: screenSize.height * 0.012),
+                        Icon(Icons.pets, color: mutedTextColor.withOpacity(0.5), size: sizes.profileOwnerEmptyIcon),
+                        SizedBox(height: sizes.profileOwnerEmptyIconTextGap),
                         Text(
                           'no_sitters_available_label'.tr(),
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: mutedTextColor, fontSize: screenSize.width * 0.034),
+                          style: TextStyle(color: mutedTextColor, fontSize: sizes.profileOwnerEmptyTextFontSize),
                         ),
                       ],
                     ),
@@ -482,8 +484,8 @@ class _ProfileOwnerScreenState extends State<ProfileOwnerScreen> {
                   itemCount: _sittersInMyCity.length,
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
-                    crossAxisSpacing: screenSize.width * 0.03,
-                    mainAxisSpacing: screenSize.width * 0.03,
+                    crossAxisSpacing: sizes.profileOwnerGridSpacing,
+                    mainAxisSpacing: sizes.profileOwnerGridSpacing,
                     childAspectRatio: 0.78,
                   ),
                   itemBuilder: (context, index) {
@@ -509,7 +511,7 @@ class _ProfileOwnerScreenState extends State<ProfileOwnerScreen> {
                   },
                 ),
 
-              SizedBox(height: screenSize.height * 0.03),
+              SizedBox(height: sizes.profileOwnerBottomGap),
             ],
           ),
         ),
@@ -670,7 +672,7 @@ class _SitterCard extends StatelessWidget {
             children: [
               Icon(Icons.star, color: Colors.amber, size: screenWidth * 0.032),
               SizedBox(width: screenWidth * 0.01),
-              Text(sitter.rating.toString(), style: TextStyle(fontSize: screenWidth * 0.028, color: mutedTextColor)),
+              Text(sitter.rating.toString(), style: TextStyle(fontSize: screenWidth * 0.032, color: mutedTextColor)),
               SizedBox(width: screenWidth * 0.025),
               Icon(Icons.location_on_outlined, color: mutedTextColor, size: screenWidth * 0.032),
               // 🔴 FIX: kanet dima "0km" (mahroudh el 9dim) - tawa
@@ -678,7 +680,7 @@ class _SitterCard extends StatelessWidget {
               // el owner wla el sitter ma3andouch location mzouda.
               Text(
                 sitter.distanceKm != null ? '${sitter.distanceKm}km' : '-',
-                style: TextStyle(fontSize: screenWidth * 0.028, color: mutedTextColor),
+                style: TextStyle(fontSize: screenWidth * 0.032, color: mutedTextColor),
               ),
             ],
           ),

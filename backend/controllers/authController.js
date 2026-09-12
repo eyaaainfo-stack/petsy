@@ -12,50 +12,43 @@ const { ensureProfileComplete } = require('../services/onboardingService');
 // 🔵 ZID (kifma tlab: "el mails elli nestamlhom mch virtuelle") - email
 // 7a9i9i (SMTP), badalna el console.log el TODO 9dim.
 const { sendEmail } = require('../services/emailService');
+// 🔵 ZID (kifma tlab: "Continue with Google") - njiw n-verifiw el idToken
+// eli el Flutter app yeb3athou (mch nethiklou fih w khalas - lezem
+// n-verifiwh m3a Google server-side, bla ha ay 7ad ynajjam yeb3ath
+// idToken fake w yedkhol b'esm 7ad okhor).
+const { OAuth2Client } = require('google-auth-library');
+const googleClient = new OAuth2Client(process.env.GOOGLE_WEB_CLIENT_ID);
 
-// 🔵 ZID (kifma tlab: "el email ykoun réellement mawjoud - vérification
-// bloquante") - nafs mant9 "code 5 ra9mat" tel forgot-password, ghir
-// houni l'confirmation el email nafsou (mch reset password).
-function buildVerificationEmail(code) {
-  return {
-    subject: 'Petsy - Confirmez votre e-mail',
-    text: `Votre code de vérification Petsy est : ${code}\n\nCe code expire dans 15 minutes.`,
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
-        <h2 style="color: #EC407A;">Petsy</h2>
-        <p>Bienvenue ! Voici votre code pour confirmer votre e-mail :</p>
-        <p style="font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #EC407A; text-align: center; padding: 16px 0;">${code}</p>
-        <p style="color: #888;">Ce code expire dans 15 minutes.</p>
-      </div>
-    `,
-  };
-}
+// 🔴 FIX (kifma tlab: "nahhili el verification mta3 el email... maneha
+// famma code zeyed") - buildVerificationEmail()/sendVerificationCode()
+// (w exports.verifyEmail/resendVerificationEmail ta7t, w el routes
+// mte3hom fel authRoutes.js) tna77aw - el frontend ma3adech ye3ayet
+// bihom (signup ma3adech mandatory yverifi email). "Forgot Password"
+// (fou9 fel fichier hedha, forgotPassword/verifyPasswordResetCode/
+// resetPassword) mazel intact - flow separate, ma tbeddelch.
 
-async function sendVerificationCode(user) {
-  const code = Math.floor(10000 + Math.random() * 90000).toString(); // 5 ra9mat
-  user.emailVerificationCode = code;
-  user.emailVerificationCodeExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 d9i9a
-  await user.save({ validateBeforeSave: false });
-
-  const emailSent = await sendEmail({ to: user.email, ...buildVerificationEmail(code) });
-  if (!emailSent) {
-    console.log(`\n📧 [VERIFY-EMAIL] (dev fallback) Code el verification lel "${user.email}": ${code} (yesse7 15 d9i9a)\n`);
-  }
-}
 
 // ==========================================
 // 1. LOGIN (Mo-waḥḥad lil-acteurs el-koll)
 // ==========================================
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, role } = req.body;
 
-    // 1. Check user b-email (Admin, Owner, Sitter, walla Courier)
+    // 🔴 FIX (kifma tlab: "el compte mta3 sitter ma ynajemch yet7all
+    // ken ma el marra jeya ye5tar account type sitter... mch yhellou
+    // men owner par exemple") - {email, role} f nefs el filter, NAFS
+    // mant9 forgotPassword (fou9, exports.forgotPassword) - el compte
+    // ma yet7allch ken el "account type" el mختار (owner/sitter/courier/
+    // admin) mch NAFS role el compte fel base.
     // 🔵 .select('+password') LEZEM tzid ba3d ma 7attait select:false
     // fel schema - bla ha, user.password ykoun undefined houni.
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findOne({ email, role }).select('+password');
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      // 🔵 message 3am (mch "email exists lakin role mch sa7i7" b
+      // exemple) - bch ma nzidouch info l'ay wa7ed ye5tabar b'iha
+      // (security: email enumeration) - nafs mant9 forgotPassword.
+      return res.status(404).json({ message: 'No account found with this email for this account type' });
     }
 
     // 2. Verifi password
@@ -175,11 +168,13 @@ exports.register = async (req, res) => {
     await newUser.save();
     console.log(`🟡 [REGISTER] newUser.save() khlas (${Date.now() - startTime}ms) - _id: ${newUser._id}`);
 
-    // 🔵 ZID (kifma tlab: "el email ykoun réellement mawjoud - vérification
-    // bloquante") - neb3thou code el verification MBACHER (bla ha, el
-    // user ynajjam ye39od b email fake w ma yerja3ch abadan yconfirmih).
-    await sendVerificationCode(newUser);
-    console.log(`🟡 [REGISTER] sendVerificationCode khlas (${Date.now() - startTime}ms)`);
+    // 🔴 FIX (kifma tlab: "nahhili el verification mta3 el email... c
+    // pas la peine bch ta3mel verification") - ma3adech neb3thou/
+    // ne5tajou code el verification fel signup (el SMTP deja mzabet w
+    // el mail 7a9i9i - "isEmailVerified" default true tawa fel model,
+    // ma nchekkouhach houni). El code yeb9a esta3mel GHIR fel "Forgot
+    // Password" (mdp_oublier_1/2/3.dart) - hedhak flow separate w
+    // mazel intact.
 
     // 🔵 ZID: token mel register zadit (kifha kif el login) - bch el
     // app tnajjam testa3mel el routes "protégées" (update profile...)
@@ -217,6 +212,236 @@ exports.register = async (req, res) => {
     // terminal. Tawa lازem yban kaملou (message + stack).
     console.error(`❌ [REGISTER] ERROR ba3d ${Date.now() - startTime}ms:`, error);
     res.status(500).json({ error: error.message });
+  }
+};
+
+// ==========================================
+// 2bis. GOOGLE AUTH ("Continue with Google" - Login WELA Signup)
+// ==========================================
+// 🔵 ZID (kifma tlab: "continuez avec google, tconnecti automatique kifha
+// kif Instagram") - route wa7da testa3mel l'el ZOUZ 7alat:
+//  - Email deja mawjoud (compte 3adi WELA google) -> LOGIN (role ma
+//    yet7ejjch, na5douh mel base).
+//  - Email mch mawjoud -> SIGNUP, ama houni lezمna "role" (owner/sitter/
+//    courier) - el front lezem yeb3athou GHIR ki el bouton "Continue
+//    with Google" fi écran signup mnfassel bel role (user_signin.dart,
+//    eli deja ye39ed "role" kel paramètre). Ken jaya mel écran LOGIN
+//    (user_login.dart) w el email mch mawjoud, nra7lou 404-style bch
+//    el front yeb3thou lel "choisir role" mel bidaya (kifha kif compte
+//    3adi mch mawjoud).
+exports.googleAuth = async (req, res) => {
+  try {
+    const { idToken, role } = req.body;
+    if (!idToken) {
+      return res.status(400).json({ message: 'idToken manquant' });
+    }
+
+    // 1. Verifi el idToken m3a Google (signature + audience + expiry) -
+    // ken el token fake wela mnte3 app okhra, hedhi tarmi exception w
+    // el catch ta7t yeb3ath 401.
+    const ticket = await googleClient.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_WEB_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    const { sub: googleId, email, name, picture, email_verified } = payload;
+
+    if (!email_verified) {
+      return res.status(400).json({ message: "L'email Google n'est pas vérifié" });
+    }
+
+    // 2. Email deja mawjoud? -> LOGIN (bla ma ne7taj role)
+    let user = await User.findOne({ email });
+
+    if (user) {
+      // Link automatique (compte kan 3adi b'email/password, tawa
+      // ye39ed connect b'Google zeda - mch confli9).
+      if (!user.googleId) {
+        user.googleId = googleId;
+      }
+      // Google deja verifi el email (email_verified true) - manti9i
+      // n7ottou isEmailVerified true, bla ma nestennewh yekteb code.
+      if (!user.isEmailVerified) {
+        user.isEmailVerified = true;
+      }
+      if (!user.photoUrl && picture) {
+        user.photoUrl = picture;
+      }
+      await user.save({ validateBeforeSave: false });
+    } else {
+      // 3. Compte jdid - lezمna role (mel écran signup, mch login)
+      if (!role) {
+        return res.status(404).json({
+          message: 'Aucun compte avec cet e-mail. Veuillez créer un compte.',
+          code: 'NO_ACCOUNT',
+        });
+      }
+
+      const userData = {
+        email,
+        googleId,
+        fullName: name || '',
+        photoUrl: picture || '',
+        isEmailVerified: true, // Google deja verifi
+      };
+
+      switch (role) {
+        case 'owner':
+          user = new Owner(userData);
+          break;
+        case 'sitter':
+          user = new Sitter(userData);
+          break;
+        case 'courier':
+          user = new Courier(userData);
+          break;
+        default:
+          return res.status(400).json({ message: 'Invalid role for registration' });
+      }
+      await user.save();
+    }
+
+    const token = jwt.sign(
+      { userId: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    const isProfileComplete = await ensureProfileComplete(user);
+
+    res.status(200).json({
+      message: 'Google auth successful',
+      token,
+      user: {
+        id: user._id,
+        email: user.email,
+        fullName: user.fullName,
+        phone: user.phone,
+        role: user.role,
+        city: user.city,
+        photoUrl: user.photoUrl,
+        isVerified: user.isVerified === true,
+        gender: user.gender,
+        isProfileComplete,
+        isEmailVerified: user.isEmailVerified,
+      },
+    });
+  } catch (error) {
+    console.error('❌ GOOGLE AUTH ERROR:', error);
+    res.status(401).json({ message: 'Échec de l\'authentification Google', error: error.message });
+  }
+};
+
+// ==========================================
+// 2ter. FACEBOOK AUTH ("Continue with Facebook" - Login WELA Signup)
+// ==========================================
+// 🔵 ZID (kifma tlab: "kima emes connexion tsir bel google, tawwa
+// nhbha bel fb") - NAFS mant9 exports.googleAuth bالضبط (fou9), ghir
+// el verification: Facebook mafamouch "idToken" signé kifha kif Google
+// - houni n-verifiw el "accessToken" b'appel direct l'Facebook Graph
+// API (/me) - ken el token fake/expired, Facebook yrajja3 erreur.
+exports.facebookAuth = async (req, res) => {
+  try {
+    const { accessToken, role } = req.body;
+    if (!accessToken) {
+      return res.status(400).json({ message: 'accessToken manquant' });
+    }
+
+    // 1. Verifi el accessToken m3a Facebook (njibou el profile fi nafs
+    // el appel - id, email, name, picture). Node 18+ 3andou "fetch"
+    // global (bla dependency zeyda).
+    const fbResponse = await fetch(
+      `https://graph.facebook.com/me?fields=id,name,email,picture.type(large)&access_token=${encodeURIComponent(accessToken)}`
+    );
+    const fbData = await fbResponse.json();
+    if (fbData.error) {
+      return res.status(401).json({ message: 'Token Facebook invalide', error: fbData.error.message });
+    }
+
+    const { id: facebookId, name, email, picture } = fbData;
+    // 🔴 IMPORTANT: Facebook ynajjam ma yrجja3ch email (compte bla
+    // email verified 3and Facebook nafsou, wela l'user rafedh el
+    // permission "email" fel dialog) - el schema/logic el kol mabnia
+    // 3al email unique, fa bla email ma nnajmouch ne39dou compte.
+    if (!email) {
+      return res.status(400).json({ message: "Impossible de récupérer l'e-mail Facebook. Vérifiez les autorisations accordées." });
+    }
+
+    // 2. Email deja mawjoud? -> LOGIN (bla ma ne7taj role)
+    let user = await User.findOne({ email });
+
+    if (user) {
+      if (!user.facebookId) {
+        user.facebookId = facebookId;
+      }
+      if (!user.isEmailVerified) {
+        user.isEmailVerified = true;
+      }
+      if (!user.photoUrl && picture && picture.data && picture.data.url) {
+        user.photoUrl = picture.data.url;
+      }
+      await user.save({ validateBeforeSave: false });
+    } else {
+      // 3. Compte jdid - lezمna role (mel écran signup, mch login)
+      if (!role) {
+        return res.status(404).json({
+          message: 'Aucun compte avec cet e-mail. Veuillez créer un compte.',
+          code: 'NO_ACCOUNT',
+        });
+      }
+
+      const userData = {
+        email,
+        facebookId,
+        fullName: name || '',
+        photoUrl: (picture && picture.data && picture.data.url) || '',
+        isEmailVerified: true, // Facebook deja verifi (nafs mant9 Google)
+      };
+
+      switch (role) {
+        case 'owner':
+          user = new Owner(userData);
+          break;
+        case 'sitter':
+          user = new Sitter(userData);
+          break;
+        case 'courier':
+          user = new Courier(userData);
+          break;
+        default:
+          return res.status(400).json({ message: 'Invalid role for registration' });
+      }
+      await user.save();
+    }
+
+    const token = jwt.sign(
+      { userId: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    const isProfileComplete = await ensureProfileComplete(user);
+
+    res.status(200).json({
+      message: 'Facebook auth successful',
+      token,
+      user: {
+        id: user._id,
+        email: user.email,
+        fullName: user.fullName,
+        phone: user.phone,
+        role: user.role,
+        city: user.city,
+        photoUrl: user.photoUrl,
+        isVerified: user.isVerified === true,
+        gender: user.gender,
+        isProfileComplete,
+        isEmailVerified: user.isEmailVerified,
+      },
+    });
+  } catch (error) {
+    console.error('❌ FACEBOOK AUTH ERROR:', error);
+    res.status(401).json({ message: 'Échec de l\'authentification Facebook', error: error.message });
   }
 };
 
@@ -347,72 +572,6 @@ exports.resetPassword = async (req, res) => {
     res.status(200).json({ message: 'Password reset successfully' });
   } catch (error) {
     console.error('❌ RESET-PASSWORD ERROR:', error);
-    res.status(500).json({ error: error.message });
-  }
-};
-
-// ==========================================
-// 4. VERIFY EMAIL (kifma tlab: "el email ykoun réellement mawjoud" -
-// vérification bloquante ba3d el signup, écran jdid ba3d
-// user_signin.dart, 9BAL UserCreateProfileScreen)
-// ==========================================
-// 🔵 nafs mant9 verifyPasswordResetCode (fou9) - ghir houni "isEmail
-// Verified = true" direct (mafamech resetToken mo2a99at, mafamech
-// écran ekher yeji ba3dha - "confirmation" bark, mch "reset").
-exports.verifyEmail = async (req, res) => {
-  try {
-    const { email, code } = req.body;
-
-    const user = await User.findOne({ email }).select('+emailVerificationCode +emailVerificationCodeExpiry');
-    if (!user || !user.emailVerificationCode) {
-      return res.status(400).json({ message: 'Invalid or expired code' });
-    }
-
-    if (user.emailVerificationCode !== code) {
-      return res.status(400).json({ message: 'Invalid code' });
-    }
-
-    if (!user.emailVerificationCodeExpiry || user.emailVerificationCodeExpiry < new Date()) {
-      return res.status(400).json({ message: 'Code expired' });
-    }
-
-    user.isEmailVerified = true;
-    user.emailVerificationCode = null;
-    user.emailVerificationCodeExpiry = null;
-    await user.save({ validateBeforeSave: false });
-
-    res.status(200).json({ message: 'Email verified' });
-  } catch (error) {
-    console.error('❌ VERIFY-EMAIL ERROR:', error);
-    res.status(500).json({ error: error.message });
-  }
-};
-
-// ==========================================
-// 5. RESEND VERIFICATION EMAIL (bouton "Resend" fel écran, nafs mant9
-// forgotPassword - code jdid, expiry jdida)
-// ==========================================
-exports.resendVerificationEmail = async (req, res) => {
-  try {
-    const { email } = req.body;
-    if (!email) {
-      return res.status(400).json({ message: 'Email is required' });
-    }
-
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ message: 'No account found with this email' });
-    }
-
-    if (user.isEmailVerified) {
-      return res.status(200).json({ message: 'Email already verified' });
-    }
-
-    await sendVerificationCode(user);
-
-    res.status(200).json({ message: 'Verification code sent' });
-  } catch (error) {
-    console.error('❌ RESEND-VERIFICATION-EMAIL ERROR:', error);
     res.status(500).json({ error: error.message });
   }
 };

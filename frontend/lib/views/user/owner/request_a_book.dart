@@ -56,6 +56,18 @@ class _RequestABookScreenState extends State<RequestABookScreen> {
 
   DateTime _visibleMonth = DateTime(DateTime.now().year, DateTime.now().month);
   DateTime? _selectedDate;
+  // 🔴 FIX (kifma tlab: "el long term boarding tethall fiha fenetre w
+  // tkoul kadeh men jour, wel walking tethall fenetre fiha 30 min...
+  // w kol ma tetzed dkayek tetzed hak dkika") - kol service "special"
+  // (boarding=jours, walking/running=d9ay9, home_check_visits=sw3at)
+  // 3andou popup 5assa bih (mch calendrier/heure "universel"). El
+  // valeur (3adad jours/d9ay9/sw3at) mahfoudha houni, serviceId -> valeur.
+  final Map<String, int> _serviceDurationValue = {};
+  // 🔴 FIX: "sitting_long_term_boarding" ghayret el checkOut DATE
+  // (checkIn + _serviceDurationValue jours) - mte7sba automatique mel
+  // popup (mch tap manuel 3al calendrier lel checkout, chraht ta7t
+  // _syncBoardingCheckOutDate).
+  DateTime? _checkOutDate;
   // 🔴 FIX: "hour: 12" ye3ni 12:00 PM (mid-journée) fel format 24h tel
   // Flutter (TimeOfDay.period: hour<12 -> AM, hour>=12 -> PM) - MCH
   // 12:00 AM (nos el lil) kifma el mockup. Hedhi el sebba elli "AM ma
@@ -162,7 +174,14 @@ class _RequestABookScreenState extends State<RequestABookScreen> {
     if (assigned.contains(pet.id)) {
       setState(() {
         assigned.remove(pet.id);
-        if (assigned.isEmpty) _servicePetIds.remove(service.serviceId);
+        if (assigned.isEmpty) {
+          _servicePetIds.remove(service.serviceId);
+          // 🔴 FIX: had service ma3adhach active - na77i el valeur mte3ha
+          // (jours/d9ay9/sw3at) w n3awdou n7essbou checkOut (date/heure).
+          _serviceDurationValue.remove(service.serviceId);
+          _syncBoardingCheckOutDate();
+          _syncDurationCheckOutTime();
+        }
       });
       return;
     }
@@ -175,13 +194,187 @@ class _RequestABookScreenState extends State<RequestABookScreen> {
       showMessageDialog(context, 'booking_pets_category_mismatch_error'.tr());
       return;
     }
+    // 🔴 FIX (kifma tlab: "tethall fiha fenetre" - boarding/walking/
+    // running/home_check_visits) - ken hedha AWEL pet yenzad l'HAD
+    // el service, n7ellou el popup mباشرة (bch el owner y7addad
+    // jours/d9ay9/sw3at 9bal ma ykammel).
+    final bool isFirstPetForService = assigned.isEmpty;
     setState(() => assigned.add(pet.id!));
+    if (isFirstPetForService && _needsDurationPopup(service.serviceId)) {
+      _showDurationPopup(service);
+    }
   }
+
+  // 🔴 FIX (kifma tlab): popup 5assa b'kol service "special" - boarding
+  // (3adad jours), walking/running (3adad d9ay9, base 30), home_check_
+  // visits (3adad sw3at, base 1) - stepper +1/-1 (kifma tlab: "kol ma
+  // tetzed dkayek tetzed hak dkika").
+  Future<void> _showDurationPopup(SitterServiceEntry service) async {
+    final String serviceId = service.serviceId;
+    final int currentValue;
+    final String unitLabelKey;
+    final int minValue;
+    if (serviceId == _boardingServiceId) {
+      currentValue = _serviceDurationValue[serviceId] ?? 1;
+      unitLabelKey = 'duration_days_label';
+      minValue = 1;
+    } else if (_minuteServiceIds.contains(serviceId)) {
+      currentValue = _serviceDurationValue[serviceId] ?? _minuteServiceBase;
+      unitLabelKey = 'duration_minutes_label';
+      minValue = _minuteServiceBase; // ma ynzelch ta7t el base (30min = el price el sitter 7attou)
+    } else {
+      currentValue = _serviceDurationValue[serviceId] ?? _hourServiceBase;
+      unitLabelKey = 'duration_hours_label';
+      minValue = _hourServiceBase;
+    }
+
+    final int? result = await showModalBottomSheet<int>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (sheetContext) {
+        int tempValue = currentValue;
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            final sizes = AppSizes.of(context);
+            return SafeArea(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(sizes.screenWidth * 0.06, sizes.screenWidth * 0.05, sizes.screenWidth * 0.06, sizes.screenWidth * 0.06),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(_serviceLabel(service), textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: sizes.myProfileBodyFontSize)),
+                    SizedBox(height: sizes.screenHeight * 0.006),
+                    Text('duration_popup_subtitle'.tr(), textAlign: TextAlign.center, style: TextStyle(color: Colors.grey.shade600, fontSize: sizes.myProfileBodyFontSize * 0.8)),
+                    SizedBox(height: sizes.screenHeight * 0.025),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        InkWell(
+                          onTap: () => setSheetState(() { if (tempValue - 1 >= minValue) tempValue -= 1; }),
+                          borderRadius: BorderRadius.circular(24),
+                          child: Padding(
+                            padding: const EdgeInsets.all(6),
+                            child: Icon(Icons.remove_circle_outline, color: AppColors.pinkpetsy, size: sizes.screenWidth * 0.09),
+                          ),
+                        ),
+                        SizedBox(width: sizes.screenWidth * 0.05),
+                        Text('$tempValue', style: TextStyle(fontSize: sizes.myProfileNameFontSize * 1.2, fontWeight: FontWeight.bold, color: AppColors.pinkpetsy)),
+                        SizedBox(width: sizes.screenWidth * 0.02),
+                        Text(unitLabelKey.tr(), style: TextStyle(color: Colors.grey.shade600, fontSize: sizes.myProfileBodyFontSize * 0.85)),
+                        SizedBox(width: sizes.screenWidth * 0.05),
+                        InkWell(
+                          onTap: () => setSheetState(() => tempValue += 1),
+                          borderRadius: BorderRadius.circular(24),
+                          child: Padding(
+                            padding: const EdgeInsets.all(6),
+                            child: Icon(Icons.add_circle_outline, color: AppColors.pinkpetsy, size: sizes.screenWidth * 0.09),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: sizes.screenHeight * 0.03),
+                    SizedBox(
+                      width: double.infinity,
+                      height: sizes.screenHeight * 0.06,
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.of(sheetContext).pop(tempValue),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.pinkpetsy,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                        ),
+                        child: Text('confirm_button'.tr(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (result == null) return; // el owner dismissa bla confirmer - n5alliw el valeur el 9dima (wela default)
+    setState(() {
+      _serviceDurationValue[serviceId] = result;
+      _syncBoardingCheckOutDate();
+      _syncDurationCheckOutTime();
+    });
+  }
+
+  // 🔴 FIX (kifma tlab): kol service "special" 3andou "unité" (jours/
+  // d9ay9/sw3at) w "valeur base" (el price el sitter 7attou ye5dem
+  // l'HAD el base, mathalan 30min l'walking, sa3a wa7da l'home_check,
+  // youm wa7ed l'boarding).
+  static const String _boardingServiceId = 'sitting_long_term_boarding';
+  static const Set<String> _minuteServiceIds = {'walking_daily_walk', 'walking_running'};
+  static const String _hourServiceId = 'sitting_home_check_visits';
+  static const int _minuteServiceBase = 30; // el prix el sitter = l'30min
+  static const int _hourServiceBase = 1; // el prix el sitter = l'sa3a wa7da
+
+  bool _needsDurationPopup(String serviceId) =>
+      serviceId == _boardingServiceId || _minuteServiceIds.contains(serviceId) || serviceId == _hourServiceId;
+
+  bool get _hasBoardingService => _servicePetIds[_boardingServiceId]?.isNotEmpty ?? false;
+
+  // 🔵 el multiplicateur (3ala 7sab el valeur mahfoudha, wela default
+  // el mant9i lel service): boarding -> *nb jours, minutes -> *(min/30),
+  // heures -> *nb sw3at, el ba9i (grooming/training/day_care) -> *1.
+  double _multiplierForService(String serviceId) {
+    if (serviceId == _boardingServiceId) {
+      return (_serviceDurationValue[serviceId] ?? 1).toDouble();
+    }
+    if (_minuteServiceIds.contains(serviceId)) {
+      return (_serviceDurationValue[serviceId] ?? _minuteServiceBase) / _minuteServiceBase;
+    }
+    if (serviceId == _hourServiceId) {
+      return (_serviceDurationValue[serviceId] ?? _hourServiceBase).toDouble();
+    }
+    return 1.0;
+  }
+
+  // 🔴 FIX (kifma tlab): "sitting_long_term_boarding" - checkOut DATE
+  // = checkIn + N jours (N mel popup) - automatique, bla tap manuel
+  // 3al calendrier lel youm el 5rouj.
+  void _syncBoardingCheckOutDate() {
+    if (!_hasBoardingService || _selectedDate == null) {
+      _checkOutDate = null;
+      return;
+    }
+    final int days = _serviceDurationValue[_boardingServiceId] ?? 1;
+    _checkOutDate = _selectedDate!.add(Duration(days: days));
+  }
+
+  // 🔴 FIX (kifma tlab: "marche mta3 1h wla 30min ma ykounch bin el
+  // checkin/checkout barcha sweya3") - lel services "bel d9ay9/sw3at"
+  // (walking/running/home_check_visits), checkOutTime yet7seb
+  // automatique = checkInTime + el mudda el AKBAR (max) beynhom (ken
+  // 3andna barcha services mel had type f nefs el booking) - el user
+  // ynajjam ba3d ye3addlou b'rou7ou (spinner mazel mawjoud).
+  void _syncDurationCheckOutTime() {
+    if (_hasBoardingService) return; // boarding ye5dem b DATE, mch heure
+    int maxMinutes = 0;
+    for (final id in {..._minuteServiceIds, _hourServiceId}) {
+      if (_servicePetIds[id]?.isNotEmpty != true) continue;
+      final int minutes = _minuteServiceIds.contains(id)
+          ? (_serviceDurationValue[id] ?? _minuteServiceBase)
+          : (_serviceDurationValue[id] ?? _hourServiceBase) * 60;
+      if (minutes > maxMinutes) maxMinutes = minutes;
+    }
+    if (maxMinutes == 0) return; // mafamech service "bel d9ay9" active - n5alliw el heure kifma hiya
+    final int totalMinutes = _checkInTime.hour * 60 + _checkInTime.minute + maxMinutes;
+    _checkOutTime = TimeOfDay(hour: (totalMinutes ~/ 60) % 24, minute: totalMinutes % 60);
+  }
+
+  // 🔵 3adad el layali (l'el total bark, boarding) - 3al a9al 1.
+  int get _nightsCount => (_serviceDurationValue[_boardingServiceId] ?? 1).clamp(1, 3650);
 
   // 🔴 FIX (kifma tlab: "el totale des service yethseb nb pets * service
   // selectionnees") -> tawa (kifma tlab el a5ir): PER-SERVICE, mch
   // global - kol service: prix (category) * 3adad el pets el mkhtarin
-  // FI HAD el service bark.
+  // FI HAD el service, * el multiplicateur (jours/d9ay9/sw3at).
   double get _total {
     double sum = 0;
     for (final service in widget.sitterServices) {
@@ -189,7 +382,7 @@ class _RequestABookScreenState extends State<RequestABookScreen> {
       if (petIds == null || petIds.isEmpty) continue;
       final price = _priceForService(service);
       if (price == null) continue;
-      sum += price * petIds.length;
+      sum += price * petIds.length * _multiplierForService(service.serviceId);
     }
     return sum;
   }
@@ -212,6 +405,14 @@ class _RequestABookScreenState extends State<RequestABookScreen> {
       showMessageDialog(context, 'select_date_error'.tr());
       return;
     }
+    // 🔴 FIX (kifma tlab): "sitting_long_term_boarding" (per jour) -
+    // el user LEZMOU ye5tar youm el checkout (mختلف 3an el checkin,
+    // ba3dou fel calendrier) - bla ha el total ma ynajjamch ye7seb el
+    // 3adad el jours s7i7.
+    if (_hasBoardingService && (_checkOutDate == null || !_checkOutDate!.isAfter(_selectedDate!))) {
+      showMessageDialog(context, 'select_checkout_date_error'.tr());
+      return;
+    }
     // 🔵 ZID (filet de sécurité): lowkan el data tel disponibilité
     // weslet METAKHRA (async, ba3d ma el user déjà 5tar el date) - nre-
     // chekkou houni zeda 9bal el ib3ath.
@@ -230,8 +431,12 @@ class _RequestABookScreenState extends State<RequestABookScreen> {
       showMessageDialog(context, 'select_service_error'.tr());
       return;
     }
+    // 🔴 FIX (kifma tlab): checkout date = _checkOutDate (ken boarding
+    // active w mختار), wela nafs youm el checkin (el services l'okhrin,
+    // "per visite" - nafs mant9 el 9dim, bla ha ma tbeddelch 7aja).
+    final DateTime effectiveCheckOutDate = _hasBoardingService && _checkOutDate != null ? _checkOutDate! : _selectedDate!;
     final checkIn = DateTime(_selectedDate!.year, _selectedDate!.month, _selectedDate!.day, _checkInTime.hour, _checkInTime.minute);
-    final checkOut = DateTime(_selectedDate!.year, _selectedDate!.month, _selectedDate!.day, _checkOutTime.hour, _checkOutTime.minute);
+    final checkOut = DateTime(effectiveCheckOutDate.year, effectiveCheckOutDate.month, effectiveCheckOutDate.day, _checkOutTime.hour, _checkOutTime.minute);
 
     // 🔴 FIX (kifma tlab): checkout lezmou ykoun BA3D checkin.
     if (!checkOut.isAfter(checkIn)) {
@@ -295,6 +500,11 @@ class _RequestABookScreenState extends State<RequestABookScreen> {
                 _selectedDate = DateTime(newCheckIn.year, newCheckIn.month, newCheckIn.day);
                 _checkInTime = TimeOfDay(hour: newCheckIn.hour, minute: newCheckIn.minute);
                 _checkOutTime = TimeOfDay(hour: newCheckOut.hour, minute: newCheckOut.minute);
+                // 🔴 FIX (kifma tlab): "sitting_long_term_boarding" (per
+                // jour) - ken el alternative mte3ha checkout f youm
+                // mختلف (multi-jours), n7ottouha zeda (mch ghir el heure).
+                final DateTime newCheckOutDate = DateTime(newCheckOut.year, newCheckOut.month, newCheckOut.day);
+                _checkOutDate = newCheckOutDate.isAfter(_selectedDate!) ? newCheckOutDate : null;
               });
               showMessageDialog(context, 'booking_alternatives_slot_applied_label'.tr());
             },
@@ -350,9 +560,38 @@ class _RequestABookScreenState extends State<RequestABookScreen> {
                   SizedBox(height: sizes.rabSectionGap),
 
                   // --------------------------------------------------
-                  // Calendrier
+                  // Calendrier (checkin DATE bark - checkout DATE
+                  // tet7seb automatique mel popup "sitting_long_term_
+                  // boarding", chraht fou9 _syncBoardingCheckOutDate).
                   // --------------------------------------------------
                   _buildCalendar(sizes),
+
+                  // 🔴 FIX (kifma tlab: "tethall fiha fenetre w tkoul
+                  // kadeh men jour") - ken boarding active, nwarriw el
+                  // checkout date el mte7sba (bla ma el owner ye7taj
+                  // ye5tarha b'rou7ou 3al calendrier).
+                  if (_hasBoardingService && _checkOutDate != null) ...[
+                    SizedBox(height: sizes.rabSectionGap * 0.5),
+                    Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.symmetric(horizontal: sizes.screenWidth * 0.04, vertical: sizes.screenHeight * 0.012),
+                      decoration: BoxDecoration(color: AppColors.pinkpetsy.withOpacity(0.10), borderRadius: BorderRadius.circular(14)),
+                      child: Row(
+                        children: [
+                          Icon(Icons.event_available, color: AppColors.pinkpetsy, size: sizes.screenWidth * 0.045),
+                          SizedBox(width: sizes.screenWidth * 0.02),
+                          Expanded(
+                            child: Text(
+                              'checkout_date_computed_label'.tr(namedArgs: {
+                                'date': '${_checkOutDate!.day}/${_checkOutDate!.month}/${_checkOutDate!.year}',
+                              }),
+                              style: TextStyle(color: AppColors.pinkpetsy, fontWeight: FontWeight.w600, fontSize: sizes.myProfileBodyFontSize * 0.85),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
 
                   SizedBox(height: sizes.rabSectionGap),
 
@@ -397,6 +636,18 @@ class _RequestABookScreenState extends State<RequestABookScreen> {
                   SizedBox(height: sizes.rabSectionGap * 0.6),
                   // 🔵 ZID (kifma tlab): total 7ay (yetbeddel automatique
                   // ki tzid/tna77i pet mel service).
+                  // 🔴 FIX (kifma tlab): "sitting_long_term_boarding"
+                  // (per jour) - nwarriw 3adad el layali houni (bch el
+                  // owner yefhem 3lech el total heka, mch bark ra9m
+                  // b'rou7ou bla contexte).
+                  if (_hasBoardingService)
+                    Padding(
+                      padding: EdgeInsets.only(bottom: sizes.screenHeight * 0.006),
+                      child: Text(
+                        'nights_count_label'.tr(namedArgs: {'count': '$_nightsCount'}),
+                        style: TextStyle(color: Colors.grey.shade600, fontSize: sizes.myProfileBodyFontSize * 0.8),
+                      ),
+                    ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -482,7 +733,19 @@ class _RequestABookScreenState extends State<RequestABookScreen> {
               if (index < startOffset) return const SizedBox();
               final day = index - startOffset + 1;
               final date = DateTime(_visibleMonth.year, _visibleMonth.month, day);
-              final bool isSelected = _selectedDate != null && _selectedDate!.year == date.year && _selectedDate!.month == date.month && _selectedDate!.day == date.day;
+              final bool isCheckIn = _selectedDate != null && _selectedDate!.year == date.year && _selectedDate!.month == date.month && _selectedDate!.day == date.day;
+              // 🔵 ZID (kifma tlab): "sitting_long_term_boarding" (per
+              // jour) - el checkout date (mte7sba automatique mel popup,
+              // _syncBoardingCheckOutDate) tban highlighted zeda (info
+              // visuelle bark, MCH tap - el owner ma yenajjamch ye5tarha
+              // b'rou7ou 3al calendrier, el popup houwa eli yحكم fiha).
+              final bool isCheckOut = _hasBoardingService && _checkOutDate != null && _checkOutDate!.year == date.year && _checkOutDate!.month == date.month && _checkOutDate!.day == date.day;
+              final bool isInRange = _hasBoardingService &&
+                  _selectedDate != null &&
+                  _checkOutDate != null &&
+                  date.isAfter(_selectedDate!) &&
+                  date.isBefore(_checkOutDate!);
+              final bool isSelected = isCheckIn || isCheckOut;
               final bool isPast = date.isBefore(DateTime(today.year, today.month, today.day));
               // 🔴 FIX (kifma tlab): "el owner ma yenajjamch ye5tar youm
               // el sitter mch dispo fih" - youm mo7addad (recurring wela
@@ -497,11 +760,18 @@ class _RequestABookScreenState extends State<RequestABookScreen> {
                       ? null
                       : isUnavailable
                           ? () => showMessageDialog(context, 'sitter_unavailable_this_day_error'.tr())
-                          : () => setState(() => _selectedDate = date),
+                          : () => setState(() {
+                                _selectedDate = date;
+                                // 🔵 el checkin tbeddel -> n3awdou n7essbou
+                                // checkOut (date, boarding) w checkOutTime
+                                // (services bel d9ay9/sw3at).
+                                _syncBoardingCheckOutDate();
+                                _syncDurationCheckOutTime();
+                              }),
                   borderRadius: BorderRadius.circular(10),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: isSelected ? AppColors.pinkpetsy : Colors.transparent,
+                      color: isSelected ? AppColors.pinkpetsy : (isInRange ? AppColors.pinkpetsy.withOpacity(0.18) : Colors.transparent),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     alignment: Alignment.center,
@@ -712,7 +982,11 @@ class _RequestABookScreenState extends State<RequestABookScreen> {
 
     String priceText;
     if (price != null) {
-      priceText = '${price.toStringAsFixed(0)} DT';
+      // 🔴 FIX (kifma tlab): el badge ywarri el prix el KAMEL (price *
+      // multiplicateur jours/d9ay9/sw3at) - mch el prix de base bark,
+      // bch el owner ychouf l'impact mel dhroufa (mathalan 3 jours).
+      final double multiplier = _multiplierForService(service.serviceId);
+      priceText = '${(price * multiplier).toStringAsFixed(0)} DT';
     } else if (isUnavailable) {
       priceText = 'service_not_offered_label'.tr();
     } else {
@@ -760,6 +1034,32 @@ class _RequestABookScreenState extends State<RequestABookScreen> {
                   ),
                 ],
               ),
+              // 🔴 FIX (kifma tlab: "tethall fiha fenetre... kol ma
+              // tetzed dkayek tetzed hak dkika") - ken had service
+              // active (3andou pet mrakez) w 3andou "unité" (jours/
+              // d9ay9/sw3at), nwarriw el 9ima el mkhtara + bouton "edit"
+              // (bch el owner ynajjam yeghayerha ba3d, mch bark el
+              // marra el loula).
+              if (assignedPetIds.isNotEmpty && _needsDurationPopup(service.serviceId)) ...[
+                SizedBox(height: sizes.screenHeight * 0.006),
+                InkWell(
+                  onTap: () => _showDurationPopup(service),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.schedule, size: sizes.screenWidth * 0.035, color: AppColors.pinkpetsy.withOpacity(0.7)),
+                      SizedBox(width: sizes.screenWidth * 0.012),
+                      Text(
+                        '${_serviceDurationValue[service.serviceId] ?? (service.serviceId == _boardingServiceId ? 1 : (_minuteServiceIds.contains(service.serviceId) ? _minuteServiceBase : _hourServiceBase))} ${(service.serviceId == _boardingServiceId ? 'duration_days_label' : (_minuteServiceIds.contains(service.serviceId) ? 'duration_minutes_label' : 'duration_hours_label')).tr()}',
+                        style: TextStyle(fontSize: sizes.myProfileBodyFontSize * 0.75, color: AppColors.pinkpetsy.withOpacity(0.85), fontWeight: FontWeight.w600),
+                      ),
+                      SizedBox(width: sizes.screenWidth * 0.012),
+                      Icon(Icons.edit, size: sizes.screenWidth * 0.032, color: Colors.grey.shade500),
+                    ],
+                  ),
+                ),
+              ],
               // 🔴 FIX: "!isUnavailable" tawa sa7i7 (chips yebanou dima
               // GHIR ken el category ma3roufa 7a9i9atan w had service
               // ma yesnedhech biha - mch bark ken price mazel null 7it

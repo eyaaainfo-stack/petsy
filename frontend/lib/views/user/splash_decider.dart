@@ -7,11 +7,9 @@ import '../../controllers/auth_session.dart';
 import '../../controllers/app_preferences.dart';
 import '../../repositories/pet_repository.dart';
 import '../../services/api_service.dart';
-import '../../services/power_save_service.dart';
 import 'language.dart';
 import 'account_type.dart';
 import 'user_create_profile.dart';
-import 'verify_email_screen.dart';
 import 'owner/profile_owner.dart';
 import 'sitter/sitter_profile.dart';
 import 'admin/admin_home.dart';
@@ -48,19 +46,11 @@ class _SplashDeciderState extends State<SplashDecider> {
   void initState() {
     super.initState();
     _decide();
-
-    // 🔴 FIX: kanet tetse2al fi KOL launch (fi kol ma el app tefte7)
-    // - tawa marra WA7DA bark fi 3omr el app (flag mahfoudha fel
-    // AppPreferences). Zeda: el appel yesir GHIR ba3d ma el 1er frame
-    // yban, w bark ken el app fel foreground/resumed (bch ma ye-crashich
-    // ken el screen tel telefon msakker wa9t el flutter run/launch).
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final bool alreadyAsked = await AppPreferences.hasAskedBatteryOptimization();
-      if (alreadyAsked) return;
-
-      await AppPreferences.setHasAskedBatteryOptimization();
-      PowerSaveService.requestIgnoreBatteryOptimizations();
-    });
+    // 🔴 FIX (kifma tlab: "nahi el fenetre 'permettre l'app de toujours
+    // fonctionner en arrière-plan'") - tنا77a el appel automatique
+    // l'PowerSaveService.requestIgnoreBatteryOptimizations() (el dialog
+    // système Android "Allow this app to ignore battery optimizations?")
+    // - el app ma3adhach tetlob had el permission 3ind el 5our.
   }
 
   Future<void> _decide() async {
@@ -117,18 +107,11 @@ class _SplashDeciderState extends State<SplashDecider> {
       final Map<String, dynamic> user = data['user'] as Map<String, dynamic>;
       final String role = user['role'] as String? ?? '';
 
-      // 🔴 FIX (kifma tlab: "el email ykoun réellement mawjoud -
-      // vérification bloquante") - ken el session mahfoudha (el user
-      // 3amel ghir signup w 5arej 9bal ma yconfirmi el code, wela
-      // 3awad login mel jdid mel session el jdida) w mazel ma
-      // confirmech, el splash ye7bsou 3and VerifyEmailScreen (mch
-      // home, mch 7atta UserCreateProfileScreen) - "?? true" (mch
-      // "?? false") bch comptes 9dam (backend ma yeb3athch had field)
-      // ma yet7absouch b'ghalta.
-      final bool isEmailVerified = user['isEmailVerified'] as bool? ?? true;
-      if (!isEmailVerified) {
-        return VerifyEmailScreen(email: user['email'] as String? ?? '');
-      }
+      // 🔴 FIX (kifma tlab: "nahhili el verification mta3 el email -
+      // el code yeb9a ghir l'reset password w l'inscri, ama mch
+      // blocage - el mail deja réel/verifié b'el fait eli el SMTP
+      // ye5dem") - ma3adech n7absou el user 3and VerifyEmailScreen.
+      // isEmailVerified mazel mawjouda fel base (informatif bark).
 
       // 🔴 FIX (kifma tlab: "idha el creation du compte mch fini ma
       // yethallich el home") - ken el profile mazel ma kammelch (el

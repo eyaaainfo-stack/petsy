@@ -46,6 +46,8 @@ dependencies:
   geolocator: ^13.0.1
   # bch nnajjmou n3maloulou appel lel API tel recherche (Nominatim/OSM)
   http: ^1.2.0
+  # 🔵 ZID (kifma tlab: "Continue with Google")
+  google_sign_in: ^6.2.1
   # 🔵 ZID: bch nnajjmou n7addou "content-type" (image/jpeg) fel photo
   # upload (uploadPhoto fel api_service.dart) - mawjouda déjà "b'ta7t"
   # (dépendance transitive tel http), houni ghir zdineha b'esmha bch

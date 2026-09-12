@@ -15,6 +15,7 @@ import 'user_create_profile.dart';
 import 'owner/profile_owner.dart';
 import 'sitter/sitter_profile.dart';
 import 'mdp_oublier_1.dart';
+import '../../widgets/message_dialog.dart';
 
 // ============================================================================
 // UserLoginScreen ("Login" - 7sab MAWJOUD)
@@ -104,67 +105,115 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
     });
 
     if (result.success) {
-      // 🔴 FIX (kifma tlab: "idha el creation du compte mch fini ma
-      // yethallich el home") - ken el profile mazel ma kammelch
-      // (isProfileComplete: false - el user 3amel ghir email+password
-      // w 5arej), ma nwarriweh el home l'ay role - nkhalliweh ykammel
-      // el parcours (UserCreateProfileScreen) - "reprise" mch "à zéro"
-      // (email/password déjà 7a9i9iyin, el session déjà mahfoudha).
-      if (!result.isProfileComplete) {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => UserCreateProfileScreen(role: widget.role)),
-          (route) => false,
-        );
-        return;
-      }
+      await _navigateAfterAuth(
+        role: result.role ?? widget.role,
+        isProfileComplete: result.isProfileComplete,
+        fullName: result.fullName,
+        city: result.city,
+        photoUrl: result.photoUrl,
+        isVerified: result.isVerified,
+        gender: result.gender,
+      );
+    }
+  }
 
-      // 🔵 sa77e7t: tاوة njibou el pets el 7a9i9iyin mel backend (GET
-      // /api/pets, protégée, ta3raf el owner mel token) - mch [] fadhya.
-      if (result.role == 'owner') {
-        final pets = await PetRepository.fetchOwnerPets();
-        if (!mounted) return;
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(
-            builder: (_) => ProfileOwnerScreen(
-              ownerName: result.fullName ?? '',
-              ownerCity: result.city ?? '',
-              pets: pets,
-              // 🔴 FIX: kanet na9sa - photo tel owner ma kanetch tban
-              // ba3d login (mediaBaseUrl + el path relatif mel backend,
-              // nafs mant9 PetRepository).
-              ownerPhotoUrl: (result.photoUrl != null && result.photoUrl!.isNotEmpty)
-                  ? '${ApiService.mediaBaseUrl}${result.photoUrl}'
-                  : null,
-              // 🔵 ZID (kifma tlab: "el tick... fel home fel pdp mteou").
-              isVerified: result.isVerified,
-              // 🔵 ZID (kifma tlab: "ken el user homme nkhalliwh vert,
-              // keno femme pink").
-              gender: result.gender,
-            ),
+  // 🔵 ZID (kifma tlab: "Continue with Google") - nafs el navigation
+  // eli el login el 3adi ye3mel (isProfileComplete? owner? sitter?) -
+  // extraite houni bch el login "classique" W el login "Google"
+  // yesta3mlouha b'les deux (bla duplication).
+  Future<void> _navigateAfterAuth({
+    required String role,
+    required bool isProfileComplete,
+    required String? fullName,
+    required String? city,
+    required String? photoUrl,
+    required bool isVerified,
+    required String? gender,
+  }) async {
+    // 🔴 FIX (kifma tlab: "idha el creation du compte mch fini ma
+    // yethallich el home") - ken el profile mazel ma kammelch
+    // (isProfileComplete: false), ma nwarriweh el home l'ay role -
+    // nkhalliweh ykammel el parcours (UserCreateProfileScreen).
+    if (!isProfileComplete) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => UserCreateProfileScreen(role: role)),
+        (route) => false,
+      );
+      return;
+    }
+
+    // 🔵 sa77e7t: tاوة njibou el pets el 7a9i9iyin mel backend (GET
+    // /api/pets, protégée, ta3raf el owner mel token) - mch [] fadhya.
+    if (role == 'owner') {
+      final pets = await PetRepository.fetchOwnerPets();
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => ProfileOwnerScreen(
+            ownerName: fullName ?? '',
+            ownerCity: city ?? '',
+            pets: pets,
+            ownerPhotoUrl: (photoUrl != null && photoUrl.isNotEmpty) ? '${ApiService.mediaBaseUrl}$photoUrl' : null,
+            isVerified: isVerified,
+            gender: gender,
           ),
-          (route) => false,
-        );
-      } else if (result.role == 'sitter') {
-        if (!mounted) return;
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(
-            builder: (_) => SitterProfileScreen(
-              sitterName: result.fullName ?? '',
-              sitterCity: result.city ?? '',
-              sitterPhotoUrl: (result.photoUrl != null && result.photoUrl!.isNotEmpty)
-                  ? '${ApiService.mediaBaseUrl}${result.photoUrl}'
-                  : null,
-              // 🔵 ZID (kifma tlab: "el tick... fel home fel pdp mteou").
-              isVerified: result.isVerified,
-              // 🔵 ZID (kifma tlab: "ken el user homme nkhalliwh vert,
-              // keno femme pink").
-              gender: result.gender,
-            ),
+        ),
+        (route) => false,
+      );
+    } else if (role == 'sitter') {
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => SitterProfileScreen(
+            sitterName: fullName ?? '',
+            sitterCity: city ?? '',
+            sitterPhotoUrl: (photoUrl != null && photoUrl.isNotEmpty) ? '${ApiService.mediaBaseUrl}$photoUrl' : null,
+            isVerified: isVerified,
+            gender: gender,
           ),
-          (route) => false,
-        );
-      }
-      // TODO: navigation lel home mte3 el b39dhin (courier/admin)
+        ),
+        (route) => false,
+      );
+    }
+    // TODO: navigation lel home mte3 el b39dhin (courier/admin)
+  }
+
+  // 🔵 ZID (kifma tlab: "Continue with Google") - "role" MA nab3thouch
+  // houni (null) 7it houni écran LOGIN (el compte lezem ykoun mawjoud
+  // déjà - ken mch mawjoud, "noAccountFound" ywarri message ytلب el
+  // user ye39od mel bidaya).
+  bool _isGoogleSubmitting = false;
+  Future<void> _onGooglePressed() async {
+    if (_isGoogleSubmitting) return;
+    setState(() => _isGoogleSubmitting = true);
+
+    final result = await _authController.signInWithGoogle();
+
+    if (!mounted) return;
+    setState(() => _isGoogleSubmitting = false);
+
+    if (result.success) {
+      await _navigateAfterAuth(
+        role: result.role ?? widget.role,
+        isProfileComplete: result.isProfileComplete,
+        fullName: result.fullName,
+        city: result.city,
+        photoUrl: result.photoUrl,
+        isVerified: result.isVerified,
+        gender: result.gender,
+      );
+      return;
+    }
+
+    switch (result.errorType) {
+      case GoogleAuthErrorType.cancelled:
+        // el user 3andlou el picker w far 9bal ma ye5tar - bla error
+        break;
+      case GoogleAuthErrorType.noAccountFound:
+        showMessageDialog(context, 'google_no_account_error'.tr());
+        break;
+      default:
+        showMessageDialog(context, 'login_generic_error'.tr());
     }
   }
 
@@ -413,13 +462,17 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         InkWell(
-                          onTap: () {
-                            // TODO: Google Sign-In
-                          },
+                          onTap: _isGoogleSubmitting ? null : _onGooglePressed,
                           borderRadius: BorderRadius.circular(50),
                           child: Padding(
                             padding: EdgeInsets.all(sizes.authSocialIconPadding),
-                            child: Icon(Icons.g_mobiledata_rounded, size: sizes.authGoogleIconSize, color: Colors.redAccent),
+                            child: _isGoogleSubmitting
+                                ? SizedBox(
+                                    width: sizes.authGoogleIconSize,
+                                    height: sizes.authGoogleIconSize,
+                                    child: const CircularProgressIndicator(strokeWidth: 2, color: Colors.redAccent),
+                                  )
+                                : Icon(Icons.g_mobiledata_rounded, size: sizes.authGoogleIconSize, color: Colors.redAccent),
                           ),
                         ),
                         SizedBox(width: sizes.authSocialIconsGap),

@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:google_sign_in/google_sign_in.dart';
 import '../services/api_service.dart';
 import 'auth_session.dart';
 
@@ -83,6 +85,51 @@ class SignUpResult {
 }
 
 // ============================================================================
+// GoogleAuthErrorType / GoogleAuthResult
+// ============================================================================
+// 🔵 ZID (kifma tlab: "Continue with Google") - "Continue with Google"
+// ye5dem ZOUZ 7alat m3a NEFS el endpoint (backend/googleAuth): LOGIN
+// (email mawjoud déjà) WELA SIGNUP (email jdid + role). "noAccountFound"
+// tji GHIR ki el bouton mel écran LOGIN w el email mch mawjoud (el écran
+// signup dima yeb3ath role, fa el backend ma yrajja3ch had el حالة).
+// ============================================================================
+enum GoogleAuthErrorType { cancelled, noAccountFound, generic, none }
+
+class GoogleAuthResult {
+  final bool success;
+  final GoogleAuthErrorType errorType;
+  final String? token;
+  final String? fullName;
+  final String? city;
+  final String? role;
+  final String? photoUrl;
+  final bool isVerified;
+  final String? gender;
+  final bool isProfileComplete;
+  final bool isEmailVerified;
+  final String? email;
+
+  const GoogleAuthResult._(this.success, this.errorType, [this.token, this.fullName, this.city, this.role, this.photoUrl, this.isVerified = false, this.gender, this.isProfileComplete = true, this.isEmailVerified = true, this.email]);
+
+  factory GoogleAuthResult.success(
+    String token, {
+    String? fullName,
+    String? city,
+    String? role,
+    String? photoUrl,
+    bool isVerified = false,
+    String? gender,
+    bool isProfileComplete = true,
+    bool isEmailVerified = true,
+    String? email,
+  }) =>
+      GoogleAuthResult._(true, GoogleAuthErrorType.none, token, fullName, city, role, photoUrl, isVerified, gender, isProfileComplete, isEmailVerified, email);
+  factory GoogleAuthResult.cancelled() => const GoogleAuthResult._(false, GoogleAuthErrorType.cancelled);
+  factory GoogleAuthResult.noAccountFound() => const GoogleAuthResult._(false, GoogleAuthErrorType.noAccountFound);
+  factory GoogleAuthResult.genericError() => const GoogleAuthResult._(false, GoogleAuthErrorType.generic);
+}
+
+// ============================================================================
 // AuthController
 // ============================================================================
 // 🔴 TAWA REAL - appels http.post() 7a9i9iyin lel backend (mch mock).
@@ -90,6 +137,89 @@ class SignUpResult {
 // ApiService sa7i7 bch te5dem.
 // ============================================================================
 class AuthController {
+  // 🔵 ZID (kifma tlab: "Continue with Google") - "serverClientId" LEZEM
+  // ykoun el "Web application" Client ID (mch el Android/iOS wa7ed) -
+  // houwa eli ykhalli Google yrajja3lna "idToken" ynajjam el BACKEND
+  // yverifih (audience match). 7ottou fel Google Cloud Console
+  // (APIs & Services > Credentials > Create Credentials > OAuth client
+  // ID > Web application), w badlou houni.
+  // 🔵 ZID (kifma tlab: "Continue with Google") - "serverClientId"
+  // LEZEM ykoun el "Web application" Client ID, ama GHIR l'Android/iOS
+  // - "google_sign_in_web" (Chrome) YERFED had paramètre khales (assertion
+  // "serverClientId is not supported on Web") - houni el Client ID
+  // ya5dhou mel meta tag "google-signin-client_id" fel web/index.html.
+  final GoogleSignIn _googleSignIn = kIsWeb
+      ? GoogleSignIn()
+      : GoogleSignIn(
+          serverClientId: '364744387888-sn2282dlen93ff0b1iketjgrrrdcu56d.apps.googleusercontent.com',
+        );
+
+  // 🔵 ZID (kifma tlab: "Continue with Google") - role == null ki el
+  // bouton fel écran LOGIN (email lezem ykoun mawjoud déjà), role !=
+  // null ki el bouton fel écran SIGNUP (user_signin.dart, deja ye39ed
+  // "role" kel paramètre - ken el email jdid, ye39od b'hedha el role).
+  Future<GoogleAuthResult> signInWithGoogle({String? role}) async {
+    try {
+      // "signIn()" el SDK yhandliw wa7dou: ken compte wa7ed mawjoud
+      // fel appareil w déjà autorisé l'app, ye5dem quasi-instantané
+      // (bla dialogue zeyda) - ken 3ada wala barcha comptes, ywarri
+      // "account picker" (kifha kif Instagram/kol app okhra).
+      final googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) {
+        // el user 3andlou el picker w far 9bal ma ye5tar (cancel)
+        return GoogleAuthResult.cancelled();
+      }
+
+      final googleAuth = await googleUser.authentication;
+      final idToken = googleAuth.idToken;
+      if (idToken == null) {
+        return GoogleAuthResult.genericError();
+      }
+
+      final response = await ApiService.post('/auth/google', {
+        'idToken': idToken,
+        if (role != null) 'role': role,
+      });
+
+      final Map<String, dynamic> data = jsonDecode(response.body) as Map<String, dynamic>;
+
+      if (response.statusCode == 200) {
+        final String token = data['token'] as String;
+        final Map<String, dynamic> user = data['user'] as Map<String, dynamic>;
+        AuthSession.save(
+          token: token,
+          userId: user['id'] as String,
+          city: user['city'] as String?,
+          role: user['role'] as String?,
+          fullName: user['fullName'] as String?,
+        );
+        return GoogleAuthResult.success(
+          token,
+          fullName: user['fullName'] as String?,
+          city: user['city'] as String?,
+          role: user['role'] as String?,
+          photoUrl: user['photoUrl'] as String?,
+          isVerified: user['isVerified'] as bool? ?? false,
+          gender: user['gender'] as String?,
+          isProfileComplete: user['isProfileComplete'] as bool? ?? true,
+          isEmailVerified: user['isEmailVerified'] as bool? ?? true,
+          email: user['email'] as String?,
+        );
+      } else if (response.statusCode == 404 && data['code'] == 'NO_ACCOUNT') {
+        // el bouton mel écran LOGIN w el email Google mafamouch compte
+        return GoogleAuthResult.noAccountFound();
+      } else {
+        return GoogleAuthResult.genericError();
+      }
+    } catch (e) {
+      // 🔵 DEBUG mo2a99at: bech nchoufou el error el 7a9i9i fel terminal
+      // (flutter run) - nnaddhouh ba3d ma nel9awh (mch besoin l'el production).
+      // ignore: avoid_print
+      print('❌ [GOOGLE SIGN-IN] Error 7a9i9i: $e');
+      return GoogleAuthResult.genericError();
+    }
+  }
+
   Future<LoginResult> login({
     required String email,
     required String password,
@@ -99,6 +229,13 @@ class AuthController {
       final response = await ApiService.post('/auth/login', {
         'email': email,
         'password': password,
+        // 🔴 FIX (kifma tlab: "el compte mta3 sitter ma ynajemch yet7all
+        // ken ma el marra jeya ye5tar account type sitter... mch yhellou
+        // men owner par exemple") - "role" kan mجاmou3 kel paramètre
+        // ama LA JAMAIS mab3outh fel body - el backend ma kanch ynajjam
+        // ychek 3lih. Tawa: yeb3ath, w el backend (login()) yesta3milou
+        // fel filter {email, role} (nafs mant9 forgotPassword).
+        'role': role,
       });
 
       final Map<String, dynamic> data = jsonDecode(response.body) as Map<String, dynamic>;

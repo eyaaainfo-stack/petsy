@@ -1,5 +1,8 @@
 // controllers/petController.js
 const Animal = require('../models/animal');
+// 🔵 ZID (kifma tlab: "supprimer le compte mtaa pets") - bch nchekkou
+// ken el pet 3andou booking "active" 9bal ma n7ذefouh (safety check).
+const Booking = require('../models/booking');
 
 // ============================================================================
 // RESOLVE PET CATEGORY (feature "compatibilite entre animaux")
@@ -166,6 +169,37 @@ exports.updatePet = async (req, res) => {
     }
 
     res.status(200).json({ message: 'Pet updated successfully', pet });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// ============================================================================
+// 5. DELETE (kifma tlab: "supprimer le compte mtaa pets" - fel Settings
+// > Confidentialité, 7dha "Supprimer mon compte")
+// ============================================================================
+// 🔵 ZID: el owner ye5tar pet mel liste (frontend), n7ذefouh - m3a
+// safety check: ken el pet 3andou booking "active" (pending/accepted/
+// open/awaiting_confirmation), manna3 el delete (bch ma yeb9awch
+// bookings b pets ma3adhomch mawjoudin - orphaned references).
+exports.deletePet = async (req, res) => {
+  try {
+    const { petId } = req.params;
+
+    const activeBooking = await Booking.findOne({
+      pets: petId,
+      status: { $in: ['pending', 'accepted', 'open', 'awaiting_confirmation'] },
+    });
+    if (activeBooking) {
+      return res.status(409).json({ message: 'This pet has an active booking. Please cancel or complete it before deleting.' });
+    }
+
+    const pet = await Animal.findOneAndDelete({ _id: petId, owner: req.userId }); // 🔴 IMPORTANT: owner zeda, mch ghir _id
+    if (!pet) {
+      return res.status(404).json({ message: 'Pet not found' });
+    }
+
+    res.status(200).json({ message: 'Pet deleted successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

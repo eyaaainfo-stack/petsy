@@ -9,10 +9,20 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true
     },
+    // 🔵 ZID (kifma tlab: "Continue with Google") - required GHIR ken
+    // el compte mafamouch googleId (compte 3adi b'email/password). El
+    // comptes eli ye39dou b'Google ma 3andhomch password khales (Google
+    // houwa eli y-authentifi-hom, mch mant9i n7otolhom password random).
     password: { 
       type: String, 
-      required: [true, 'Password is required'] 
+      required: [function () { return !this.googleId; }, 'Password is required'] 
     },
+    // 🔵 ZID (kifma tlab: "Continue with Google") - el "sub" (unique ID)
+    // eli Google yrja3ou fel idToken. "sparse: true" bch el index unique
+    // ma yet3atalch 3al comptes eli googleId tou3hom null (email/password
+    // classique) - bla "sparse", MongoDB kan y7eb kol "null" ykoun unique
+    // (w yerfed 2éme compte b'null).
+    googleId: { type: String, default: null, unique: true, sparse: true },
     // 🔵 badalna: mch required tawa - 7it el flow tel app yesta3mel
     // el email/password fel signup, w el fullName/phone yet3amrou
     // BA3D fi écran mnfassel (UserCreateProfileScreen). Ken lezmek

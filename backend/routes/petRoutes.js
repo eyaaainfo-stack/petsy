@@ -25,4 +25,9 @@ router.post('/:petId/photo', protect, petUpload.single('photo'), petController.u
 // gender/behaviors/careInfo/vetClinicName/vetClinicPhone).
 router.patch('/:petId', protect, petController.updatePet);
 
+// 🔵 ZID (kifma tlab: "supprimer le compte mtaa pets") - security_
+// settings_screen.dart, "Supprimer un animal" - "protect" bch el
+// controller ye3raf el owner mel token (req.userId), mch mel body.
+router.delete('/:petId', protect, petController.deletePet);
+
 module.exports = router;

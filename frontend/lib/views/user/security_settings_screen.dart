@@ -4,6 +4,8 @@ import '../../constants/app_colors.dart';
 import '../../constants/app_sizes.dart';
 import '../../controllers/account_security_controller.dart';
 import '../../controllers/auth_session.dart';
+import '../../models/pet_summary.dart';
+import '../../repositories/pet_repository.dart';
 import '../../widgets/back_button.dart';
 import '../../widgets/message_dialog.dart';
 import 'account_type.dart';
@@ -28,6 +30,9 @@ class SecuritySettingsScreen extends StatefulWidget {
 class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
   final AccountSecurityController _controller = AccountSecurityController();
   bool _isDeleting = false;
+  // 🔵 ZID (kifma tlab: "supprimer le compte mtaa pets") - loading state
+  // waqt el fetch tel liste tel pets (popup) w waqt el delete 7a9i9i.
+  bool _isDeletingPet = false;
 
   // ==========================================================================
   // Flux "Supprimer mon compte": avertissement -> mot de passe -> appel API
@@ -106,6 +111,106 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
     }
   }
 
+  // ==========================================================================
+  // Flux "Supprimer un animal" (kifma tlab: "tht supprimer mon compte
+  // supprimer le compte mtaa pets... tjik liste mtaa el pets... w
+  // tkhtar whd w tefskhou") - liste tel pets (bottom sheet) -> confirmation
+  // (dialog avertissement) -> appel API -> refresh el liste.
+  // ==========================================================================
+  Future<void> _onDeletePetPressed() async {
+    setState(() => _isDeletingPet = true);
+    final pets = await PetRepository.fetchOwnerPets();
+    if (!mounted) return;
+    setState(() => _isDeletingPet = false);
+
+    if (pets.isEmpty) {
+      showMessageDialog(context, 'no_pets_to_delete_error'.tr());
+      return;
+    }
+
+    if (!mounted) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (sheetContext) {
+        final sizes = AppSizes.of(sheetContext);
+        return SafeArea(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(sizes.screenWidth * 0.06, sizes.screenWidth * 0.05, sizes.screenWidth * 0.06, sizes.screenWidth * 0.06),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('select_pet_to_delete_title'.tr(), style: TextStyle(fontWeight: FontWeight.bold, fontSize: sizes.myProfileBodyFontSize)),
+                SizedBox(height: sizes.screenHeight * 0.015),
+                Flexible(
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: pets.length,
+                    separatorBuilder: (_, __) => Divider(color: Colors.grey.withOpacity(0.15)),
+                    itemBuilder: (context, index) {
+                      final PetSummary pet = pets[index];
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: CircleAvatar(
+                          radius: sizes.screenWidth * 0.06,
+                          backgroundColor: AppColors.pinkpetsy.withOpacity(0.12),
+                          backgroundImage: pet.photoUrl != null ? NetworkImage(pet.photoUrl!) : null,
+                          child: pet.photoUrl == null ? Icon(Icons.pets, color: AppColors.pinkpetsy) : null,
+                        ),
+                        title: Text(pet.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                        trailing: const Icon(Icons.delete_outline, color: AppColors.error),
+                        onTap: () {
+                          Navigator.of(sheetContext).pop();
+                          _confirmAndDeletePet(pet);
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _confirmAndDeletePet(PetSummary pet) async {
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('delete_pet_title'.tr()),
+        content: Text('delete_pet_warning'.tr(namedArgs: {'name': pet.name})),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text('cancel_button'.tr())),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text('delete_button'.tr(), style: const TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+    if (!mounted) return;
+    if (pet.id == null) return;
+
+    setState(() => _isDeletingPet = true);
+    final result = await PetRepository.deletePet(pet.id!);
+    if (!mounted) return;
+    setState(() => _isDeletingPet = false);
+
+    if (result.success) {
+      showMessageDialog(context, 'pet_deleted_success_label'.tr());
+    } else {
+      showMessageDialog(context, result.errorMessage ?? 'login_generic_error'.tr());
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final sizes = AppSizes.of(context);
@@ -153,6 +258,24 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                       iconColor: AppColors.error,
                       isLoading: _isDeleting,
                       onTap: _isDeleting ? null : _onDeleteAccountPressed,
+                    ),
+                  ],
+
+                  // 🔵 ZID (kifma tlab: "nzid bouton fel parametre fel
+                  // confidentialite tht supprimer mon compte, supprimer
+                  // le compte mtaa pets... tjik liste mtaa el pets w
+                  // tkhtar whd w tefskhou") - "owner" bark (houwa el
+                  // wa7id eli 3andou pets).
+                  if (AuthSession.userRole == 'owner') ...[
+                    Divider(color: AppColors.pinkpetsy.withOpacity(0.15)),
+                    _settingsRow(
+                      sizes: sizes,
+                      icon: Icons.pets,
+                      label: 'delete_pet_label'.tr(),
+                      mutedTextColor: AppColors.error,
+                      iconColor: AppColors.error,
+                      isLoading: _isDeletingPet,
+                      onTap: _isDeletingPet ? null : _onDeletePetPressed,
                     ),
                   ],
                 ],

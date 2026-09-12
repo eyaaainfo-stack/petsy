@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../../constants/app_colors.dart';
+import '../../../constants/app_sizes.dart';
 import '../../../models/pet_summary.dart';
 import '../../../widgets/back_button.dart';
 import '../../../widgets/paw_widget.dart';
@@ -34,32 +35,32 @@ class SeeAllPetsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size;
+    final sizes = AppSizes.of(context);
 
     return Scaffold(
       body: SafeArea(
         child: Stack(
           children: [
             // 🐾 Paw (fou9-yemin, kifha kif el design)
-            buildPetPaw(context: context, size: screenSize.width * 0.09, topPercent: 0.025, leftPercent: 0.85, color: AppColors.pinkpetsy.withOpacity(0.6)),
+            buildPetPaw(context: context, size: sizes.seeAllPetsPawSize, topPercent: 0.025, leftPercent: 0.85, color: AppColors.pinkpetsy.withOpacity(0.6)),
 
             SingleChildScrollView(
-              padding: EdgeInsets.symmetric(horizontal: screenSize.width * 0.06),
+              padding: EdgeInsets.symmetric(horizontal: sizes.seeAllPetsHorizontalPadding),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  SizedBox(height: screenSize.height * 0.09),
+                  SizedBox(height: sizes.seeAllPetsTopGap),
 
                   Text(
                     'my_pets_title'.tr(),
                     style: TextStyle(
-                      fontSize: screenSize.width * 0.06,
+                      fontSize: sizes.seeAllPetsTitleFontSize,
                       fontWeight: FontWeight.bold,
                       color: AppColors.pinkpetsy,
                     ),
                   ),
 
-                  SizedBox(height: screenSize.height * 0.03),
+                  SizedBox(height: sizes.seeAllPetsTitleGridGap),
 
                   // ----------------------------------------------------
                   // Grid: el pets el kol + "Add" fel a5er (kifha kif
@@ -71,8 +72,8 @@ class SeeAllPetsScreen extends StatelessWidget {
                     itemCount: pets.length + 1, // +1 lel "Add" tile
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
-                      crossAxisSpacing: screenSize.width * 0.06,
-                      mainAxisSpacing: screenSize.height * 0.025,
+                      crossAxisSpacing: sizes.seeAllPetsGridCrossSpacing,
+                      mainAxisSpacing: sizes.seeAllPetsGridMainSpacing,
                       childAspectRatio: 0.85,
                     ),
                     itemBuilder: (context, index) {
@@ -80,7 +81,7 @@ class SeeAllPetsScreen extends StatelessWidget {
                       if (index == pets.length) {
                         return Center(
                           child: AddPetTile(
-                            size: screenSize.width * 0.28,
+                            size: sizes.seeAllPetsTileSize,
                             onTap: () {
                               Navigator.of(context).push(
                                 MaterialPageRoute(
@@ -99,7 +100,7 @@ class SeeAllPetsScreen extends StatelessWidget {
                       return Center(
                         child: PetTile(
                           pet: pets[index],
-                          size: screenSize.width * 0.28,
+                          size: sizes.seeAllPetsTileSize,
                           onTap: () {
                             Navigator.of(context).push(
                               MaterialPageRoute(builder: (_) => PetProfileScreen(pet: pets[index])),
@@ -110,7 +111,7 @@ class SeeAllPetsScreen extends StatelessWidget {
                     },
                   ),
 
-                  SizedBox(height: screenSize.height * 0.03),
+                  SizedBox(height: sizes.seeAllPetsBottomGap),
                 ],
               ),
             ),

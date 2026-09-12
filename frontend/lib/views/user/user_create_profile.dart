@@ -6,6 +6,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
 import '../../constants/app_colors.dart';
+import '../../constants/app_sizes.dart';
 import '../../widgets/back_button.dart';
 import '../../widgets/button.dart';
 import '../../widgets/paw_widget.dart';
@@ -272,18 +273,18 @@ class _UserCreateProfileScreenState extends State<UserCreateProfileScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (sheetContext) {
-        final screenSize = MediaQuery.of(context).size;
+        final sizes = AppSizes.of(context);
         return SafeArea(
           child: SizedBox(
-            height: screenSize.height * 0.6,
+            height: sizes.userCreateProfileCityPickerHeight,
             child: Column(
               children: [
                 Padding(
-                  padding: EdgeInsets.all(screenSize.width * 0.04),
+                  padding: EdgeInsets.all(sizes.userCreateProfileCityPickerPadding),
                   child: Text(
                     'select_city_title'.tr(),
                     style: TextStyle(
-                      fontSize: screenSize.width * 0.045,
+                      fontSize: sizes.userCreateProfileCityPickerTitleFontSize,
                       fontWeight: FontWeight.bold,
                       color: AppColors.pinkpetsy,
                     ),
@@ -467,49 +468,50 @@ class _UserCreateProfileScreenState extends State<UserCreateProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size;
+    final sizes = AppSizes.of(context);
+    final screenSize = MediaQuery.of(context).size; // 🔵 lezمha l'el _fieldLabel (parametrized).
 
     return Scaffold(
       body: SafeArea(
         child: Stack(
           children: [
-            buildPetPaw(context: context, size: screenSize.width * 0.09, topPercent: 0.025, leftPercent: 0.80, color: AppColors.pinkpetsy.withOpacity(0.6)),
-            buildPetPaw(context: context, size: screenSize.width * 0.065, topPercent: 0.06, leftPercent: 0.88, color: AppColors.pinkpetsy.withOpacity(0.6)),
+            buildPetPaw(context: context, size: sizes.userCreateProfilePaw1Size, topPercent: 0.025, leftPercent: 0.80, color: AppColors.pinkpetsy.withOpacity(0.6)),
+            buildPetPaw(context: context, size: sizes.userCreateProfilePaw2Size, topPercent: 0.06, leftPercent: 0.88, color: AppColors.pinkpetsy.withOpacity(0.6)),
 
             SingleChildScrollView(
-              padding: EdgeInsets.symmetric(horizontal: screenSize.width * 0.08),
+              padding: EdgeInsets.symmetric(horizontal: sizes.userCreateProfileHorizontalPadding),
               child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    SizedBox(height: screenSize.height * 0.09),
+                    SizedBox(height: sizes.userCreateProfileTopGap),
 
                     Center(
                       child: Text(
                         'create_profile_title'.tr(),
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: screenSize.width * 0.052,
+                          fontSize: sizes.userCreateProfileTitleFontSize,
                           fontWeight: FontWeight.bold,
                           color: AppColors.vertpetsy,
                         ),
                       ),
                     ),
-                    SizedBox(height: screenSize.height * 0.004),
+                    SizedBox(height: sizes.userCreateProfileTitleSubtitleGap),
                     Center(
                       child: Text(
                         'create_profile_subtitle'.tr(),
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: screenSize.width * 0.046,
+                          fontSize: sizes.userCreateProfileSubtitleFontSize,
                           fontWeight: FontWeight.bold,
                           color: AppColors.pinkpetsy,
                         ),
                       ),
                     ),
 
-                    SizedBox(height: screenSize.height * 0.03),
+                    SizedBox(height: sizes.userCreateProfileSubtitleAvatarGap),
 
                     // 📷 Avatar + badge camera -> el bottom sheet (Galerie/Camera)
                     Center(
@@ -519,27 +521,27 @@ class _UserCreateProfileScreenState extends State<UserCreateProfileScreen> {
                           clipBehavior: Clip.none,
                           children: [
                             CircleAvatar(
-                              radius: screenSize.width * 0.14,
+                              radius: sizes.userCreateProfileAvatarRadius,
                               backgroundColor: AppColors.vertpetsy.withOpacity(0.15),
                               // lowkan 3andna photo mkhtara, twarriha; lowkan
                               // le, el icon el default el shakhs (person)
                               backgroundImage: _profileImageBytes != null ? MemoryImage(_profileImageBytes!) : null,
                               child: _profileImageBytes == null
-                                  ? Icon(Icons.person, size: screenSize.width * 0.16, color: Colors.black87)
+                                  ? Icon(Icons.person, size: sizes.userCreateProfileAvatarIcon, color: Colors.black87)
                                   : null,
                             ),
                             Positioned(
                               bottom: 0,
-                              right: screenSize.width * 0.005,
+                              right: sizes.userCreateProfileCameraBadgeOffset,
                               child: Container(
-                                width: screenSize.width * 0.09,
-                                height: screenSize.width * 0.09,
+                                width: sizes.userCreateProfileCameraBadgeSize,
+                                height: sizes.userCreateProfileCameraBadgeSize,
                                 decoration: BoxDecoration(
                                   color: AppColors.vertpetsy,
                                   shape: BoxShape.circle,
                                   border: Border.all(color: Theme.of(context).scaffoldBackgroundColor, width: 2.5),
                                 ),
-                                child: Icon(Icons.camera_alt, size: screenSize.width * 0.045, color: Colors.white),
+                                child: Icon(Icons.camera_alt, size: sizes.userCreateProfileCameraIcon, color: Colors.white),
                               ),
                             ),
                           ],
@@ -547,23 +549,23 @@ class _UserCreateProfileScreenState extends State<UserCreateProfileScreen> {
                       ),
                     ),
 
-                    SizedBox(height: screenSize.height * 0.012),
+                    SizedBox(height: sizes.userCreateProfileAvatarLabelGap),
 
                     Center(
                       child: Text(
                         'add_photo_label'.tr(),
                         style: TextStyle(
-                          fontSize: screenSize.width * 0.036,
+                          fontSize: sizes.userCreateProfileAddPhotoFontSize,
                           color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
                         ),
                       ),
                     ),
 
-                    SizedBox(height: screenSize.height * 0.035),
+                    SizedBox(height: sizes.userCreateProfileLabelFieldsGap),
 
                     // Name
                     _fieldLabel('name_label'.tr(), screenSize.width),
-                    SizedBox(height: screenSize.height * 0.008),
+                    SizedBox(height: sizes.userCreateProfileFieldLabelGap),
                     TextFormField(
                       controller: _nameController,
                       validator: (value) {
@@ -581,10 +583,10 @@ class _UserCreateProfileScreenState extends State<UserCreateProfileScreen> {
                         context: context,
                         suffixIcon: _checkingName
                             ? Padding(
-                                padding: EdgeInsets.all(screenSize.width * 0.035),
+                                padding: EdgeInsets.all(sizes.userCreateProfileNameCheckIconPadding),
                                 child: SizedBox(
-                                  width: screenSize.width * 0.04,
-                                  height: screenSize.width * 0.04,
+                                  width: sizes.userCreateProfileNameCheckIconSize,
+                                  height: sizes.userCreateProfileNameCheckIconSize,
                                   child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.vertpetsy),
                                 ),
                               )
@@ -600,39 +602,39 @@ class _UserCreateProfileScreenState extends State<UserCreateProfileScreen> {
                     // el icon) - "disponible" (vert) wela "meakhoud" (a7mar),
                     // nafs mant9 el insta/fb.
                     if (!_checkingName && _nameAvailable != null && _lastCheckedName == _nameController.text.trim()) ...[
-                      SizedBox(height: screenSize.height * 0.006),
+                      SizedBox(height: sizes.userCreateProfileNameStatusGap),
                       Text(
                         _nameAvailable == true ? 'name_available_label'.tr() : 'name_taken_error'.tr(),
                         style: TextStyle(
-                          fontSize: screenSize.width * 0.03,
+                          fontSize: sizes.userCreateProfileNameStatusFontSize,
                           color: _nameAvailable == true ? AppColors.success : AppColors.error,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
 
-                    SizedBox(height: screenSize.height * 0.02),
+                    SizedBox(height: sizes.userCreateProfileFieldBlockGap),
 
                     // Birthday
                     _fieldLabel('birthday_label'.tr(), screenSize.width),
-                    SizedBox(height: screenSize.height * 0.008),
+                    SizedBox(height: sizes.userCreateProfileFieldLabelGap),
                     TextFormField(
                       controller: _birthdayController,
                       readOnly: true,
                       onTap: _pickBirthday,
                       decoration: _fieldDecoration(
                         context: context,
-                        suffixIcon: Icon(Icons.calendar_today_outlined, color: AppColors.pinkpetsy.withOpacity(0.7), size: screenSize.width * 0.05),
+                        suffixIcon: Icon(Icons.calendar_today_outlined, color: AppColors.pinkpetsy.withOpacity(0.7), size: sizes.userCreateProfileSuffixIcon),
                       ),
                     ),
 
-                    SizedBox(height: screenSize.height * 0.02),
+                    SizedBox(height: sizes.userCreateProfileFieldBlockGap),
 
                     // 🔵 ZID (kifma tlabt): Gender - 2 boutons (Male/Female),
                     // choix wa7ed bark (nafs el pattern tel pet gender fi
                     // create_pet_profile.dart).
                     _fieldLabel('gender_label'.tr(), screenSize.width),
-                    SizedBox(height: screenSize.height * 0.008),
+                    SizedBox(height: sizes.userCreateProfileFieldLabelGap),
                     Row(
                       children: [
                         Expanded(
@@ -642,12 +644,12 @@ class _UserCreateProfileScreenState extends State<UserCreateProfileScreen> {
                               backgroundColor: _selectedGender == 'female' ? AppColors.pinkpetsy.withOpacity(0.15) : null,
                               side: BorderSide(color: _selectedGender == 'female' ? AppColors.pinkpetsy : AppColors.pinkpetsy.withOpacity(0.4)),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              padding: EdgeInsets.symmetric(vertical: screenSize.height * 0.016),
+                              padding: EdgeInsets.symmetric(vertical: sizes.userCreateProfileGenderButtonPaddingV),
                             ),
                             child: Text('female_label'.tr(), style: TextStyle(color: AppColors.pinkpetsy, fontWeight: FontWeight.w600)),
                           ),
                         ),
-                        SizedBox(width: screenSize.width * 0.03),
+                        SizedBox(width: sizes.userCreateProfileGenderButtonGap),
                         Expanded(
                           child: OutlinedButton(
                             onPressed: () => setState(() => _selectedGender = 'male'),
@@ -655,7 +657,7 @@ class _UserCreateProfileScreenState extends State<UserCreateProfileScreen> {
                               backgroundColor: _selectedGender == 'male' ? AppColors.pinkpetsy.withOpacity(0.15) : null,
                               side: BorderSide(color: _selectedGender == 'male' ? AppColors.pinkpetsy : AppColors.pinkpetsy.withValues(alpha: 0.4)),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              padding: EdgeInsets.symmetric(vertical: screenSize.height * 0.016),
+                              padding: EdgeInsets.symmetric(vertical: sizes.userCreateProfileGenderButtonPaddingV),
                             ),
                             child: Text('male_label'.tr(), style: TextStyle(color: AppColors.pinkpetsy, fontWeight: FontWeight.w600)),
                           ),
@@ -663,45 +665,45 @@ class _UserCreateProfileScreenState extends State<UserCreateProfileScreen> {
                       ],
                     ),
 
-                    SizedBox(height: screenSize.height * 0.02),
+                    SizedBox(height: sizes.userCreateProfileFieldBlockGap),
 
                     // 🔴 FIX (kifma tlab): "Localization" tawa 9bal
                     // "City" (mch ba3دها) - Localization -> yeftah el
                     // khariita (widgets/map.dart)
                     _fieldLabel('localization_label'.tr(), screenSize.width),
-                    SizedBox(height: screenSize.height * 0.008),
+                    SizedBox(height: sizes.userCreateProfileFieldLabelGap),
                     TextFormField(
                       controller: _locationController,
                       readOnly: true,
                       onTap: _pickLocation,
                       decoration: _fieldDecoration(
                         context: context,
-                        suffixIcon: Icon(Icons.map_outlined, color: AppColors.pinkpetsy.withOpacity(0.7), size: screenSize.width * 0.05),
+                        suffixIcon: Icon(Icons.map_outlined, color: AppColors.pinkpetsy.withOpacity(0.7), size: sizes.userCreateProfileSuffixIcon),
                       ),
                     ),
 
-                    SizedBox(height: screenSize.height * 0.02),
+                    SizedBox(height: sizes.userCreateProfileFieldBlockGap),
 
                     // City -> bottom sheet bel 24 wilaya (mch TextField 3adi)
                     _fieldLabel('city_label'.tr(), screenSize.width),
-                    SizedBox(height: screenSize.height * 0.008),
+                    SizedBox(height: sizes.userCreateProfileFieldLabelGap),
                     TextFormField(
                       controller: _cityController,
                       readOnly: true,
                       onTap: _showCityPicker,
                       decoration: _fieldDecoration(
                         context: context,
-                        suffixIcon: Icon(Icons.location_on_outlined, color: AppColors.pinkpetsy.withOpacity(0.7), size: screenSize.width * 0.05),
+                        suffixIcon: Icon(Icons.location_on_outlined, color: AppColors.pinkpetsy.withOpacity(0.7), size: sizes.userCreateProfileSuffixIcon),
                       ),
                     ),
 
-                    SizedBox(height: screenSize.height * 0.02),
+                    SizedBox(height: sizes.userCreateProfileFieldBlockGap),
 
                     // Phone Number -> "+216 XX XXX XXX" (kifma tlab) -
                     // el user yekteb ar9am bark, el prefix+spaces
                     // yet7otou automatique.
                     _fieldLabel('phone_number_label'.tr(), screenSize.width),
-                    SizedBox(height: screenSize.height * 0.008),
+                    SizedBox(height: sizes.userCreateProfileFieldLabelGap),
                     TextFormField(
                       controller: _phoneController,
                       keyboardType: TextInputType.number,
@@ -710,11 +712,11 @@ class _UserCreateProfileScreenState extends State<UserCreateProfileScreen> {
                       decoration: _fieldDecoration(context: context),
                     ),
 
-                    SizedBox(height: screenSize.height * 0.02),
+                    SizedBox(height: sizes.userCreateProfileFieldBlockGap),
 
                     // About you -> obligatoire GHIR lel sitter/courier
                     _fieldLabel('about_you_label'.tr(), screenSize.width),
-                    SizedBox(height: screenSize.height * 0.008),
+                    SizedBox(height: sizes.userCreateProfileFieldLabelGap),
                     TextFormField(
                       controller: _aboutController,
                       maxLines: 4,
@@ -722,7 +724,7 @@ class _UserCreateProfileScreenState extends State<UserCreateProfileScreen> {
                       decoration: _fieldDecoration(context: context),
                     ),
 
-                    SizedBox(height: screenSize.height * 0.04),
+                    SizedBox(height: sizes.userCreateProfileButtonGap),
 
                     Center(
                       child: CustomButton(
@@ -736,7 +738,7 @@ class _UserCreateProfileScreenState extends State<UserCreateProfileScreen> {
                       ),
                     ),
 
-                    SizedBox(height: screenSize.height * 0.04),
+                    SizedBox(height: sizes.userCreateProfileButtonGap),
                   ],
                 ),
               ),

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../constants/app_colors.dart';
+import '../../../constants/app_sizes.dart';
 import '../../../widgets/back_button.dart';
 import '../../../widgets/button.dart';
 import '../../../widgets/outlined_button.dart';
@@ -334,7 +335,7 @@ class _AddPetPhotoScreenState extends State<AddPetPhotoScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size;
+    final sizes = AppSizes.of(context);
     final String placeholderAsset =
         widget.petType == 'cat' ? 'assets/images/cat.png' : 'assets/images/dog.png';
 
@@ -343,22 +344,22 @@ class _AddPetPhotoScreenState extends State<AddPetPhotoScreen> {
         child: Stack(
           children: [
             // 🐾 Paws (fou9-yemin w ta7t-yesar, kifha kif el design)
-            buildPetPaw(context: context, size: screenSize.width * 0.08, topPercent: 0.02, leftPercent: 0.86, color: AppColors.pinkpetsy.withOpacity(0.7)),
-            buildPetPaw(context: context, size: screenSize.width * 0.09, topPercent: 0.86, leftPercent: 0.06, color: AppColors.pinkpetsy.withOpacity(0.7)),
+            buildPetPaw(context: context, size: sizes.addPetPhotoPaw1Size, topPercent: 0.02, leftPercent: 0.86, color: AppColors.pinkpetsy.withOpacity(0.7)),
+            buildPetPaw(context: context, size: sizes.addPetPhotoPaw2Size, topPercent: 0.86, leftPercent: 0.06, color: AppColors.pinkpetsy.withOpacity(0.7)),
 
             const CustomBackButton(),
 
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: screenSize.width * 0.08),
+              padding: EdgeInsets.symmetric(horizontal: sizes.addPetPhotoHorizontalPadding),
               child: Column(
                 children: [
-                  SizedBox(height: screenSize.height * 0.10),
+                  SizedBox(height: sizes.addPetPhotoTopGap),
 
                   Text(
                     'add_pet_photo_title'.tr(),
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: screenSize.width * 0.055,
+                      fontSize: sizes.addPetPhotoTitleFontSize,
                       fontWeight: FontWeight.bold,
                       color: Theme.of(context).textTheme.bodyLarge?.color,
                     ),
@@ -376,8 +377,8 @@ class _AddPetPhotoScreenState extends State<AddPetPhotoScreen> {
                       alignment: Alignment.center,
                       children: [
                         Container(
-                          width: screenSize.width * 0.52,
-                          height: screenSize.width * 0.52,
+                          width: sizes.addPetPhotoPhotoSize,
+                          height: sizes.addPetPhotoPhotoSize,
                           decoration: BoxDecoration(
                             // 🔵 badalna: mrabba3 b zawaya mdawra (mch
                             // dayra kamla) - el images (dog.png/cat.png)
@@ -402,26 +403,26 @@ class _AddPetPhotoScreenState extends State<AddPetPhotoScreen> {
                           bottom: -6,
                           right: -6,
                           child: Container(
-                            width: screenSize.width * 0.11,
-                            height: screenSize.width * 0.11,
+                            width: sizes.addPetPhotoCameraBadgeSize,
+                            height: sizes.addPetPhotoCameraBadgeSize,
                             decoration: BoxDecoration(
                               color: AppColors.pinkpetsy,
                               shape: BoxShape.circle,
                               border: Border.all(color: Theme.of(context).scaffoldBackgroundColor, width: 2.5),
                             ),
-                            child: Icon(Icons.camera_alt, color: Colors.white, size: screenSize.width * 0.05),
+                            child: Icon(Icons.camera_alt, color: Colors.white, size: sizes.addPetPhotoCameraIcon),
                           ),
                         ),
                       ],
                     ),
                   ),
 
-                  SizedBox(height: screenSize.height * 0.02),
+                  SizedBox(height: sizes.addPetPhotoPhotoLabelGap),
 
                   Text(
                     'your_pet_photo_label'.tr(),
                     style: TextStyle(
-                      fontSize: screenSize.width * 0.04,
+                      fontSize: sizes.addPetPhotoLabelFontSize,
                       fontWeight: FontWeight.w600,
                       color: AppColors.vertpetsy,
                     ),
@@ -433,14 +434,14 @@ class _AddPetPhotoScreenState extends State<AddPetPhotoScreen> {
                   // mawjoud déjà, fou9 el "Next" bالضبط.
                   CustomOutlinedButton(
                     text: 'add_another_pet_button'.tr(),
-                    width: screenSize.width * 0.90,
-                    height: screenSize.height * 0.065,
+                    width: sizes.addPetPhotoOutlinedButtonWidth,
+                    height: sizes.addPetPhotoOutlinedButtonHeight,
                     fontFactor: 0.32,
-                    prefixIcon: Icon(Icons.add, color: AppColors.vertpetsy, size: screenSize.width * 0.05),
+                    prefixIcon: Icon(Icons.add, color: AppColors.vertpetsy, size: sizes.addPetPhotoOutlinedButtonIcon),
                     onPressed: _onAddAnotherPetPressed,
                   ),
 
-                  SizedBox(height: screenSize.height * 0.015),
+                  SizedBox(height: sizes.addPetPhotoButtonsGap),
 
                   CustomButton(
                     text: _isSubmitting ? 'loading_label'.tr() : 'next_button'.tr(),
@@ -451,7 +452,7 @@ class _AddPetPhotoScreenState extends State<AddPetPhotoScreen> {
                     onPressed: _onNextPressed,
                   ),
 
-                  SizedBox(height: screenSize.height * 0.04),
+                  SizedBox(height: sizes.addPetPhotoBottomGap),
                 ],
               ),
             ),

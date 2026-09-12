@@ -198,7 +198,14 @@ class _AvailabilityPickerState extends State<AvailabilityPicker> {
                   ),
                   InkWell(
                     onTap: () async {
-                      final picked = await showTimePicker(context: dialogContext, initialTime: const TimeOfDay(hour: 14, minute: 0));
+                      // 🔴 FIX (kifma tlab: "el marra el thenya ywalli
+                      // fiha bug") - kan hardcoded 14:00 dima (ma
+                      // yeftakerch el 9ima eli 5tartha 9bal ken t3awed
+                      // te7ell had el 7a9el mel jdid).
+                      final initial = tempStartMinutes != null
+                          ? TimeOfDay(hour: tempStartMinutes! ~/ 60, minute: tempStartMinutes! % 60)
+                          : const TimeOfDay(hour: 14, minute: 0);
+                      final picked = await showTimePicker(context: dialogContext, initialTime: initial);
                       if (picked != null) setDialogState(() => tempStartMinutes = picked.hour * 60 + picked.minute);
                     },
                     child: Padding(
@@ -214,7 +221,11 @@ class _AvailabilityPickerState extends State<AvailabilityPicker> {
                   ),
                   InkWell(
                     onTap: () async {
-                      final picked = await showTimePicker(context: dialogContext, initialTime: const TimeOfDay(hour: 15, minute: 0));
+                      // 🔴 FIX: nafs el mochkla - 15:00 hardcoded.
+                      final initial = tempEndMinutes != null
+                          ? TimeOfDay(hour: tempEndMinutes! ~/ 60, minute: tempEndMinutes! % 60)
+                          : const TimeOfDay(hour: 15, minute: 0);
+                      final picked = await showTimePicker(context: dialogContext, initialTime: initial);
                       if (picked != null) setDialogState(() => tempEndMinutes = picked.hour * 60 + picked.minute);
                     },
                     child: Padding(

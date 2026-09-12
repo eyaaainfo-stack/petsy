@@ -109,6 +109,35 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           ),
           themeMode: overrideMode ?? _themeMode,
 
+          // 🔴 FIX (kifma tlab: "fi Chrome yodhhrou kbar w f tlf sghar") -
+          // el app el kol (AppSizes + CustomButton + el ba9i) ye7sbou
+          // "screenWidth/Height" mel MediaQuery direct - fel phone hedha
+          // ~360-430px (normal), ama fel Chrome/PC el window ynajjam
+          // ykoun 700-1500px+ (fetha kbira) - fa kol 7aja "tetkabber"
+          // proportionnellement. "builder" houni ye7bes/ycap el ra9m
+          // el eli el app "tchouf" (bark l'el 7isabet, mch el window
+          // el 7a9i9iya) bin 320-430 (3ard) w 600-932 (toul) - "référence
+          // phone" dima, 7ata fel Chrome/desktop.
+          // 🔴 FIX (kifma tlab: "el widgets zidhom chwaya, mch bark el
+          // ktiba" - el phone (360 logical) as8ar mel "reference" el
+          // design mbani 3lih (390, chraht fel comments - iPhone 12/13)
+          // - zedna FLOOR houni (mch bark el cap el fou9ani l'Chrome) -
+          // ay device as8ar mel reference ye5dem "kbar" kifha kif
+          // reference (mch bark el fonts - KOL 7aja: paddings/icons/
+          // widgets/gaps, 7it el kol mabni 3ala nafs el screenWidth/
+          // Height mel MediaQuery).
+          builder: (context, child) {
+            final MediaQueryData mq = MediaQuery.of(context);
+            final Size cappedSize = Size(
+              mq.size.width.clamp(390.0, 430.0),
+              mq.size.height.clamp(700.0, 932.0),
+            );
+            return MediaQuery(
+              data: mq.copyWith(size: cappedSize),
+              child: child!,
+            );
+          },
+
           home: const SplashDecider(),
         );
       },

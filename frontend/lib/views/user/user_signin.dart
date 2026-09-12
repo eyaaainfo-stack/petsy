@@ -7,8 +7,12 @@ import '../../widgets/button.dart';
 import '../../widgets/paw_widget.dart';
 import '../../controllers/validators.dart';
 import '../../controllers/auth_controller.dart';
-import 'verify_email_screen.dart';
 import '../../widgets/message_dialog.dart';
+import 'user_create_profile.dart';
+import 'owner/profile_owner.dart';
+import 'sitter/sitter_profile.dart';
+import '../../repositories/pet_repository.dart';
+import '../../services/api_service.dart';
 
 // ============================================================================
 // UserSignInScreen ("Sign up" - 7sab jdid)
@@ -84,13 +88,14 @@ class _UserSignInScreenState extends State<UserSignInScreen> {
     if (!mounted) return;
     setState(() => _isSubmitting = false);
 
-    // 🔵 ZID houni: kif el signup yenja7, nemchiw l'écran VerifyEmailScreen
-    // 9BAL (kifma tlab: "el email ykoun réellement mawjoud - vérification
-    // bloquante") - UserCreateProfileScreen (nafs role) yeji GHIR ba3d
-    // ma el user yconfirmi el code.
+    // 🔴 FIX (kifma tlab: "nahhili el verification mta3 el email... c
+    // pas la peine bch ta3mel verification") - VerifyEmailScreen
+    // ma3adech mandatory - nemchiw direct l'UserCreateProfileScreen
+    // (nafs role), kifha kif el flow tel Google Sign-In.
     if (result.success) {
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => VerifyEmailScreen(email: _emailController.text.trim())),
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => UserCreateProfileScreen(role: widget.role)),
+        (route) => false,
       );
     } else if (result.errorMessage == 'signup_email_exists_error'.tr()) {
       // 🔴 FIX: red INLINE ta7t el 7a9el email (mch popup) - setState
@@ -105,6 +110,97 @@ class _UserSignInScreenState extends State<UserSignInScreen> {
       // etc.).
       showMessageDialog(context, result.errorMessage ?? 'login_generic_error'.tr());
     }
+  }
+
+  // 🔵 ZID (kifma tlab: "Continue with Google") - houni écran SIGNUP,
+  // "role" (widget.role) deja m3aloum - ken el email jdid, el compte
+  // yet39od b'hedha el role MBACHER (bla ma ye7taj VerifyEmailScreen,
+  // 7it Google deja verifi el email - isEmailVerified true mel backend).
+  // Ken el email deja mawjoud (compte 3adi wela google), houni LOGIN
+  // normal (nafs mant9 UserLoginScreen).
+  bool _isGoogleSubmitting = false;
+  Future<void> _onGooglePressed() async {
+    if (_isGoogleSubmitting) return;
+    setState(() => _isGoogleSubmitting = true);
+
+    final result = await _authController.signInWithGoogle(role: widget.role);
+
+    if (!mounted) return;
+    setState(() => _isGoogleSubmitting = false);
+
+    if (result.success) {
+      await _navigateAfterGoogleAuth(
+        role: result.role ?? widget.role,
+        isProfileComplete: result.isProfileComplete,
+        fullName: result.fullName,
+        city: result.city,
+        photoUrl: result.photoUrl,
+        isVerified: result.isVerified,
+        gender: result.gender,
+      );
+      return;
+    }
+
+    switch (result.errorType) {
+      case GoogleAuthErrorType.cancelled:
+        // el user 3andlou el picker w far 9bal ma ye5tar - bla error
+        break;
+      default:
+        // "noAccountFound" mch mumkena houni (dima nab3thou role), fa
+        // ay error okhor ("generic") ye5dem b'nafs el message.
+        showMessageDialog(context, 'login_generic_error'.tr());
+    }
+  }
+
+  Future<void> _navigateAfterGoogleAuth({
+    required String role,
+    required bool isProfileComplete,
+    required String? fullName,
+    required String? city,
+    required String? photoUrl,
+    required bool isVerified,
+    required String? gender,
+  }) async {
+    if (!isProfileComplete) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => UserCreateProfileScreen(role: role)),
+        (route) => false,
+      );
+      return;
+    }
+
+    if (role == 'owner') {
+      final pets = await PetRepository.fetchOwnerPets();
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => ProfileOwnerScreen(
+            ownerName: fullName ?? '',
+            ownerCity: city ?? '',
+            pets: pets,
+            ownerPhotoUrl: (photoUrl != null && photoUrl.isNotEmpty) ? '${ApiService.mediaBaseUrl}$photoUrl' : null,
+            isVerified: isVerified,
+            gender: gender,
+          ),
+        ),
+        (route) => false,
+      );
+    } else if (role == 'sitter') {
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => SitterProfileScreen(
+            sitterName: fullName ?? '',
+            sitterCity: city ?? '',
+            sitterPhotoUrl: (photoUrl != null && photoUrl.isNotEmpty) ? '${ApiService.mediaBaseUrl}$photoUrl' : null,
+            isVerified: isVerified,
+            gender: gender,
+          ),
+        ),
+        (route) => false,
+      );
+    }
+    // TODO: navigation lel home mte3 el b39dhin (courier/admin)
   }
 
   InputDecoration _fieldDecoration({
@@ -314,13 +410,17 @@ class _UserSignInScreenState extends State<UserSignInScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         InkWell(
-                          onTap: () {
-                            // TODO: Google Sign-In
-                          },
+                          onTap: _isGoogleSubmitting ? null : _onGooglePressed,
                           borderRadius: BorderRadius.circular(50),
                           child: Padding(
                             padding: EdgeInsets.all(sizes.authSocialIconPadding),
-                            child: Icon(Icons.g_mobiledata_rounded, size: sizes.authGoogleIconSize, color: Colors.redAccent),
+                            child: _isGoogleSubmitting
+                                ? SizedBox(
+                                    width: sizes.authGoogleIconSize,
+                                    height: sizes.authGoogleIconSize,
+                                    child: const CircularProgressIndicator(strokeWidth: 2, color: Colors.redAccent),
+                                  )
+                                : Icon(Icons.g_mobiledata_rounded, size: sizes.authGoogleIconSize, color: Colors.redAccent),
                           ),
                         ),
                         SizedBox(width: sizes.authSocialIconsGap),

@@ -27,6 +27,16 @@ class AppSizes {
   double get screenWidth => _screenSize.width;
   double get screenHeight => _screenSize.height;
 
+  // 🔵 ZID (kifma tlab: "minimum floor l'el ktiba" - Tecno Pop 7 w
+  // téléphones sghar el logical width mte3hom as8ar mel reference
+  // (~390px, iPhone 12/13) - kol el ratios yenzlou b'nisba, w el
+  // ktiba tban as8ar physiquement 3al écrans hedhom. "_minFont" ye5alli
+  // ay fontSize ma yenzelch ta7t 11px, 7ata lowkan screenWidth * ratio
+  // y3ti a9al - el design/proportions el bāši ma yetbadlouch (ghir
+  // el font, mch padding/icons/etc.).
+  static const double _minFontSize = 11.0;
+  double _floorFont(double size) => size < _minFontSize ? _minFontSize : size;
+
   // --------------------------------------------------------------------
   // Account type buttons (views/user/account_type.dart)
   // --------------------------------------------------------------------
@@ -48,8 +58,8 @@ class AppSizes {
   double get accountButtonPaddingV => screenHeight * accountButtonPaddingVRatio;
   double get accountButtonIconSize => screenWidth * accountButtonIconRatio;
   double get accountButtonArrowIconSize => screenWidth * accountButtonArrowIconRatio;
-  double get accountButtonTitleFontSize => screenWidth * accountButtonTitleFontRatio;
-  double get accountButtonDescFontSize => screenWidth * accountButtonDescFontRatio;
+  double get accountButtonTitleFontSize => _floorFont(screenWidth * accountButtonTitleFontRatio);
+  double get accountButtonDescFontSize => _floorFont(screenWidth * accountButtonDescFontRatio);
   double get accountButtonGap => screenWidth * accountButtonGapRatio;
   double get accountButtonEndGap => screenWidth * accountButtonEndGapRatio;
   double get accountButtonTitleGap => screenHeight * accountButtonTitleGapRatio;
@@ -60,7 +70,7 @@ class AppSizes {
   //
   // // Welcome screen (views/user/welcome.dart)
   // static const double welcomeTitleFontRatio = 0.06;
-  // double get welcomeTitleFontSize => screenWidth * welcomeTitleFontRatio;
+  // double get welcomeTitleFontSize => _floorFont(screenWidth * welcomeTitleFontRatio);
   // --------------------------------------------------------------------
 
   // --------------------------------------------------------------------
@@ -115,7 +125,7 @@ class AppSizes {
   double get languageLogoWidth => screenWidth * languageLogoWidthRatio;
   double get languageLogoHeight => screenHeight * languageLogoHeightRatio;
 
-  double get languageTitleFontSize => screenWidth * languageTitleFontRatio;
+  double get languageTitleFontSize => _floorFont(screenWidth * languageTitleFontRatio);
 
   double get languageBlockTopGap => screenHeight * languageBlockTopGapRatio;
   double get languageLogoTitleGap => screenHeight * languageLogoTitleGapRatio;
@@ -166,9 +176,9 @@ class AppSizes {
   double get welcomeTopGap => screenHeight * welcomeTopGapRatio;
   double get welcomeImageWidth => screenWidth * welcomeImageWidthRatio;
   double get welcomeImageTitleGap => screenHeight * welcomeImageTitleGapRatio;
-  double get welcomeTitleFontSize => screenWidth * welcomeTitleFontRatio;
+  double get welcomeTitleFontSize => _floorFont(screenWidth * welcomeTitleFontRatio);
   double get welcomeTitleSubtitleGap => screenHeight * welcomeTitleSubtitleGapRatio;
-  double get welcomeSubtitleFontSize => screenWidth * welcomeSubtitleFontRatio;
+  double get welcomeSubtitleFontSize => _floorFont(screenWidth * welcomeSubtitleFontRatio);
   double get welcomeBottomGap => screenHeight * welcomeBottomGapRatio;
 
   // --------------------------------------------------------------------
@@ -196,12 +206,12 @@ class AppSizes {
   double get onboardingPawSize2 => screenWidth * onboardingPawSize2Ratio;
   double get onboardingSkipAreaHeight => screenHeight * onboardingSkipAreaHeightRatio;
   double get onboardingSkipPaddingH => screenWidth * onboardingSkipPaddingHRatio;
-  double get onboardingSkipFontSize => screenWidth * onboardingSkipFontRatio;
+  double get onboardingSkipFontSize => _floorFont(screenWidth * onboardingSkipFontRatio);
   double get onboardingPagePaddingH => screenWidth * onboardingPagePaddingHRatio;
   double get onboardingImageSize => screenWidth * onboardingImageSizeRatio;
-  double get onboardingTitleFontSize => screenWidth * onboardingTitleFontRatio;
+  double get onboardingTitleFontSize => _floorFont(screenWidth * onboardingTitleFontRatio);
   double get onboardingTitleSubtitleGap => screenHeight * onboardingTitleSubtitleGapRatio;
-  double get onboardingSubtitleFontSize => screenWidth * onboardingSubtitleFontRatio;
+  double get onboardingSubtitleFontSize => _floorFont(screenWidth * onboardingSubtitleFontRatio);
   double get onboardingDotMarginH => screenWidth * onboardingDotMarginHRatio;
   double get onboardingDotActiveWidth => screenWidth * onboardingDotActiveWidthRatio;
   double get onboardingDotInactiveWidth => screenWidth * onboardingDotInactiveWidthRatio;
@@ -261,18 +271,18 @@ class AppSizes {
   double get authTopGap => screenHeight * authTopGapRatio;
   double get authLogoWidth => screenWidth * authLogoWidthRatio;
   double get authLogoTitleGap => screenHeight * authLogoTitleGapRatio;
-  double get authTitleFontSize => screenWidth * authTitleFontRatio;
+  double get authTitleFontSize => _floorFont(screenWidth * authTitleFontRatio);
   double get authTitleSubtitleGap => screenHeight * authTitleSubtitleGapRatio;
-  double get authSubtitleFontSize => screenWidth * authSubtitleFontRatio;
+  double get authSubtitleFontSize => _floorFont(screenWidth * authSubtitleFontRatio);
   double get authSubtitleFieldsGap => screenHeight * authSubtitleFieldsGapRatio;
-  double get authFieldLabelFontSize => screenWidth * authFieldLabelFontRatio;
+  double get authFieldLabelFontSize => _floorFont(screenWidth * authFieldLabelFontRatio);
   double get authLabelFieldGap => screenHeight * authLabelFieldGapRatio;
   double get authFieldsGap => screenHeight * authFieldsGapRatio;
   double get authButtonWidth => screenWidth * authButtonWidthRatio;
   double get authButtonHeight => screenHeight * authButtonHeightRatio;
   double get authDividerGap => screenHeight * authDividerGapRatio;
   double get authDividerPaddingH => screenWidth * authDividerPaddingHRatio;
-  double get authDividerFontSize => screenWidth * authDividerFontRatio;
+  double get authDividerFontSize => _floorFont(screenWidth * authDividerFontRatio);
   double get authDividerSocialGap => screenHeight * authDividerSocialGapRatio;
   double get authSocialIconPadding => screenWidth * authSocialIconPaddingRatio;
   double get authGoogleIconSize => screenWidth * authGoogleIconSizeRatio;
@@ -284,7 +294,7 @@ class AppSizes {
 
   double get authLoginPreButtonGap => screenHeight * authLoginPreButtonGapRatio;
   double get authLoginButtonForgotGap => screenHeight * authLoginButtonForgotGapRatio;
-  double get authForgotPasswordFontSize => screenWidth * authForgotPasswordFontRatio;
+  double get authForgotPasswordFontSize => _floorFont(screenWidth * authForgotPasswordFontRatio);
   double get authForgotCreateAccountGap => screenHeight * authForgotCreateAccountGapRatio;
 
   // --------------------------------------------------------------------
@@ -329,7 +339,7 @@ class AppSizes {
   double get accountTypeTopGap => screenHeight * accountTypeTopGapRatio;
   double get accountTypeLogoWidth => screenWidth * accountTypeLogoWidthRatio;
   double get accountTypeLogoTitleGap => screenHeight * accountTypeLogoTitleGapRatio;
-  double get accountTypeTitleFontSize => screenWidth * accountTypeTitleFontRatio;
+  double get accountTypeTitleFontSize => _floorFont(screenWidth * accountTypeTitleFontRatio);
   double get accountTypeTitleButtonsGap => screenHeight * accountTypeTitleButtonsGapRatio;
   double get accountTypeButtonSpacing => screenHeight * accountTypeButtonSpacingRatio;
   double get accountTypeBottomGap => screenHeight * accountTypeBottomGapRatio;
@@ -350,7 +360,7 @@ class AppSizes {
   double get sitterServicesPawSize2 => screenWidth * sitterServicesPawSize2Ratio;
   double get sitterServicesHorizontalPadding => screenWidth * sitterServicesHorizontalPaddingRatio;
   double get sitterServicesTopGap => screenHeight * sitterServicesTopGapRatio;
-  double get sitterServicesTitleFontSize => screenWidth * sitterServicesTitleFontRatio;
+  double get sitterServicesTitleFontSize => _floorFont(screenWidth * sitterServicesTitleFontRatio);
   double get sitterServicesTitleCardGap => screenHeight * sitterServicesTitleCardGapRatio;
   double get sitterServicesRowGap => screenHeight * sitterServicesRowGapRatio;
   double get sitterServicesBottomGap => screenHeight * sitterServicesBottomGapRatio;
@@ -374,7 +384,7 @@ class AppSizes {
   double get sitterHomePawSize1 => screenWidth * sitterHomePawSize1Ratio;
   double get sitterHomeHorizontalPadding => screenWidth * sitterHomeHorizontalPaddingRatio;
   double get sitterHomeTopGap => screenHeight * sitterHomeTopGapRatio;
-  double get sitterHomeTitleFontSize => screenWidth * sitterHomeTitleFontRatio;
+  double get sitterHomeTitleFontSize => _floorFont(screenWidth * sitterHomeTitleFontRatio);
   double get sitterHomeTitleBoxGap => screenHeight * sitterHomeTitleBoxGapRatio;
   double get sitterHomeBoxGap => screenHeight * sitterHomeBoxGapRatio;
   double get sitterHomeOptionIconSize => screenWidth * sitterHomeOptionIconSizeRatio;
@@ -408,11 +418,11 @@ class AppSizes {
   double get sitterProfileHorizontalPadding => screenWidth * sitterProfileHorizontalPaddingRatio;
   double get sitterProfileTopGap => screenHeight * sitterProfileTopGapRatio;
   double get sitterProfileAvatarRadius => screenWidth * sitterProfileAvatarRatio;
-  double get sitterProfileHeaderNameFontSize => screenWidth * sitterProfileHeaderNameFontRatio;
-  double get sitterProfileHeaderCityFontSize => screenWidth * sitterProfileHeaderCityFontRatio;
+  double get sitterProfileHeaderNameFontSize => _floorFont(screenWidth * sitterProfileHeaderNameFontRatio);
+  double get sitterProfileHeaderCityFontSize => _floorFont(screenWidth * sitterProfileHeaderCityFontRatio);
   double get sitterProfileIconButtonSize => screenWidth * sitterProfileIconButtonSizeRatio;
   double get sitterProfileSectionGap => screenHeight * sitterProfileSectionGapRatio;
-  double get sitterProfileSectionTitleFontSize => screenWidth * sitterProfileSectionTitleFontRatio;
+  double get sitterProfileSectionTitleFontSize => _floorFont(screenWidth * sitterProfileSectionTitleFontRatio);
   double get sitterProfileSectionTitleListGap => screenHeight * sitterProfileSectionTitleListGapRatio;
   double get sitterProfileTodayCardWidth => screenWidth * sitterProfileTodayCardWidthRatio;
   double get sitterProfileTodayCardHeight => screenHeight * sitterProfileTodayCardHeightRatio;
@@ -438,10 +448,10 @@ class AppSizes {
   double get sidebarWidth => screenWidth * sidebarWidthRatio;
   double get sidebarHeaderPadding => screenWidth * sidebarHeaderPaddingRatio;
   double get sidebarPhotoSize => screenWidth * sidebarPhotoSizeRatio;
-  double get sidebarNameFontSize => screenWidth * sidebarNameFontRatio;
+  double get sidebarNameFontSize => _floorFont(screenWidth * sidebarNameFontRatio);
   double get sidebarPawSize1 => screenWidth * sidebarPawSize1Ratio;
   double get sidebarPawSize2 => screenWidth * sidebarPawSize2Ratio;
-  double get sidebarItemFontSize => screenWidth * sidebarItemFontRatio;
+  double get sidebarItemFontSize => _floorFont(screenWidth * sidebarItemFontRatio);
   double get sidebarItemIconSize => screenWidth * sidebarItemIconRatio;
   double get sidebarItemVerticalPad => screenHeight * sidebarItemVerticalPadRatio;
   double get sidebarAboutButtonHeight => screenHeight * sidebarAboutButtonHeightRatio;
@@ -463,11 +473,11 @@ class AppSizes {
   double get myProfileHorizontalPadding => screenWidth * myProfileHorizontalPaddingRatio;
   double get myProfileTopGap => screenHeight * myProfileTopGapRatio;
   double get myProfilePhotoSize => screenWidth * myProfilePhotoSizeRatio;
-  double get myProfileNameFontSize => screenWidth * myProfileNameFontRatio;
-  double get myProfileCityFontSize => screenWidth * myProfileCityFontRatio;
+  double get myProfileNameFontSize => _floorFont(screenWidth * myProfileNameFontRatio);
+  double get myProfileCityFontSize => _floorFont(screenWidth * myProfileCityFontRatio);
   double get myProfileSectionGap => screenHeight * myProfileSectionGapRatio;
-  double get myProfilePillFontSize => screenWidth * myProfilePillFontRatio;
-  double get myProfileBodyFontSize => screenWidth * myProfileBodyFontRatio;
+  double get myProfilePillFontSize => _floorFont(screenWidth * myProfilePillFontRatio);
+  double get myProfileBodyFontSize => _floorFont(screenWidth * myProfileBodyFontRatio);
   double get myProfileMiniCardIconSize => screenWidth * myProfileMiniCardIconRatio;
   double get myProfileBottomGap => screenHeight * myProfileBottomGapRatio;
 
@@ -495,10 +505,10 @@ class AppSizes {
 
   double get updatePetBannerHeight => screenHeight * updatePetBannerHeightRatio;
   double get updatePetPhotoSize => screenWidth * updatePetPhotoSizeRatio;
-  double get updatePetTitleFontSize => screenWidth * updatePetTitleFontRatio;
+  double get updatePetTitleFontSize => _floorFont(screenWidth * updatePetTitleFontRatio);
   double get updatePetHorizontalPadding => screenWidth * updatePetHorizontalPaddingRatio;
-  double get updatePetLabelFontSize => screenWidth * updatePetLabelFontRatio;
-  double get updatePetValueFontSize => screenWidth * updatePetValueFontRatio;
+  double get updatePetLabelFontSize => _floorFont(screenWidth * updatePetLabelFontRatio);
+  double get updatePetValueFontSize => _floorFont(screenWidth * updatePetValueFontRatio);
   double get updatePetFieldGap => screenHeight * updatePetFieldGapRatio;
   double get updatePetSectionGap => screenHeight * updatePetSectionGapRatio;
   double get updatePetPawSize => screenWidth * updatePetPawSizeRatio;
@@ -508,12 +518,18 @@ class AppSizes {
   // bin el 3 écrans (nafs structure: back button + paws + illustration
   // + titre + soutitre + champs + bouton).
   // --------------------------------------------------------------------
+  // 🔴 FIX (kifma tlab: "boutonet kbar 3la 7sab el screens l'okhrin") -
+  // fpIllustrationSizeRatio kan 0.45 (45% mel 3ard el screen - kbir
+  // barcha 3la 7sab el circles el mouchabhin fel app, mathalan
+  // favEmptyStateIconRatio/chatEmptyStateIconRatio ~0.14-0.16), w
+  // fpBackButtonSizeRatio kan 0.11 (el CustomBackButton el standard
+  // fixe ~9% mel écran référence). Na9asnahom bech ykounou consistents.
   static const double fpHorizontalPaddingRatio = 0.07;
   static const double fpTopGapRatio = 0.02;
-  static const double fpBackButtonSizeRatio = 0.11;
+  static const double fpBackButtonSizeRatio = 0.09;
   static const double fpPawSizeRatio = 0.07;
-  static const double fpIllustrationSizeRatio = 0.45;
-  static const double fpIllustrationIconRatio = 0.20;
+  static const double fpIllustrationSizeRatio = 0.20;
+  static const double fpIllustrationIconRatio = 0.09;
   static const double fpTitleFontRatio = 0.058;
   static const double fpSubtitleFontRatio = 0.036;
   static const double fpSectionGapRatio = 0.03;
@@ -525,8 +541,8 @@ class AppSizes {
   double get fpPawSize => screenWidth * fpPawSizeRatio;
   double get fpIllustrationSize => screenWidth * fpIllustrationSizeRatio;
   double get fpIllustrationIconSize => screenWidth * fpIllustrationIconRatio;
-  double get fpTitleFontSize => screenWidth * fpTitleFontRatio;
-  double get fpSubtitleFontSize => screenWidth * fpSubtitleFontRatio;
+  double get fpTitleFontSize => _floorFont(screenWidth * fpTitleFontRatio);
+  double get fpSubtitleFontSize => _floorFont(screenWidth * fpSubtitleFontRatio);
   double get fpSectionGap => screenHeight * fpSectionGapRatio;
   double get fpFieldGap => screenHeight * fpFieldGapRatio;
 
@@ -660,12 +676,12 @@ class AppSizes {
   double get adminHomeAvatarSize => screenWidth * adminHomeAvatarSizeRatio;
   double get adminHomeAvatarIcon => screenWidth * adminHomeAvatarIconRatio;
   double get adminHomeAvatarTextGap => screenWidth * adminHomeAvatarTextGapRatio;
-  double get adminHomeNameFontSize => screenWidth * adminHomeNameFontRatio;
-  double get adminHomeBadgeFontSize => screenWidth * adminHomeBadgeFontRatio;
+  double get adminHomeNameFontSize => _floorFont(screenWidth * adminHomeNameFontRatio);
+  double get adminHomeBadgeFontSize => _floorFont(screenWidth * adminHomeBadgeFontRatio);
   double get adminHomeMenuButtonSize => screenWidth * adminHomeMenuButtonSizeRatio;
   double get adminHomeMenuIconSize => screenWidth * adminHomeMenuIconRatio;
   double get adminHomeHeaderSectionGap => screenHeight * adminHomeHeaderSectionGapRatio;
-  double get adminHomeSectionTitleFontSize => screenWidth * adminHomeSectionTitleFontRatio;
+  double get adminHomeSectionTitleFontSize => _floorFont(screenWidth * adminHomeSectionTitleFontRatio);
   double get adminHomeSectionTitleListGap => screenHeight * adminHomeSectionTitleListGapRatio;
   double get adminHomeBottomGap => screenHeight * adminHomeBottomGapRatio;
 
@@ -689,10 +705,10 @@ class AppSizes {
   double get adminTileAvatarSize => screenWidth * adminTileAvatarSizeRatio;
   double get adminTileAvatarTextGap => screenWidth * adminTileAvatarTextGapRatio;
   double get adminTileIconSize => screenWidth * adminTileIconRatio;
-  double get adminTileLabelFontSize => screenWidth * adminTileLabelFontRatio;
+  double get adminTileLabelFontSize => _floorFont(screenWidth * adminTileLabelFontRatio);
   double get adminTileBadgePaddingH => screenWidth * adminTileBadgePaddingHRatio;
   double get adminTileBadgeMinWidth => screenWidth * adminTileBadgeMinWidthRatio;
-  double get adminTileBadgeFontSize => screenWidth * adminTileBadgeFontRatio;
+  double get adminTileBadgeFontSize => _floorFont(screenWidth * adminTileBadgeFontRatio);
   double get adminTileBadgeChevronGap => screenWidth * adminTileBadgeChevronGapRatio;
   double get adminTileChevronSize => screenWidth * adminTileChevronRatio;
 
@@ -710,7 +726,7 @@ class AppSizes {
   double get adminStatsPawSize => screenWidth * adminStatsPawSizeRatio;
   double get adminStatsHorizontalPadding => screenWidth * adminStatsHorizontalPaddingRatio;
   double get adminStatsTopGap => screenHeight * adminStatsTopGapRatio;
-  double get adminStatsTitleFontSize => screenWidth * adminStatsTitleFontRatio;
+  double get adminStatsTitleFontSize => _floorFont(screenWidth * adminStatsTitleFontRatio);
   double get adminStatsSectionGap => screenHeight * adminStatsSectionGapRatio;
   double get adminStatsTileGap => screenHeight * adminStatsTileGapRatio;
   double get adminStatsBottomGap => screenHeight * adminStatsBottomGapRatio;
@@ -749,7 +765,7 @@ class AppSizes {
   double get adminRegPawSize => screenWidth * adminRegPawSizeRatio;
   double get adminRegHorizontalPadding => screenWidth * adminRegHorizontalPaddingRatio;
   double get adminRegTopGap => screenHeight * adminRegTopGapRatio;
-  double get adminRegTitleFontSize => screenWidth * adminRegTitleFontRatio;
+  double get adminRegTitleFontSize => _floorFont(screenWidth * adminRegTitleFontRatio);
   double get adminRegSectionGap => screenHeight * adminRegSectionGapRatio;
   double get adminRegLoadingVerticalPad => screenHeight * adminRegLoadingVerticalPadRatio;
   double get adminRegErrorVerticalPad => screenHeight * adminRegErrorVerticalPadRatio;
@@ -757,11 +773,11 @@ class AppSizes {
   double get adminRegErrorIconGap => screenHeight * adminRegErrorIconGapRatio;
   double get adminRegErrorButtonGap => screenHeight * adminRegErrorButtonGapRatio;
   double get adminRegTotalCardPadding => screenWidth * adminRegTotalCardPaddingRatio;
-  double get adminRegTotalCardLabelFontSize => screenWidth * adminRegTotalCardLabelFontRatio;
+  double get adminRegTotalCardLabelFontSize => _floorFont(screenWidth * adminRegTotalCardLabelFontRatio);
   double get adminRegTotalCardLabelValueGap => screenHeight * adminRegTotalCardLabelValueGapRatio;
-  double get adminRegTotalCardValueFontSize => screenWidth * adminRegTotalCardValueFontRatio;
+  double get adminRegTotalCardValueFontSize => _floorFont(screenWidth * adminRegTotalCardValueFontRatio);
   double get adminRegAfterTotalCardGap => screenHeight * adminRegAfterTotalCardGapRatio;
-  double get adminRegSectionTitleFontSize => screenWidth * adminRegSectionTitleFontRatio;
+  double get adminRegSectionTitleFontSize => _floorFont(screenWidth * adminRegSectionTitleFontRatio);
   double get adminRegSectionTitleGridGap => screenHeight * adminRegSectionTitleGridGapRatio;
   double get adminRegGridSpacing => screenWidth * adminRegGridSpacingRatio;
   double get adminRegBottomGap => screenHeight * adminRegBottomGapRatio;
@@ -793,13 +809,13 @@ class AppSizes {
   double get adminDashPawSize => screenWidth * adminDashPawSizeRatio;
   double get adminDashHorizontalPadding => screenWidth * adminDashHorizontalPaddingRatio;
   double get adminDashTopGap => screenHeight * adminDashTopGapRatio;
-  double get adminDashTitleFontSize => screenWidth * adminDashTitleFontRatio;
+  double get adminDashTitleFontSize => _floorFont(screenWidth * adminDashTitleFontRatio);
   double get adminDashTitleSubtitleGap => screenHeight * adminDashTitleSubtitleGapRatio;
-  double get adminDashSubtitleFontSize => screenWidth * adminDashSubtitleFontRatio;
+  double get adminDashSubtitleFontSize => _floorFont(screenWidth * adminDashSubtitleFontRatio);
   double get adminDashSubtitleSelectorGap => screenHeight * adminDashSubtitleSelectorGapRatio;
   double get adminDashSelectorPaddingH => screenWidth * adminDashSelectorPaddingHRatio;
   double get adminDashSelectorPaddingV => screenWidth * adminDashSelectorPaddingVRatio;
-  double get adminDashSelectorFontSize => screenWidth * adminDashSelectorFontRatio;
+  double get adminDashSelectorFontSize => _floorFont(screenWidth * adminDashSelectorFontRatio);
   double get adminDashSelectorChartGap => screenHeight * adminDashSelectorChartGapRatio;
   double get adminDashLoadingVerticalPad => screenHeight * adminDashLoadingVerticalPadRatio;
   double get adminDashErrorVerticalPad => screenHeight * adminDashErrorVerticalPadRatio;
@@ -825,9 +841,9 @@ class AppSizes {
   double get statCardIconContainerSize => screenWidth * statCardIconContainerSizeRatio;
   double get statCardIconSize => screenWidth * statCardIconSizeRatio;
   double get statCardIconValueGap => screenWidth * statCardIconValueGapRatio;
-  double get statCardValueFontSize => screenWidth * statCardValueFontRatio;
+  double get statCardValueFontSize => _floorFont(screenWidth * statCardValueFontRatio);
   double get statCardValueLabelGap => screenWidth * statCardValueLabelGapRatio;
-  double get statCardLabelFontSize => screenWidth * statCardLabelFontRatio;
+  double get statCardLabelFontSize => _floorFont(screenWidth * statCardLabelFontRatio);
 
   // --------------------------------------------------------------------
   // Line Chart (widgets/line_chart_widget.dart)
@@ -849,8 +865,8 @@ class AppSizes {
   static const double lineChartDotRadiusRatio = 0.007;
 
   double get lineChartHeight => screenHeight * lineChartHeightRatio;
-  double get lineChartAxisFontSize => screenWidth * lineChartAxisFontRatio;
-  double get lineChartLegendFontSize => screenWidth * lineChartLegendFontRatio;
+  double get lineChartAxisFontSize => _floorFont(screenWidth * lineChartAxisFontRatio);
+  double get lineChartLegendFontSize => _floorFont(screenWidth * lineChartLegendFontRatio);
   double get lineChartLegendDotSize => screenWidth * lineChartLegendDotRatio;
   double get lineChartLegendGap => screenHeight * lineChartLegendGapRatio;
   double get lineChartLegendSpacing => screenWidth * lineChartLegendSpacingRatio;
@@ -910,29 +926,29 @@ class AppSizes {
   double get adminAccountsPawSize => screenWidth * adminAccountsPawSizeRatio;
   double get adminAccountsHorizontalPadding => screenWidth * adminAccountsHorizontalPaddingRatio;
   double get adminAccountsTopGap => screenHeight * adminAccountsTopGapRatio;
-  double get adminAccountsTitleFontSize => screenWidth * adminAccountsTitleFontRatio;
+  double get adminAccountsTitleFontSize => _floorFont(screenWidth * adminAccountsTitleFontRatio);
   double get adminAccountsSectionGap => screenHeight * adminAccountsSectionGapRatio;
   double get adminAccountsSearchIcon => screenWidth * adminAccountsSearchIconRatio;
-  double get adminAccountsSearchFontSize => screenWidth * adminAccountsSearchFontRatio;
+  double get adminAccountsSearchFontSize => _floorFont(screenWidth * adminAccountsSearchFontRatio);
   double get adminAccountsFilterChipGap => screenHeight * adminAccountsFilterChipGapRatio;
   double get adminAccountsChipHPadding => screenWidth * adminAccountsChipHPaddingRatio;
   double get adminAccountsChipVPadding => screenWidth * adminAccountsChipVPaddingRatio;
-  double get adminAccountsChipFontSize => screenWidth * adminAccountsChipFontRatio;
+  double get adminAccountsChipFontSize => _floorFont(screenWidth * adminAccountsChipFontRatio);
   double get adminAccountsChipSpacing => screenWidth * adminAccountsChipSpacingRatio;
   double get adminAccountsCountRowGap => screenHeight * adminAccountsCountRowGapRatio;
-  double get adminAccountsCountFontSize => screenWidth * adminAccountsCountFontRatio;
+  double get adminAccountsCountFontSize => _floorFont(screenWidth * adminAccountsCountFontRatio);
   double get adminAccountsCreateButtonHPadding => screenWidth * adminAccountsCreateButtonHPaddingRatio;
   double get adminAccountsCreateButtonVPadding => screenWidth * adminAccountsCreateButtonVPaddingRatio;
-  double get adminAccountsCreateButtonFontSize => screenWidth * adminAccountsCreateButtonFontRatio;
+  double get adminAccountsCreateButtonFontSize => _floorFont(screenWidth * adminAccountsCreateButtonFontRatio);
   double get adminAccountsCreateButtonIcon => screenWidth * adminAccountsCreateButtonIconRatio;
   double get adminAccountsListGap => screenHeight * adminAccountsListGapRatio;
   double get adminAccountsCardGap => screenHeight * adminAccountsCardGapRatio;
   double get adminAccountsCardPadding => screenWidth * adminAccountsCardPaddingRatio;
   double get adminAccountsAvatarSize => screenWidth * adminAccountsAvatarSizeRatio;
-  double get adminAccountsAvatarFontSize => screenWidth * adminAccountsAvatarFontRatio;
-  double get adminAccountsNameFontSize => screenWidth * adminAccountsNameFontRatio;
-  double get adminAccountsRoleFontSize => screenWidth * adminAccountsRoleFontRatio;
-  double get adminAccountsEmailFontSize => screenWidth * adminAccountsEmailFontRatio;
+  double get adminAccountsAvatarFontSize => _floorFont(screenWidth * adminAccountsAvatarFontRatio);
+  double get adminAccountsNameFontSize => _floorFont(screenWidth * adminAccountsNameFontRatio);
+  double get adminAccountsRoleFontSize => _floorFont(screenWidth * adminAccountsRoleFontRatio);
+  double get adminAccountsEmailFontSize => _floorFont(screenWidth * adminAccountsEmailFontRatio);
   double get adminAccountsNameRoleGap => screenHeight * adminAccountsNameRoleGapRatio;
   double get adminAccountsRoleEmailGap => screenHeight * adminAccountsRoleEmailGapRatio;
   double get adminAccountsAvatarTextGap => screenWidth * adminAccountsAvatarTextGapRatio;
@@ -965,9 +981,9 @@ class AppSizes {
   double get adminFormPawSize => screenWidth * adminFormPawSizeRatio;
   double get adminFormHorizontalPadding => screenWidth * adminFormHorizontalPaddingRatio;
   double get adminFormTopGap => screenHeight * adminFormTopGapRatio;
-  double get adminFormTitleFontSize => screenWidth * adminFormTitleFontRatio;
+  double get adminFormTitleFontSize => _floorFont(screenWidth * adminFormTitleFontRatio);
   double get adminFormSectionGap => screenHeight * adminFormSectionGapRatio;
-  double get adminFormRoleLabelFontSize => screenWidth * adminFormRoleLabelFontRatio;
+  double get adminFormRoleLabelFontSize => _floorFont(screenWidth * adminFormRoleLabelFontRatio);
   double get adminFormRoleLabelGap => screenHeight * adminFormRoleLabelGapRatio;
   double get adminFormRoleChipGap => screenWidth * adminFormRoleChipGapRatio;
   double get adminFormFieldGap => screenHeight * adminFormFieldGapRatio;
@@ -1015,29 +1031,29 @@ class AppSizes {
   double get adminReviewsPawSize => screenWidth * adminReviewsPawSizeRatio;
   double get adminReviewsHorizontalPadding => screenWidth * adminReviewsHorizontalPaddingRatio;
   double get adminReviewsTopGap => screenHeight * adminReviewsTopGapRatio;
-  double get adminReviewsTitleFontSize => screenWidth * adminReviewsTitleFontRatio;
+  double get adminReviewsTitleFontSize => _floorFont(screenWidth * adminReviewsTitleFontRatio);
   double get adminReviewsSectionGap => screenHeight * adminReviewsSectionGapRatio;
   double get adminReviewsSearchIcon => screenWidth * adminReviewsSearchIconRatio;
-  double get adminReviewsSearchFontSize => screenWidth * adminReviewsSearchFontRatio;
+  double get adminReviewsSearchFontSize => _floorFont(screenWidth * adminReviewsSearchFontRatio);
   double get adminReviewsListGap => screenHeight * adminReviewsListGapRatio;
   double get adminReviewsFilterChipGap => screenHeight * adminReviewsFilterChipGapRatio;
   double get adminReviewsCardGap => screenHeight * adminReviewsCardGapRatio;
   double get adminReviewsCardPadding => screenWidth * adminReviewsCardPaddingRatio;
   double get adminReviewsAvatarSize => screenWidth * adminReviewsAvatarSizeRatio;
-  double get adminReviewsAvatarFontSize => screenWidth * adminReviewsAvatarFontRatio;
+  double get adminReviewsAvatarFontSize => _floorFont(screenWidth * adminReviewsAvatarFontRatio);
   double get adminReviewsAvatarTextGap => screenWidth * adminReviewsAvatarTextGapRatio;
-  double get adminReviewsNameFontSize => screenWidth * adminReviewsNameFontRatio;
-  double get adminReviewsRoleFontSize => screenWidth * adminReviewsRoleFontRatio;
+  double get adminReviewsNameFontSize => _floorFont(screenWidth * adminReviewsNameFontRatio);
+  double get adminReviewsRoleFontSize => _floorFont(screenWidth * adminReviewsRoleFontRatio);
   double get adminReviewsNameRoleGap => screenHeight * adminReviewsNameRoleGapRatio;
   double get adminReviewsStarIcon => screenWidth * adminReviewsStarIconRatio;
-  double get adminReviewsRatingFontSize => screenWidth * adminReviewsRatingFontRatio;
+  double get adminReviewsRatingFontSize => _floorFont(screenWidth * adminReviewsRatingFontRatio);
   double get adminReviewsSatisfiedIcon => screenWidth * adminReviewsSatisfiedIconRatio;
-  double get adminReviewsReviewTextFontSize => screenWidth * adminReviewsReviewTextFontRatio;
+  double get adminReviewsReviewTextFontSize => _floorFont(screenWidth * adminReviewsReviewTextFontRatio);
   double get adminReviewsReviewTextTopGap => screenHeight * adminReviewsReviewTextTopGapRatio;
   double get adminReviewsDividerGap => screenHeight * adminReviewsDividerGapRatio;
-  double get adminReviewsBreakdownFontSize => screenWidth * adminReviewsBreakdownFontRatio;
+  double get adminReviewsBreakdownFontSize => _floorFont(screenWidth * adminReviewsBreakdownFontRatio);
   double get adminReviewsBreakdownGap => screenWidth * adminReviewsBreakdownGapRatio;
-  double get adminReviewsFooterFontSize => screenWidth * adminReviewsFooterFontRatio;
+  double get adminReviewsFooterFontSize => _floorFont(screenWidth * adminReviewsFooterFontRatio);
   double get adminReviewsFooterTopGap => screenHeight * adminReviewsFooterTopGapRatio;
   double get adminReviewsEmptyStateIcon => screenWidth * adminReviewsEmptyStateIconRatio;
   double get adminReviewsEmptyStateVerticalPad => screenHeight * adminReviewsEmptyStateVerticalPadRatio;
@@ -1088,23 +1104,23 @@ class AppSizes {
   double get adminDetailHorizontalPadding => screenWidth * adminDetailHorizontalPaddingRatio;
   double get adminDetailTopGap => screenHeight * adminDetailTopGapRatio;
   double get adminDetailAvatarSize => screenWidth * adminDetailAvatarSizeRatio;
-  double get adminDetailAvatarFontSize => screenWidth * adminDetailAvatarFontRatio;
+  double get adminDetailAvatarFontSize => _floorFont(screenWidth * adminDetailAvatarFontRatio);
   double get adminDetailAvatarNameGap => screenHeight * adminDetailAvatarNameGapRatio;
-  double get adminDetailNameFontSize => screenWidth * adminDetailNameFontRatio;
+  double get adminDetailNameFontSize => _floorFont(screenWidth * adminDetailNameFontRatio);
   double get adminDetailNameBadgeGap => screenHeight * adminDetailNameBadgeGapRatio;
   double get adminDetailBadgeHPadding => screenWidth * adminDetailBadgeHPaddingRatio;
   double get adminDetailBadgeVPadding => screenWidth * adminDetailBadgeVPaddingRatio;
-  double get adminDetailBadgeFontSize => screenWidth * adminDetailBadgeFontRatio;
+  double get adminDetailBadgeFontSize => _floorFont(screenWidth * adminDetailBadgeFontRatio);
   double get adminDetailHeaderSectionGap => screenHeight * adminDetailHeaderSectionGapRatio;
-  double get adminDetailSectionTitleFontSize => screenWidth * adminDetailSectionTitleFontRatio;
+  double get adminDetailSectionTitleFontSize => _floorFont(screenWidth * adminDetailSectionTitleFontRatio);
   double get adminDetailSectionTitleGap => screenHeight * adminDetailSectionTitleGapRatio;
   double get adminDetailSectionGap => screenHeight * adminDetailSectionGapRatio;
   double get adminDetailCardPadding => screenWidth * adminDetailCardPaddingRatio;
   double get adminDetailRowIconSize => screenWidth * adminDetailRowIconSizeRatio;
   double get adminDetailRowIconInner => screenWidth * adminDetailRowIconInnerRatio;
   double get adminDetailRowTextGap => screenWidth * adminDetailRowTextGapRatio;
-  double get adminDetailRowLabelFontSize => screenWidth * adminDetailRowLabelFontRatio;
-  double get adminDetailRowValueFontSize => screenWidth * adminDetailRowValueFontRatio;
+  double get adminDetailRowLabelFontSize => _floorFont(screenWidth * adminDetailRowLabelFontRatio);
+  double get adminDetailRowValueFontSize => _floorFont(screenWidth * adminDetailRowValueFontRatio);
   double get adminDetailRowLabelValueGap => screenHeight * adminDetailRowLabelValueGapRatio;
   double get adminDetailRowVerticalPadding => screenHeight * adminDetailRowVerticalPaddingRatio;
   double get adminDetailStatsGridSpacing => screenWidth * adminDetailStatsGridSpacingRatio;
@@ -1150,18 +1166,18 @@ class AppSizes {
   double get adminValidationsPawSize => screenWidth * adminValidationsPawSizeRatio;
   double get adminValidationsHorizontalPadding => screenWidth * adminValidationsHorizontalPaddingRatio;
   double get adminValidationsTopGap => screenHeight * adminValidationsTopGapRatio;
-  double get adminValidationsTitleFontSize => screenWidth * adminValidationsTitleFontRatio;
+  double get adminValidationsTitleFontSize => _floorFont(screenWidth * adminValidationsTitleFontRatio);
   double get adminValidationsSectionGap => screenHeight * adminValidationsSectionGapRatio;
   double get adminValidationsCardGap => screenHeight * adminValidationsCardGapRatio;
   double get adminValidationsCardPadding => screenWidth * adminValidationsCardPaddingRatio;
   double get adminValidationsAvatarSize => screenWidth * adminValidationsAvatarSizeRatio;
-  double get adminValidationsAvatarFontSize => screenWidth * adminValidationsAvatarFontRatio;
+  double get adminValidationsAvatarFontSize => _floorFont(screenWidth * adminValidationsAvatarFontRatio);
   double get adminValidationsAvatarTextGap => screenWidth * adminValidationsAvatarTextGapRatio;
-  double get adminValidationsNameFontSize => screenWidth * adminValidationsNameFontRatio;
-  double get adminValidationsRoleFontSize => screenWidth * adminValidationsRoleFontRatio;
+  double get adminValidationsNameFontSize => _floorFont(screenWidth * adminValidationsNameFontRatio);
+  double get adminValidationsRoleFontSize => _floorFont(screenWidth * adminValidationsRoleFontRatio);
   double get adminValidationsNameRoleGap => screenHeight * adminValidationsNameRoleGapRatio;
   double get adminValidationsChecklistTopGap => screenHeight * adminValidationsChecklistTopGapRatio;
-  double get adminValidationsChecklistItemFontSize => screenWidth * adminValidationsChecklistItemFontRatio;
+  double get adminValidationsChecklistItemFontSize => _floorFont(screenWidth * adminValidationsChecklistItemFontRatio);
   double get adminValidationsChecklistItemGap => screenWidth * adminValidationsChecklistItemGapRatio;
   double get adminValidationsButtonTopGap => screenHeight * adminValidationsButtonTopGapRatio;
   double get adminValidationsButtonHeight => screenHeight * adminValidationsButtonHeightRatio;
@@ -1201,17 +1217,17 @@ class AppSizes {
   double get verificationPawSize => screenWidth * verificationPawSizeRatio;
   double get verificationHorizontalPadding => screenWidth * verificationHorizontalPaddingRatio;
   double get verificationTopGap => screenHeight * verificationTopGapRatio;
-  double get verificationTitleFontSize => screenWidth * verificationTitleFontRatio;
+  double get verificationTitleFontSize => _floorFont(screenWidth * verificationTitleFontRatio);
   double get verificationSectionGap => screenHeight * verificationSectionGapRatio;
   double get verificationBannerPadding => screenWidth * verificationBannerPaddingRatio;
   double get verificationBannerIcon => screenWidth * verificationBannerIconRatio;
   double get verificationBannerIconGap => screenHeight * verificationBannerIconGapRatio;
-  double get verificationBannerFontSize => screenWidth * verificationBannerFontRatio;
+  double get verificationBannerFontSize => _floorFont(screenWidth * verificationBannerFontRatio);
   double get verificationRowPadding => screenWidth * verificationRowPaddingRatio;
   double get verificationRowIcon => screenWidth * verificationRowIconRatio;
   double get verificationRowTextGap => screenWidth * verificationRowTextGapRatio;
-  double get verificationRowLabelFontSize => screenWidth * verificationRowLabelFontRatio;
-  double get verificationRowProgressFontSize => screenWidth * verificationRowProgressFontRatio;
+  double get verificationRowLabelFontSize => _floorFont(screenWidth * verificationRowLabelFontRatio);
+  double get verificationRowProgressFontSize => _floorFont(screenWidth * verificationRowProgressFontRatio);
   double get verificationRowLabelProgressGap => screenHeight * verificationRowLabelProgressGapRatio;
   double get verificationLoadingVerticalPad => screenHeight * verificationLoadingVerticalPadRatio;
   double get verificationErrorVerticalPad => screenHeight * verificationErrorVerticalPadRatio;
@@ -1251,11 +1267,11 @@ class AppSizes {
   double get adminSidebarAvatarSize => screenWidth * adminSidebarAvatarSizeRatio;
   double get adminSidebarAvatarIcon => screenWidth * adminSidebarAvatarIconRatio;
   double get adminSidebarAvatarNameGap => screenHeight * adminSidebarAvatarNameGapRatio;
-  double get adminSidebarNameFontSize => screenWidth * adminSidebarNameFontRatio;
+  double get adminSidebarNameFontSize => _floorFont(screenWidth * adminSidebarNameFontRatio);
   double get adminSidebarNameBadgeGap => screenHeight * adminSidebarNameBadgeGapRatio;
   double get adminSidebarBadgeHPadding => screenWidth * adminSidebarBadgeHPaddingRatio;
   double get adminSidebarBadgeVPadding => screenWidth * adminSidebarBadgeVPaddingRatio;
-  double get adminSidebarBadgeFontSize => screenWidth * adminSidebarBadgeFontRatio;
+  double get adminSidebarBadgeFontSize => _floorFont(screenWidth * adminSidebarBadgeFontRatio);
   double get adminSidebarPawSize => screenWidth * adminSidebarPawSizeRatio;
   double get adminSidebarListTopGap => screenHeight * adminSidebarListTopGapRatio;
   double get adminSidebarListHorizontalPadding => screenWidth * adminSidebarListHorizontalPaddingRatio;
@@ -1264,7 +1280,7 @@ class AppSizes {
   double get adminSidebarItemIconCircle => screenWidth * adminSidebarItemIconCircleRatio;
   double get adminSidebarItemIcon => screenWidth * adminSidebarItemIconRatio;
   double get adminSidebarItemTextGap => screenWidth * adminSidebarItemTextGapRatio;
-  double get adminSidebarItemFontSize => screenWidth * adminSidebarItemFontRatio;
+  double get adminSidebarItemFontSize => _floorFont(screenWidth * adminSidebarItemFontRatio);
   double get adminSidebarItemChevron => screenWidth * adminSidebarItemChevronRatio;
   double get adminSidebarItemGap => screenHeight * adminSidebarItemGapRatio;
   double get adminSidebarLogoutGap => screenHeight * adminSidebarLogoutGapRatio;
@@ -1294,12 +1310,12 @@ class AppSizes {
   double get sidebarPillIconCircle => screenWidth * sidebarPillIconCircleRatio;
   double get sidebarPillIcon => screenWidth * sidebarPillIconRatio;
   double get sidebarPillTextGap => screenWidth * sidebarPillTextGapRatio;
-  double get sidebarPillFontSize => screenWidth * sidebarPillFontRatio;
+  double get sidebarPillFontSize => _floorFont(screenWidth * sidebarPillFontRatio);
   double get sidebarPillChevron => screenWidth * sidebarPillChevronRatio;
   double get sidebarPillGap => screenHeight * sidebarPillGapRatio;
   double get sidebarPillBadgeMinWidth => screenWidth * sidebarPillBadgeMinWidthRatio;
   double get sidebarPillBadgePaddingH => screenWidth * sidebarPillBadgePaddingHRatio;
-  double get sidebarPillBadgeFontSize => screenWidth * sidebarPillBadgeFontRatio;
+  double get sidebarPillBadgeFontSize => _floorFont(screenWidth * sidebarPillBadgeFontRatio);
   double get sidebarPillBadgeGap => screenWidth * sidebarPillBadgeGapRatio;
   double get sidebarVerifiedBadgeSize => screenWidth * sidebarVerifiedBadgeRatio;
 
@@ -1335,28 +1351,28 @@ class AppSizes {
 
   double get messagesTopGap => screenHeight * messagesTopGapRatio;
   double get messagesHorizontalPadding => screenWidth * messagesHorizontalPaddingRatio;
-  double get messagesTitleFontSize => screenWidth * messagesTitleFontRatio;
+  double get messagesTitleFontSize => _floorFont(screenWidth * messagesTitleFontRatio);
   double get messagesSectionGap => screenHeight * messagesSectionGapRatio;
   double get messagesSearchIcon => screenWidth * messagesSearchIconRatio;
-  double get messagesSearchFontSize => screenWidth * messagesSearchFontRatio;
+  double get messagesSearchFontSize => _floorFont(screenWidth * messagesSearchFontRatio);
   double get messagesSearchPaddingH => screenWidth * messagesSearchPaddingHRatio;
   double get messagesSearchPaddingV => screenWidth * messagesSearchPaddingVRatio;
   double get messagesBubbleSize => screenWidth * messagesBubbleSizeRatio;
   double get messagesBubbleGap => screenWidth * messagesBubbleGapRatio;
-  double get messagesBubbleNameFontSize => screenWidth * messagesBubbleNameFontRatio;
+  double get messagesBubbleNameFontSize => _floorFont(screenWidth * messagesBubbleNameFontRatio);
   double get messagesBubbleNameGap => screenHeight * messagesBubbleNameGapRatio;
   double get messagesBubbleNameWidth => screenWidth * messagesBubbleNameWidthRatio;
   double get messagesConvAvatarSize => screenWidth * messagesConvAvatarSizeRatio;
-  double get messagesConvNameFontSize => screenWidth * messagesConvNameFontRatio;
-  double get messagesConvPreviewFontSize => screenWidth * messagesConvPreviewFontRatio;
-  double get messagesConvTimeFontSize => screenWidth * messagesConvTimeFontRatio;
+  double get messagesConvNameFontSize => _floorFont(screenWidth * messagesConvNameFontRatio);
+  double get messagesConvPreviewFontSize => _floorFont(screenWidth * messagesConvPreviewFontRatio);
+  double get messagesConvTimeFontSize => _floorFont(screenWidth * messagesConvTimeFontRatio);
   double get messagesConvPaddingV => screenHeight * messagesConvPaddingVRatio;
   double get messagesConvGap => screenHeight * messagesConvGapRatio;
   double get messagesConvRowGap => screenWidth * messagesConvRowGapRatio;
   double get messagesEmptyStateIcon => screenWidth * messagesEmptyStateIconRatio;
   double get messagesEmptyStateVerticalPad => screenHeight * messagesEmptyStateVerticalPadRatio;
   double get messagesUnreadBadgeMinWidth => screenWidth * messagesUnreadBadgeMinWidthRatio;
-  double get messagesUnreadBadgeFontSize => screenWidth * messagesUnreadBadgeFontRatio;
+  double get messagesUnreadBadgeFontSize => _floorFont(screenWidth * messagesUnreadBadgeFontRatio);
 
   // --------------------------------------------------------------------
   // Chat (views/user/chat_screen.dart) - conversation individuelle:
@@ -1388,8 +1404,8 @@ class AppSizes {
   static const double chatEmptyStateVerticalPadRatio = 0.16;
 
   double get chatHeaderAvatarSize => screenWidth * chatHeaderAvatarSizeRatio;
-  double get chatHeaderNameFontSize => screenWidth * chatHeaderNameFontRatio;
-  double get chatHeaderSubFontSize => screenWidth * chatHeaderSubFontRatio;
+  double get chatHeaderNameFontSize => _floorFont(screenWidth * chatHeaderNameFontRatio);
+  double get chatHeaderSubFontSize => _floorFont(screenWidth * chatHeaderSubFontRatio);
   double get chatHeaderPaddingH => screenWidth * chatHeaderPaddingHRatio;
   double get chatHeaderPaddingV => screenWidth * chatHeaderPaddingVRatio;
   double get chatListPaddingH => screenWidth * chatListPaddingHRatio;
@@ -1397,16 +1413,16 @@ class AppSizes {
   double get chatBubbleMaxWidth => screenWidth * chatBubbleMaxWidthRatio;
   double get chatBubblePaddingH => screenWidth * chatBubblePaddingHRatio;
   double get chatBubblePaddingV => screenWidth * chatBubblePaddingVRatio;
-  double get chatBubbleFontSize => screenWidth * chatBubbleFontRatio;
-  double get chatBubbleTimeFontSize => screenWidth * chatBubbleTimeFontRatio;
+  double get chatBubbleFontSize => _floorFont(screenWidth * chatBubbleFontRatio);
+  double get chatBubbleTimeFontSize => _floorFont(screenWidth * chatBubbleTimeFontRatio);
   double get chatBubbleGap => screenHeight * chatBubbleGapRatio;
   double get chatBubbleImageMaxWidth => screenWidth * chatBubbleImageMaxWidthRatio;
   double get chatBubbleImageRadius => screenWidth * chatBubbleImageRadiusRatio;
-  double get chatDateSeparatorFontSize => screenWidth * chatDateSeparatorFontRatio;
+  double get chatDateSeparatorFontSize => _floorFont(screenWidth * chatDateSeparatorFontRatio);
   double get chatDateSeparatorGap => screenHeight * chatDateSeparatorGapRatio;
   double get chatInputBarPaddingH => screenWidth * chatInputBarPaddingHRatio;
   double get chatInputBarPaddingV => screenWidth * chatInputBarPaddingVRatio;
-  double get chatInputFontSize => screenWidth * chatInputFontRatio;
+  double get chatInputFontSize => _floorFont(screenWidth * chatInputFontRatio);
   double get chatInputIcon => screenWidth * chatInputIconRatio;
   double get chatSendButtonSize => screenWidth * chatSendButtonSizeRatio;
   double get chatEmptyStateIcon => screenWidth * chatEmptyStateIconRatio;
@@ -1429,18 +1445,391 @@ class AppSizes {
   static const double aboutUsCardTitleFontRatio = 0.042;
   static const double aboutUsCardBodyFontRatio = 0.034;
   static const double aboutUsClosingFontRatio = 0.04;
+  static const double aboutUsLogoFontRatio = 0.11;
 
   double get aboutUsTopGap => screenHeight * aboutUsTopGapRatio;
   double get aboutUsHorizontalPadding => screenWidth * aboutUsHorizontalPaddingRatio;
-  double get aboutUsTitleFontSize => screenWidth * aboutUsTitleFontRatio;
+  double get aboutUsTitleFontSize => _floorFont(screenWidth * aboutUsTitleFontRatio);
   double get aboutUsHeroRadius => screenWidth * aboutUsHeroRadiusRatio;
   double get aboutUsSectionGap => screenHeight * aboutUsSectionGapRatio;
-  double get aboutUsIntroFontSize => screenWidth * aboutUsIntroFontRatio;
+  double get aboutUsIntroFontSize => _floorFont(screenWidth * aboutUsIntroFontRatio);
   double get aboutUsCardPadding => screenWidth * aboutUsCardPaddingRatio;
   double get aboutUsCardGap => screenHeight * aboutUsCardGapRatio;
   double get aboutUsCardIconSize => screenWidth * aboutUsCardIconSizeRatio;
   double get aboutUsCardIconGap => screenWidth * aboutUsCardIconGapRatio;
-  double get aboutUsCardTitleFontSize => screenWidth * aboutUsCardTitleFontRatio;
-  double get aboutUsCardBodyFontSize => screenWidth * aboutUsCardBodyFontRatio;
-  double get aboutUsClosingFontSize => screenWidth * aboutUsClosingFontRatio;
+  double get aboutUsCardTitleFontSize => _floorFont(screenWidth * aboutUsCardTitleFontRatio);
+  double get aboutUsCardBodyFontSize => _floorFont(screenWidth * aboutUsCardBodyFontRatio);
+  double get aboutUsClosingFontSize => _floorFont(screenWidth * aboutUsClosingFontRatio);
+  double get aboutUsLogoFontSize => _floorFont(screenWidth * aboutUsLogoFontRatio);
+
+  // --------------------------------------------------------------------
+  // See All Pets (views/user/owner/see_all_pets.dart) - grid tel pets
+  // el kol tel owner + "Add" tile fel a5er.
+  // --------------------------------------------------------------------
+  static const double seeAllPetsPawSizeRatio = 0.09;
+  static const double seeAllPetsHorizontalPaddingRatio = 0.06;
+  static const double seeAllPetsTopGapRatio = 0.09;
+  static const double seeAllPetsTitleFontRatio = 0.06;
+  static const double seeAllPetsTitleGridGapRatio = 0.03;
+  static const double seeAllPetsGridCrossSpacingRatio = 0.06;
+  static const double seeAllPetsGridMainSpacingRatio = 0.025;
+  static const double seeAllPetsTileSizeRatio = 0.28;
+  static const double seeAllPetsBottomGapRatio = 0.03;
+
+  double get seeAllPetsPawSize => screenWidth * seeAllPetsPawSizeRatio;
+  double get seeAllPetsHorizontalPadding => screenWidth * seeAllPetsHorizontalPaddingRatio;
+  double get seeAllPetsTopGap => screenHeight * seeAllPetsTopGapRatio;
+  double get seeAllPetsTitleFontSize => _floorFont(screenWidth * seeAllPetsTitleFontRatio);
+  double get seeAllPetsTitleGridGap => screenHeight * seeAllPetsTitleGridGapRatio;
+  double get seeAllPetsGridCrossSpacing => screenWidth * seeAllPetsGridCrossSpacingRatio;
+  double get seeAllPetsGridMainSpacing => screenHeight * seeAllPetsGridMainSpacingRatio;
+  double get seeAllPetsTileSize => screenWidth * seeAllPetsTileSizeRatio;
+  double get seeAllPetsBottomGap => screenHeight * seeAllPetsBottomGapRatio;
+
+  // --------------------------------------------------------------------
+  // Admin Login (views/user/admin/admin_login.dart)
+  // --------------------------------------------------------------------
+  static const double adminLoginPaw1SizeRatio = 0.08;
+  static const double adminLoginPaw2SizeRatio = 0.06;
+  static const double adminLoginHorizontalPaddingRatio = 0.08;
+  static const double adminLoginTopGapRatio = 0.16;
+  static const double adminLoginLogoWidthRatio = 0.34;
+  static const double adminLoginLogoBadgeGapRatio = 0.03;
+  static const double adminLoginBadgePaddingHRatio = 0.035;
+  static const double adminLoginBadgePaddingVRatio = 0.007;
+  static const double adminLoginBadgeIconRatio = 0.04;
+  static const double adminLoginBadgeIconGapRatio = 0.015;
+  static const double adminLoginBadgeFontRatio = 0.034;
+  static const double adminLoginBadgeTitleGapRatio = 0.02;
+  static const double adminLoginTitleFontRatio = 0.062;
+  static const double adminLoginTitleSubtitleGapRatio = 0.012;
+  static const double adminLoginSubtitleFontRatio = 0.036;
+  static const double adminLoginSubtitleFieldsGapRatio = 0.045;
+  static const double adminLoginFieldsGapRatio = 0.02;
+  static const double adminLoginFieldForgotGapRatio = 0.012;
+  static const double adminLoginForgotFontRatio = 0.034;
+  static const double adminLoginForgotButtonGapRatio = 0.03;
+  static const double adminLoginBottomGapRatio = 0.04;
+
+  double get adminLoginPaw1Size => screenWidth * adminLoginPaw1SizeRatio;
+  double get adminLoginPaw2Size => screenWidth * adminLoginPaw2SizeRatio;
+  double get adminLoginHorizontalPadding => screenWidth * adminLoginHorizontalPaddingRatio;
+  double get adminLoginTopGap => screenHeight * adminLoginTopGapRatio;
+  double get adminLoginLogoWidth => screenWidth * adminLoginLogoWidthRatio;
+  double get adminLoginLogoBadgeGap => screenHeight * adminLoginLogoBadgeGapRatio;
+  double get adminLoginBadgePaddingH => screenWidth * adminLoginBadgePaddingHRatio;
+  double get adminLoginBadgePaddingV => screenHeight * adminLoginBadgePaddingVRatio;
+  double get adminLoginBadgeIcon => screenWidth * adminLoginBadgeIconRatio;
+  double get adminLoginBadgeIconGap => screenWidth * adminLoginBadgeIconGapRatio;
+  double get adminLoginBadgeFontSize => _floorFont(screenWidth * adminLoginBadgeFontRatio);
+  double get adminLoginBadgeTitleGap => screenHeight * adminLoginBadgeTitleGapRatio;
+  double get adminLoginTitleFontSize => _floorFont(screenWidth * adminLoginTitleFontRatio);
+  double get adminLoginTitleSubtitleGap => screenHeight * adminLoginTitleSubtitleGapRatio;
+  double get adminLoginSubtitleFontSize => _floorFont(screenWidth * adminLoginSubtitleFontRatio);
+  double get adminLoginSubtitleFieldsGap => screenHeight * adminLoginSubtitleFieldsGapRatio;
+  double get adminLoginFieldsGap => screenHeight * adminLoginFieldsGapRatio;
+  double get adminLoginFieldForgotGap => screenHeight * adminLoginFieldForgotGapRatio;
+  double get adminLoginForgotFontSize => _floorFont(screenWidth * adminLoginForgotFontRatio);
+  double get adminLoginForgotButtonGap => screenHeight * adminLoginForgotButtonGapRatio;
+  double get adminLoginBottomGap => screenHeight * adminLoginBottomGapRatio;
+
+  // --------------------------------------------------------------------
+  // Profile Owner (views/user/owner/profile_owner.dart) - home tel
+  // owner: header (photo+greeting+menu/notif) + "Your Pets" + search +
+  // "Available for urgent sitting" (grid tel sitters).
+  // --------------------------------------------------------------------
+  static const double profileOwnerTopGapRatio = 0.02;
+  static const double profileOwnerHorizontalPaddingRatio = 0.06;
+  static const double profileOwnerAvatarSizeRatio = 0.13;
+  static const double profileOwnerAvatarIconRatio = 0.08;
+  static const double profileOwnerAvatarBadgeRatio = 0.038;
+  static const double profileOwnerAvatarNameGapRatio = 0.03;
+  static const double profileOwnerGreetingFontRatio = 0.042;
+  static const double profileOwnerCityFontRatio = 0.034;
+  static const double profileOwnerHeaderIconSizeRatio = 0.10;
+  static const double profileOwnerHeaderIconGapRatio = 0.02;
+  static const double profileOwnerHeaderPetsGapRatio = 0.03;
+  static const double profileOwnerSectionTitleFontRatio = 0.042;
+  static const double profileOwnerSeeAllFontRatio = 0.034;
+  static const double profileOwnerPetsRowGapRatio = 0.015;
+  static const double profileOwnerPetsRowHeightRatio = 0.24;
+  static const double profileOwnerAddPetTileSizeRatio = 0.18;
+  static const double profileOwnerPetTileGapRatio = 0.04;
+  static const double profileOwnerPetsSearchGapRatio = 0.03;
+  static const double profileOwnerSearchFontRatio = 0.035;
+  static const double profileOwnerSearchPaddingVRatio = 0.018;
+  static const double profileOwnerSearchSectionGapRatio = 0.03;
+  static const double profileOwnerUrgentTitleFontRatio = 0.04;
+  static const double profileOwnerUrgentTitleGapRatio = 0.015;
+  static const double profileOwnerLoadingPaddingVRatio = 0.06;
+  static const double profileOwnerEmptyPaddingVRatio = 0.04;
+  static const double profileOwnerEmptyIconRatio = 0.12;
+  static const double profileOwnerEmptyIconTextGapRatio = 0.012;
+  static const double profileOwnerEmptyTextFontRatio = 0.034;
+  static const double profileOwnerGridSpacingRatio = 0.03;
+  static const double profileOwnerBottomGapRatio = 0.03;
+
+  double get profileOwnerTopGap => screenHeight * profileOwnerTopGapRatio;
+  double get profileOwnerHorizontalPadding => screenWidth * profileOwnerHorizontalPaddingRatio;
+  double get profileOwnerAvatarSize => screenWidth * profileOwnerAvatarSizeRatio;
+  double get profileOwnerAvatarIcon => screenWidth * profileOwnerAvatarIconRatio;
+  double get profileOwnerAvatarBadge => screenWidth * profileOwnerAvatarBadgeRatio;
+  double get profileOwnerAvatarNameGap => screenWidth * profileOwnerAvatarNameGapRatio;
+  double get profileOwnerGreetingFontSize => _floorFont(screenWidth * profileOwnerGreetingFontRatio);
+  double get profileOwnerCityFontSize => _floorFont(screenWidth * profileOwnerCityFontRatio);
+  double get profileOwnerHeaderIconSize => screenWidth * profileOwnerHeaderIconSizeRatio;
+  double get profileOwnerHeaderIconGap => screenWidth * profileOwnerHeaderIconGapRatio;
+  double get profileOwnerHeaderPetsGap => screenHeight * profileOwnerHeaderPetsGapRatio;
+  double get profileOwnerSectionTitleFontSize => _floorFont(screenWidth * profileOwnerSectionTitleFontRatio);
+  double get profileOwnerSeeAllFontSize => _floorFont(screenWidth * profileOwnerSeeAllFontRatio);
+  double get profileOwnerPetsRowGap => screenHeight * profileOwnerPetsRowGapRatio;
+  double get profileOwnerPetsRowHeight => screenWidth * profileOwnerPetsRowHeightRatio;
+  double get profileOwnerAddPetTileSize => screenWidth * profileOwnerAddPetTileSizeRatio;
+  double get profileOwnerPetTileGap => screenWidth * profileOwnerPetTileGapRatio;
+  double get profileOwnerPetsSearchGap => screenHeight * profileOwnerPetsSearchGapRatio;
+  double get profileOwnerSearchFontSize => _floorFont(screenWidth * profileOwnerSearchFontRatio);
+  double get profileOwnerSearchPaddingV => screenHeight * profileOwnerSearchPaddingVRatio;
+  double get profileOwnerSearchSectionGap => screenHeight * profileOwnerSearchSectionGapRatio;
+  double get profileOwnerUrgentTitleFontSize => _floorFont(screenWidth * profileOwnerUrgentTitleFontRatio);
+  double get profileOwnerUrgentTitleGap => screenHeight * profileOwnerUrgentTitleGapRatio;
+  double get profileOwnerLoadingPaddingV => screenHeight * profileOwnerLoadingPaddingVRatio;
+  double get profileOwnerEmptyPaddingV => screenHeight * profileOwnerEmptyPaddingVRatio;
+  double get profileOwnerEmptyIcon => screenWidth * profileOwnerEmptyIconRatio;
+  double get profileOwnerEmptyIconTextGap => screenHeight * profileOwnerEmptyIconTextGapRatio;
+  double get profileOwnerEmptyTextFontSize => _floorFont(screenWidth * profileOwnerEmptyTextFontRatio);
+  double get profileOwnerGridSpacing => screenWidth * profileOwnerGridSpacingRatio;
+  double get profileOwnerBottomGap => screenHeight * profileOwnerBottomGapRatio;
+
+  // --------------------------------------------------------------------
+  // Pet Profile (views/user/owner/pet_profile.dart) - details tel
+  // 7ayawen (about, size/gender/age pills, behaviors, care info, vet).
+  // 🔵 _PetBanner/_InfoPill/_careInfoRow (private classes/methods fel
+  // nefs fichier) ye5dhou "screenSize"/"screenWidth" kel paramètre
+  // (parametrized, nafs mant9 _HeaderIconButton/_SitterCard) - ma
+  // ye7tajouch AppSizes direct, el getters houni l'PetProfileScreen.build() bark.
+  // --------------------------------------------------------------------
+  static const double petProfileHorizontalPaddingRatio = 0.07;
+  static const double petProfileBannerContentGapRatio = 0.05;
+  static const double petProfileSectionTitleFontRatio = 0.045;
+  static const double petProfileTitlePillsGapRatio = 0.015;
+  static const double petProfilePillGapRatio = 0.025;
+  static const double petProfilePillsSectionGapRatio = 0.035;
+  static const double petProfileNoDataFontRatio = 0.034;
+  static const double petProfileBehaviorChipSpacingRatio = 0.03;
+  static const double petProfileBehaviorChipRunSpacingRatio = 0.015;
+  static const double petProfileBehaviorChipPaddingHRatio = 0.04;
+  static const double petProfileBehaviorChipPaddingVRatio = 0.012;
+  static const double petProfileBehaviorChipFontRatio = 0.033;
+  static const double petProfileVetLabelGapRatio = 0.01;
+  static const double petProfileVetTextFontRatio = 0.036;
+  static const double petProfileBottomGapRatio = 0.04;
+
+  double get petProfileHorizontalPadding => screenWidth * petProfileHorizontalPaddingRatio;
+  double get petProfileBannerContentGap => screenHeight * petProfileBannerContentGapRatio;
+  double get petProfileSectionTitleFontSize => _floorFont(screenWidth * petProfileSectionTitleFontRatio);
+  double get petProfileTitlePillsGap => screenHeight * petProfileTitlePillsGapRatio;
+  double get petProfilePillGap => screenWidth * petProfilePillGapRatio;
+  double get petProfilePillsSectionGap => screenHeight * petProfilePillsSectionGapRatio;
+  double get petProfileNoDataFontSize => _floorFont(screenWidth * petProfileNoDataFontRatio);
+  double get petProfileBehaviorChipSpacing => screenWidth * petProfileBehaviorChipSpacingRatio;
+  double get petProfileBehaviorChipRunSpacing => screenHeight * petProfileBehaviorChipRunSpacingRatio;
+  double get petProfileBehaviorChipPaddingH => screenWidth * petProfileBehaviorChipPaddingHRatio;
+  double get petProfileBehaviorChipPaddingV => screenHeight * petProfileBehaviorChipPaddingVRatio;
+  double get petProfileBehaviorChipFontSize => _floorFont(screenWidth * petProfileBehaviorChipFontRatio);
+  double get petProfileVetLabelGap => screenHeight * petProfileVetLabelGapRatio;
+  double get petProfileVetTextFontSize => _floorFont(screenWidth * petProfileVetTextFontRatio);
+  double get petProfileBottomGap => screenHeight * petProfileBottomGapRatio;
+
+  // --------------------------------------------------------------------
+  // Create Pet Profile (views/user/owner/create_pet_profile.dart) -
+  // étape 1: pet type (dog/cat), category, name/age/breed/size, gender.
+  // 🔵 _fieldLabel/_buildPetTypeCard (helpers privés fel nefs fichier)
+  // ye5dhou "screenWidth" kel paramètre (parametrized) - el getters
+  // houni l'el build() method el principal bark.
+  // --------------------------------------------------------------------
+  static const double createPetProfileHorizontalPaddingRatio = 0.07;
+  static const double createPetProfileTopGapRatio = 0.09;
+  static const double createPetProfileTitleFontRatio = 0.052;
+  static const double createPetProfileTitleSubtitleGapRatio = 0.012;
+  static const double createPetProfileSubtitleFontRatio = 0.034;
+  static const double createPetProfileSubtitleQuestionGapRatio = 0.035;
+  static const double createPetProfileQuestionFontRatio = 0.038;
+  static const double createPetProfileQuestionCardsGapRatio = 0.015;
+  static const double createPetProfileCardsGapRatio = 0.10;
+  static const double createPetProfileCardsSectionGapRatio = 0.035;
+  static const double createPetProfileFieldLabelGapRatio = 0.008;
+  static const double createPetProfileFieldBlockGapRatio = 0.02;
+  static const double createPetProfileCategoryFontRatio = 0.034;
+  static const double createPetProfileSizeGenderGapRatio = 0.025;
+  static const double createPetProfileGenderLabelRowGapRatio = 0.005;
+  static const double createPetProfileGenderSpacingRatio = 0.08;
+  static const double createPetProfileGenderIconRatio = 0.06;
+  static const double createPetProfileButtonGapRatio = 0.04;
+
+  double get createPetProfileHorizontalPadding => screenWidth * createPetProfileHorizontalPaddingRatio;
+  double get createPetProfileTopGap => screenHeight * createPetProfileTopGapRatio;
+  double get createPetProfileTitleFontSize => _floorFont(screenWidth * createPetProfileTitleFontRatio);
+  double get createPetProfileTitleSubtitleGap => screenHeight * createPetProfileTitleSubtitleGapRatio;
+  double get createPetProfileSubtitleFontSize => _floorFont(screenWidth * createPetProfileSubtitleFontRatio);
+  double get createPetProfileSubtitleQuestionGap => screenHeight * createPetProfileSubtitleQuestionGapRatio;
+  double get createPetProfileQuestionFontSize => _floorFont(screenWidth * createPetProfileQuestionFontRatio);
+  double get createPetProfileQuestionCardsGap => screenHeight * createPetProfileQuestionCardsGapRatio;
+  double get createPetProfileCardsGap => screenWidth * createPetProfileCardsGapRatio;
+  double get createPetProfileCardsSectionGap => screenHeight * createPetProfileCardsSectionGapRatio;
+  double get createPetProfileFieldLabelGap => screenHeight * createPetProfileFieldLabelGapRatio;
+  double get createPetProfileFieldBlockGap => screenHeight * createPetProfileFieldBlockGapRatio;
+  double get createPetProfileCategoryFontSize => _floorFont(screenWidth * createPetProfileCategoryFontRatio);
+  double get createPetProfileSizeGenderGap => screenHeight * createPetProfileSizeGenderGapRatio;
+  double get createPetProfileGenderLabelRowGap => screenHeight * createPetProfileGenderLabelRowGapRatio;
+  double get createPetProfileGenderSpacing => screenWidth * createPetProfileGenderSpacingRatio;
+  double get createPetProfileGenderIcon => screenWidth * createPetProfileGenderIconRatio;
+  double get createPetProfileButtonGap => screenHeight * createPetProfileButtonGapRatio;
+
+  // --------------------------------------------------------------------
+  // Create Pet Profile 2 (views/user/owner/create_pet_profile_2.dart) -
+  // étape 2: behavior (Card 1) + care info (Card 2) + veterinary info.
+  // 🔵 _pillCard/_behaviorRow/_behaviorButton/_careInfoRow/_fieldLabel/
+  // _sectionHeaderPill (helpers privés) ye5dhou screenWidth/screenHeight
+  // kel paramètre (parametrized) - el getters houni l'el build() bark.
+  // --------------------------------------------------------------------
+  static const double createPetProfile2PawSizeRatio = 0.09;
+  static const double createPetProfile2HorizontalPaddingRatio = 0.07;
+  static const double createPetProfile2TopGapRatio = 0.09;
+  static const double createPetProfile2TitleFontRatio = 0.048;
+  static const double createPetProfile2TitleSubtitleGapRatio = 0.012;
+  static const double createPetProfile2SubtitleFontRatio = 0.034;
+  static const double createPetProfile2SubtitleCardGapRatio = 0.035;
+  static const double createPetProfile2CardInnerWidthRatio = 0.86;
+  static const double createPetProfile2BehaviorGapRatio = 0.03;
+  static const double createPetProfile2BehaviorButtonHeightRatio = 0.16;
+  static const double createPetProfile2CardsGapRatio = 0.035;
+  static const double createPetProfile2CareCardVetGapRatio = 0.04;
+  static const double createPetProfile2VetTitleFontRatio = 0.036;
+  static const double createPetProfile2VetTitleFieldGapRatio = 0.02;
+  static const double createPetProfile2FieldLabelGapRatio = 0.008;
+  static const double createPetProfile2FieldBlockGapRatio = 0.02;
+  static const double createPetProfile2ButtonGapRatio = 0.04;
+  static const double createPetProfile2YesNoColumnWidthRatio = 0.14;
+
+  double get createPetProfile2PawSize => screenWidth * createPetProfile2PawSizeRatio;
+  double get createPetProfile2HorizontalPadding => screenWidth * createPetProfile2HorizontalPaddingRatio;
+  double get createPetProfile2TopGap => screenHeight * createPetProfile2TopGapRatio;
+  double get createPetProfile2TitleFontSize => _floorFont(screenWidth * createPetProfile2TitleFontRatio);
+  double get createPetProfile2TitleSubtitleGap => screenHeight * createPetProfile2TitleSubtitleGapRatio;
+  double get createPetProfile2SubtitleFontSize => _floorFont(screenWidth * createPetProfile2SubtitleFontRatio);
+  double get createPetProfile2SubtitleCardGap => screenHeight * createPetProfile2SubtitleCardGapRatio;
+  double get createPetProfile2CardInnerWidth => screenWidth * createPetProfile2CardInnerWidthRatio;
+  double get createPetProfile2BehaviorGap => screenWidth * createPetProfile2BehaviorGapRatio;
+  double get createPetProfile2BehaviorButtonHeight => screenWidth * createPetProfile2BehaviorButtonHeightRatio;
+  double get createPetProfile2CardsGap => screenHeight * createPetProfile2CardsGapRatio;
+  double get createPetProfile2CareCardVetGap => screenHeight * createPetProfile2CareCardVetGapRatio;
+  double get createPetProfile2VetTitleFontSize => _floorFont(screenWidth * createPetProfile2VetTitleFontRatio);
+  double get createPetProfile2VetTitleFieldGap => screenHeight * createPetProfile2VetTitleFieldGapRatio;
+  double get createPetProfile2FieldLabelGap => screenHeight * createPetProfile2FieldLabelGapRatio;
+  double get createPetProfile2FieldBlockGap => screenHeight * createPetProfile2FieldBlockGapRatio;
+  double get createPetProfile2ButtonGap => screenHeight * createPetProfile2ButtonGapRatio;
+  double get createPetProfile2YesNoColumnWidth => screenWidth * createPetProfile2YesNoColumnWidthRatio;
+
+  // --------------------------------------------------------------------
+  // Add Pet Photo (views/user/owner/add_pet_photo.dart) - étape 3:
+  // photo picker (gallery/camera) + "Add another pet" / "Next".
+  // --------------------------------------------------------------------
+  static const double addPetPhotoPaw1SizeRatio = 0.08;
+  static const double addPetPhotoPaw2SizeRatio = 0.09;
+  static const double addPetPhotoHorizontalPaddingRatio = 0.08;
+  static const double addPetPhotoTopGapRatio = 0.10;
+  static const double addPetPhotoTitleFontRatio = 0.055;
+  static const double addPetPhotoPhotoSizeRatio = 0.52;
+  static const double addPetPhotoCameraBadgeSizeRatio = 0.11;
+  static const double addPetPhotoCameraIconRatio = 0.05;
+  static const double addPetPhotoPhotoLabelGapRatio = 0.02;
+  static const double addPetPhotoLabelFontRatio = 0.04;
+  static const double addPetPhotoOutlinedButtonWidthRatio = 0.90;
+  static const double addPetPhotoOutlinedButtonHeightRatio = 0.065;
+  static const double addPetPhotoOutlinedButtonIconRatio = 0.05;
+  static const double addPetPhotoButtonsGapRatio = 0.015;
+  static const double addPetPhotoBottomGapRatio = 0.04;
+
+  double get addPetPhotoPaw1Size => screenWidth * addPetPhotoPaw1SizeRatio;
+  double get addPetPhotoPaw2Size => screenWidth * addPetPhotoPaw2SizeRatio;
+  double get addPetPhotoHorizontalPadding => screenWidth * addPetPhotoHorizontalPaddingRatio;
+  double get addPetPhotoTopGap => screenHeight * addPetPhotoTopGapRatio;
+  double get addPetPhotoTitleFontSize => _floorFont(screenWidth * addPetPhotoTitleFontRatio);
+  double get addPetPhotoPhotoSize => screenWidth * addPetPhotoPhotoSizeRatio;
+  double get addPetPhotoCameraBadgeSize => screenWidth * addPetPhotoCameraBadgeSizeRatio;
+  double get addPetPhotoCameraIcon => screenWidth * addPetPhotoCameraIconRatio;
+  double get addPetPhotoPhotoLabelGap => screenHeight * addPetPhotoPhotoLabelGapRatio;
+  double get addPetPhotoLabelFontSize => _floorFont(screenWidth * addPetPhotoLabelFontRatio);
+  double get addPetPhotoOutlinedButtonWidth => screenWidth * addPetPhotoOutlinedButtonWidthRatio;
+  double get addPetPhotoOutlinedButtonHeight => screenHeight * addPetPhotoOutlinedButtonHeightRatio;
+  double get addPetPhotoOutlinedButtonIcon => screenWidth * addPetPhotoOutlinedButtonIconRatio;
+  double get addPetPhotoButtonsGap => screenHeight * addPetPhotoButtonsGapRatio;
+  double get addPetPhotoBottomGap => screenHeight * addPetPhotoBottomGapRatio;
+
+  // --------------------------------------------------------------------
+  // User Create Profile (views/user/user_create_profile.dart) - avatar
+  // + name (check live) + birthday + gender + localization + city +
+  // phone + about you. 🔵 _fieldLabel (helper privé) ye5dou "screenWidth"
+  // kel paramètre (parametrized) - el getters houni l'el build()/
+  // _showCityPicker bark.
+  // --------------------------------------------------------------------
+  static const double userCreateProfilePaw1SizeRatio = 0.09;
+  static const double userCreateProfilePaw2SizeRatio = 0.065;
+  static const double userCreateProfileHorizontalPaddingRatio = 0.08;
+  static const double userCreateProfileTopGapRatio = 0.09;
+  static const double userCreateProfileTitleFontRatio = 0.052;
+  static const double userCreateProfileTitleSubtitleGapRatio = 0.004;
+  static const double userCreateProfileSubtitleFontRatio = 0.046;
+  static const double userCreateProfileSubtitleAvatarGapRatio = 0.03;
+  static const double userCreateProfileAvatarRadiusRatio = 0.14;
+  static const double userCreateProfileAvatarIconRatio = 0.16;
+  static const double userCreateProfileCameraBadgeOffsetRatio = 0.005;
+  static const double userCreateProfileCameraBadgeSizeRatio = 0.09;
+  static const double userCreateProfileCameraIconRatio = 0.045;
+  static const double userCreateProfileAvatarLabelGapRatio = 0.012;
+  static const double userCreateProfileAddPhotoFontRatio = 0.036;
+  static const double userCreateProfileLabelFieldsGapRatio = 0.035;
+  static const double userCreateProfileFieldLabelGapRatio = 0.008;
+  static const double userCreateProfileNameCheckIconPaddingRatio = 0.035;
+  static const double userCreateProfileNameCheckIconSizeRatio = 0.04;
+  static const double userCreateProfileNameStatusGapRatio = 0.006;
+  static const double userCreateProfileNameStatusFontRatio = 0.034;
+  static const double userCreateProfileFieldBlockGapRatio = 0.02;
+  static const double userCreateProfileSuffixIconRatio = 0.05;
+  static const double userCreateProfileGenderButtonGapRatio = 0.03;
+  static const double userCreateProfileGenderButtonPaddingVRatio = 0.016;
+  static const double userCreateProfileButtonGapRatio = 0.04;
+  static const double userCreateProfileCityPickerHeightRatio = 0.6;
+  static const double userCreateProfileCityPickerPaddingRatio = 0.04;
+  static const double userCreateProfileCityPickerTitleFontRatio = 0.045;
+
+  double get userCreateProfilePaw1Size => screenWidth * userCreateProfilePaw1SizeRatio;
+  double get userCreateProfilePaw2Size => screenWidth * userCreateProfilePaw2SizeRatio;
+  double get userCreateProfileHorizontalPadding => screenWidth * userCreateProfileHorizontalPaddingRatio;
+  double get userCreateProfileTopGap => screenHeight * userCreateProfileTopGapRatio;
+  double get userCreateProfileTitleFontSize => _floorFont(screenWidth * userCreateProfileTitleFontRatio);
+  double get userCreateProfileTitleSubtitleGap => screenHeight * userCreateProfileTitleSubtitleGapRatio;
+  double get userCreateProfileSubtitleFontSize => _floorFont(screenWidth * userCreateProfileSubtitleFontRatio);
+  double get userCreateProfileSubtitleAvatarGap => screenHeight * userCreateProfileSubtitleAvatarGapRatio;
+  double get userCreateProfileAvatarRadius => screenWidth * userCreateProfileAvatarRadiusRatio;
+  double get userCreateProfileAvatarIcon => screenWidth * userCreateProfileAvatarIconRatio;
+  double get userCreateProfileCameraBadgeOffset => screenWidth * userCreateProfileCameraBadgeOffsetRatio;
+  double get userCreateProfileCameraBadgeSize => screenWidth * userCreateProfileCameraBadgeSizeRatio;
+  double get userCreateProfileCameraIcon => screenWidth * userCreateProfileCameraIconRatio;
+  double get userCreateProfileAvatarLabelGap => screenHeight * userCreateProfileAvatarLabelGapRatio;
+  double get userCreateProfileAddPhotoFontSize => _floorFont(screenWidth * userCreateProfileAddPhotoFontRatio);
+  double get userCreateProfileLabelFieldsGap => screenHeight * userCreateProfileLabelFieldsGapRatio;
+  double get userCreateProfileFieldLabelGap => screenHeight * userCreateProfileFieldLabelGapRatio;
+  double get userCreateProfileNameCheckIconPadding => screenWidth * userCreateProfileNameCheckIconPaddingRatio;
+  double get userCreateProfileNameCheckIconSize => screenWidth * userCreateProfileNameCheckIconSizeRatio;
+  double get userCreateProfileNameStatusGap => screenHeight * userCreateProfileNameStatusGapRatio;
+  double get userCreateProfileNameStatusFontSize => _floorFont(screenWidth * userCreateProfileNameStatusFontRatio);
+  double get userCreateProfileFieldBlockGap => screenHeight * userCreateProfileFieldBlockGapRatio;
+  double get userCreateProfileSuffixIcon => screenWidth * userCreateProfileSuffixIconRatio;
+  double get userCreateProfileGenderButtonGap => screenWidth * userCreateProfileGenderButtonGapRatio;
+  double get userCreateProfileGenderButtonPaddingV => screenHeight * userCreateProfileGenderButtonPaddingVRatio;
+  double get userCreateProfileButtonGap => screenHeight * userCreateProfileButtonGapRatio;
+  double get userCreateProfileCityPickerHeight => screenHeight * userCreateProfileCityPickerHeightRatio;
+  double get userCreateProfileCityPickerPadding => screenWidth * userCreateProfileCityPickerPaddingRatio;
+  double get userCreateProfileCityPickerTitleFontSize => _floorFont(screenWidth * userCreateProfileCityPickerTitleFontRatio);
 }

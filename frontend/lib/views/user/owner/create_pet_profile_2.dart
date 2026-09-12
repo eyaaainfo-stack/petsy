@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../../constants/app_colors.dart';
+import '../../../constants/app_sizes.dart';
 import '../../../widgets/back_button.dart';
 import '../../../widgets/button.dart';
 import '../../../widgets/outlined_button.dart';
@@ -352,7 +353,7 @@ class _CreatePetProfile2ScreenState extends State<CreatePetProfile2Screen> {
           Expanded(
             child: Text(
               labelKey.tr(),
-              style: TextStyle(fontSize: screenWidth * 0.032),
+              style: TextStyle(fontSize: screenWidth * 0.034),
             ),
           ),
           SizedBox(
@@ -380,7 +381,8 @@ class _CreatePetProfile2ScreenState extends State<CreatePetProfile2Screen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size;
+    final sizes = AppSizes.of(context);
+    final screenSize = MediaQuery.of(context).size; // 🔵 lezمha l'el helpers (_pillCard/_behaviorRow/_careInfoRow/_fieldLabel...).
     final Color mutedTextColor =
         Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.75) ?? Colors.black87;
 
@@ -388,39 +390,39 @@ class _CreatePetProfile2ScreenState extends State<CreatePetProfile2Screen> {
       body: SafeArea(
         child: Stack(
           children: [
-            buildPetPaw(context: context, size: screenSize.width * 0.09, topPercent: 0.09, leftPercent: 0.04, color: AppColors.pinkpetsy.withOpacity(0.6)),
-            buildPetPaw(context: context, size: screenSize.width * 0.09, topPercent: 0.09, leftPercent: 0.85, color: AppColors.pinkpetsy.withOpacity(0.6)),
+            buildPetPaw(context: context, size: sizes.createPetProfile2PawSize, topPercent: 0.09, leftPercent: 0.04, color: AppColors.pinkpetsy.withOpacity(0.6)),
+            buildPetPaw(context: context, size: sizes.createPetProfile2PawSize, topPercent: 0.09, leftPercent: 0.85, color: AppColors.pinkpetsy.withOpacity(0.6)),
 
             SingleChildScrollView(
-              padding: EdgeInsets.symmetric(horizontal: screenSize.width * 0.07),
+              padding: EdgeInsets.symmetric(horizontal: sizes.createPetProfile2HorizontalPadding),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  SizedBox(height: screenSize.height * 0.09),
+                  SizedBox(height: sizes.createPetProfile2TopGap),
 
                   Text(
                     'pet_behavior_title'.tr(),
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: screenSize.width * 0.048,
+                      fontSize: sizes.createPetProfile2TitleFontSize,
                       fontWeight: FontWeight.bold,
                       color: AppColors.vertpetsy,
                     ),
                   ),
 
-                  SizedBox(height: screenSize.height * 0.012),
+                  SizedBox(height: sizes.createPetProfile2TitleSubtitleGap),
 
                   Text(
                     'pet_profile_subtitle'.tr(),
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: screenSize.width * 0.032,
+                      fontSize: sizes.createPetProfile2SubtitleFontSize,
                       color: mutedTextColor,
                       height: 1.35,
                     ),
                   ),
 
-                  SizedBox(height: screenSize.height * 0.035),
+                  SizedBox(height: sizes.createPetProfile2SubtitleCardGap),
 
                   // ----------------------------------------------------
                   // Card 1: "Pet's behavior include ..."
@@ -428,10 +430,10 @@ class _CreatePetProfile2ScreenState extends State<CreatePetProfile2Screen> {
                   Builder(builder: (context) {
                     // hjm kol bouton: (3ard el card - gap) / 2, bch
                     // ykounou 2 f kol sef, mzabta, mch Wrap 7or.
-                    final double cardInnerWidth = screenSize.width * 0.86 - 32;
-                    final double gap = screenSize.width * 0.03;
+                    final double cardInnerWidth = sizes.createPetProfile2CardInnerWidth - 32;
+                    final double gap = sizes.createPetProfile2BehaviorGap;
                     final double buttonWidth = (cardInnerWidth - gap) / 2;
-                    final double buttonHeight = screenSize.width * 0.16;
+                    final double buttonHeight = sizes.createPetProfile2BehaviorButtonHeight;
 
                     return _pillCard(
                       context: context,
@@ -450,7 +452,7 @@ class _CreatePetProfile2ScreenState extends State<CreatePetProfile2Screen> {
                     );
                   }),
 
-                  SizedBox(height: screenSize.height * 0.035),
+                  SizedBox(height: sizes.createPetProfile2CardsGap),
 
                   // ----------------------------------------------------
                   // Card 2: "Care info"
@@ -467,11 +469,11 @@ class _CreatePetProfile2ScreenState extends State<CreatePetProfile2Screen> {
                           children: [
                             const Expanded(child: SizedBox()),
                             SizedBox(
-                              width: screenSize.width * 0.14,
+                              width: sizes.createPetProfile2YesNoColumnWidth,
                               child: Text('yes_label'.tr(), textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold)),
                             ),
                             SizedBox(
-                              width: screenSize.width * 0.14,
+                              width: sizes.createPetProfile2YesNoColumnWidth,
                               child: Text('no_label'.tr(), textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold)),
                             ),
                           ],
@@ -484,37 +486,37 @@ class _CreatePetProfile2ScreenState extends State<CreatePetProfile2Screen> {
                     ),
                   ),
 
-                  SizedBox(height: screenSize.height * 0.04),
+                  SizedBox(height: sizes.createPetProfile2CareCardVetGap),
 
                   Text(
                     'veterinary_info_label'.tr(),
                     style: TextStyle(
-                      fontSize: screenSize.width * 0.036,
+                      fontSize: sizes.createPetProfile2VetTitleFontSize,
                       fontWeight: FontWeight.bold,
                       color: Theme.of(context).textTheme.bodyLarge?.color,
                     ),
                   ),
 
-                  SizedBox(height: screenSize.height * 0.02),
+                  SizedBox(height: sizes.createPetProfile2VetTitleFieldGap),
 
                   _fieldLabel('clinic_name_label'.tr(), screenSize.width),
-                  SizedBox(height: screenSize.height * 0.008),
+                  SizedBox(height: sizes.createPetProfile2FieldLabelGap),
                   TextFormField(
                     controller: _clinicNameController,
                     decoration: _fieldDecoration(context: context),
                   ),
 
-                  SizedBox(height: screenSize.height * 0.02),
+                  SizedBox(height: sizes.createPetProfile2FieldBlockGap),
 
                   _fieldLabel('phone_number_label'.tr(), screenSize.width),
-                  SizedBox(height: screenSize.height * 0.008),
+                  SizedBox(height: sizes.createPetProfile2FieldLabelGap),
                   TextFormField(
                     controller: _clinicPhoneController,
                     keyboardType: TextInputType.phone,
                     decoration: _fieldDecoration(context: context),
                   ),
 
-                  SizedBox(height: screenSize.height * 0.04),
+                  SizedBox(height: sizes.createPetProfile2ButtonGap),
 
                   Center(
                     child: CustomButton(
@@ -527,7 +529,7 @@ class _CreatePetProfile2ScreenState extends State<CreatePetProfile2Screen> {
                     ),
                   ),
 
-                  SizedBox(height: screenSize.height * 0.04),
+                  SizedBox(height: sizes.createPetProfile2ButtonGap),
                 ],
               ),
             ),

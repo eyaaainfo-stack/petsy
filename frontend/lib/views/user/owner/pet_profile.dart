@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../../constants/app_colors.dart';
+import '../../../constants/app_sizes.dart';
 import '../../../models/pet_summary.dart';
 import '../../../widgets/back_button.dart';
 import 'update_pet_profile.dart';
@@ -59,7 +60,8 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final pet = _pet;
-    final screenSize = MediaQuery.of(context).size;
+    final sizes = AppSizes.of(context);
+    final screenSize = MediaQuery.of(context).size; // 🔵 lezمha l'el _PetBanner/_InfoPill/_careInfoRow (parametrized).
     final Color textColor = Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black87;
 
     return Scaffold(
@@ -76,22 +78,22 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
               _PetBanner(pet: pet, screenSize: screenSize, onEditPressed: widget.readOnly ? null : _onEditPressed),
 
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: screenSize.width * 0.07),
+                padding: EdgeInsets.symmetric(horizontal: sizes.petProfileHorizontalPadding),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    SizedBox(height: screenSize.height * 0.05),
+                    SizedBox(height: sizes.petProfileBannerContentGap),
 
                     Text(
                       'about_pet_title'.tr(namedArgs: {'name': pet.name}),
                       style: TextStyle(
-                        fontSize: screenSize.width * 0.045,
+                        fontSize: sizes.petProfileSectionTitleFontSize,
                         fontWeight: FontWeight.bold,
                         color: textColor,
                       ),
                     ),
 
-                    SizedBox(height: screenSize.height * 0.015),
+                    SizedBox(height: sizes.petProfileTitlePillsGap),
 
                     // Size / Gender / Age
                     Row(
@@ -104,7 +106,7 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
                             screenWidth: screenSize.width,
                           ),
                         ),
-                        SizedBox(width: screenSize.width * 0.025),
+                        SizedBox(width: sizes.petProfilePillGap),
                         Expanded(
                           child: _InfoPill(
                             icon: Icons.male_outlined,
@@ -115,7 +117,7 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
                             screenWidth: screenSize.width,
                           ),
                         ),
-                        SizedBox(width: screenSize.width * 0.025),
+                        SizedBox(width: sizes.petProfilePillGap),
                         Expanded(
                           child: _InfoPill(
                             icon: Icons.cake_outlined,
@@ -127,57 +129,57 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
                       ],
                     ),
 
-                    SizedBox(height: screenSize.height * 0.035),
+                    SizedBox(height: sizes.petProfilePillsSectionGap),
 
                     // Behaviors
                     Text(
                       'pet_behaviors_title'.tr(namedArgs: {'name': pet.name}),
                       style: TextStyle(
-                        fontSize: screenSize.width * 0.045,
+                        fontSize: sizes.petProfileSectionTitleFontSize,
                         fontWeight: FontWeight.bold,
                         color: textColor,
                       ),
                     ),
 
-                    SizedBox(height: screenSize.height * 0.015),
+                    SizedBox(height: sizes.petProfileTitlePillsGap),
 
                     if (pet.behaviors.isEmpty)
                       Text(
                         'no_data_label'.tr(),
-                        style: TextStyle(color: AppColors.vertpetsy.withOpacity(0.6), fontSize: screenSize.width * 0.034),
+                        style: TextStyle(color: AppColors.vertpetsy.withOpacity(0.6), fontSize: sizes.petProfileNoDataFontSize),
                       )
                     else
                       Wrap(
-                        spacing: screenSize.width * 0.03,
-                        runSpacing: screenSize.height * 0.015,
+                        spacing: sizes.petProfileBehaviorChipSpacing,
+                        runSpacing: sizes.petProfileBehaviorChipRunSpacing,
                         children: pet.behaviors.map((key) {
                           return Container(
-                            padding: EdgeInsets.symmetric(horizontal: screenSize.width * 0.04, vertical: screenSize.height * 0.012),
+                            padding: EdgeInsets.symmetric(horizontal: sizes.petProfileBehaviorChipPaddingH, vertical: sizes.petProfileBehaviorChipPaddingV),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(color: AppColors.vertpetsy, width: 1.3),
                             ),
                             child: Text(
                               key.tr(),
-                              style: TextStyle(color: AppColors.vertpetsy, fontWeight: FontWeight.w600, fontSize: screenSize.width * 0.033),
+                              style: TextStyle(color: AppColors.vertpetsy, fontWeight: FontWeight.w600, fontSize: sizes.petProfileBehaviorChipFontSize),
                             ),
                           );
                         }).toList(),
                       ),
 
-                    SizedBox(height: screenSize.height * 0.035),
+                    SizedBox(height: sizes.petProfilePillsSectionGap),
 
                     // Care info
                     Text(
                       'care_info_label'.tr(),
                       style: TextStyle(
-                        fontSize: screenSize.width * 0.045,
+                        fontSize: sizes.petProfileSectionTitleFontSize,
                         fontWeight: FontWeight.bold,
                         color: textColor,
                       ),
                     ),
 
-                    SizedBox(height: screenSize.height * 0.015),
+                    SizedBox(height: sizes.petProfileTitlePillsGap),
 
                     _careInfoRow('microchipped_label'.tr(), pet.careInfo['microchipped'] ?? false, screenSize.width),
                     _careInfoRow('vaccinated_label'.tr(), pet.careInfo['vaccinated'] ?? false, screenSize.width),
@@ -186,22 +188,22 @@ class _PetProfileScreenState extends State<PetProfileScreen> {
 
                     // Veterinary info (lowkan mawjouda)
                     if (pet.vetClinicName?.isNotEmpty == true) ...[
-                      SizedBox(height: screenSize.height * 0.035),
+                      SizedBox(height: sizes.petProfilePillsSectionGap),
                       Text(
                         'veterinary_info_label'.tr(),
                         style: TextStyle(
-                          fontSize: screenSize.width * 0.045,
+                          fontSize: sizes.petProfileSectionTitleFontSize,
                           fontWeight: FontWeight.bold,
                           color: textColor,
                         ),
                       ),
-                      SizedBox(height: screenSize.height * 0.01),
-                      Text('${pet.vetClinicName}', style: TextStyle(fontSize: screenSize.width * 0.036)),
+                      SizedBox(height: sizes.petProfileVetLabelGap),
+                      Text('${pet.vetClinicName}', style: TextStyle(fontSize: sizes.petProfileVetTextFontSize)),
                       if (pet.vetClinicPhone?.isNotEmpty == true)
-                        Text(pet.vetClinicPhone!, style: TextStyle(fontSize: screenSize.width * 0.036, color: Colors.grey)),
+                        Text(pet.vetClinicPhone!, style: TextStyle(fontSize: sizes.petProfileVetTextFontSize, color: Colors.grey)),
                     ],
 
-                    SizedBox(height: screenSize.height * 0.04),
+                    SizedBox(height: sizes.petProfileBottomGap),
                   ],
                 ),
               ),
@@ -350,7 +352,7 @@ class _PetBanner extends StatelessWidget {
                 if (pet.breed?.isNotEmpty == true)
                   Text(
                     pet.breed!,
-                    style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: screenSize.width * 0.03),
+                    style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: screenSize.width * 0.034),
                   ),
               ],
             ),
@@ -394,12 +396,12 @@ class _InfoPill extends StatelessWidget {
               color: AppColors.pinkpetsy.withOpacity(0.3),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: Text(label, style: TextStyle(fontSize: screenWidth * 0.026, fontWeight: FontWeight.w600, color: AppColors.pinkpetsy)),
+            child: Text(label, style: TextStyle(fontSize: screenWidth * 0.034, fontWeight: FontWeight.w600, color: AppColors.pinkpetsy)),
           ),
           SizedBox(height: screenWidth * 0.02),
           Icon(icon, color: AppColors.pinkpetsy, size: screenWidth * 0.05),
           SizedBox(height: screenWidth * 0.008),
-          Text(value, style: TextStyle(fontSize: screenWidth * 0.03, fontWeight: FontWeight.w600)),
+          Text(value, style: TextStyle(fontSize: screenWidth * 0.034, fontWeight: FontWeight.w600)),
         ],
       ),
     );

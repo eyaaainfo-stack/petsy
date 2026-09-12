@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../../constants/app_colors.dart';
+import '../../../constants/app_sizes.dart';
 import '../../../widgets/back_button.dart';
 import '../../../widgets/button.dart';
 import '../../../controllers/create_pet_profile_controller.dart';
@@ -212,7 +213,7 @@ class _CreatePetProfileScreenState extends State<CreatePetProfileScreen> {
             labelKey.tr(),
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              fontSize: screenWidth * 0.030,
+              fontSize: screenWidth * 0.034,
               color: Theme.of(context).textTheme.bodyLarge?.color,
             ),
           ),
@@ -223,7 +224,8 @@ class _CreatePetProfileScreenState extends State<CreatePetProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size;
+    final sizes = AppSizes.of(context);
+    final screenSize = MediaQuery.of(context).size; // 🔵 lezمha l'_fieldLabel/_buildPetTypeCard (parametrized).
     final Color mutedTextColor =
         Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.75) ?? Colors.black87;
 
@@ -232,48 +234,48 @@ class _CreatePetProfileScreenState extends State<CreatePetProfileScreen> {
         child: Stack(
           children: [
             SingleChildScrollView(
-              padding: EdgeInsets.symmetric(horizontal: screenSize.width * 0.07),
+              padding: EdgeInsets.symmetric(horizontal: sizes.createPetProfileHorizontalPadding),
               child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    SizedBox(height: screenSize.height * 0.09),
+                    SizedBox(height: sizes.createPetProfileTopGap),
 
                     Text(
                       'pet_profile_title'.tr(),
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: screenSize.width * 0.052,
+                        fontSize: sizes.createPetProfileTitleFontSize,
                         fontWeight: FontWeight.bold,
                         color: AppColors.vertpetsy,
                       ),
                     ),
 
-                    SizedBox(height: screenSize.height * 0.012),
+                    SizedBox(height: sizes.createPetProfileTitleSubtitleGap),
 
                     Text(
                       'pet_profile_subtitle'.tr(),
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: screenSize.width * 0.032,
+                        fontSize: sizes.createPetProfileSubtitleFontSize,
                         color: mutedTextColor,
                         height: 1.35,
                       ),
                     ),
 
-                    SizedBox(height: screenSize.height * 0.035),
+                    SizedBox(height: sizes.createPetProfileSubtitleQuestionGap),
 
                     Text(
                       'pet_type_question'.tr(),
                       style: TextStyle(
-                        fontSize: screenSize.width * 0.038,
+                        fontSize: sizes.createPetProfileQuestionFontSize,
                         fontWeight: FontWeight.bold,
                         color: Theme.of(context).textTheme.bodyLarge?.color,
                       ),
                     ),
 
-                    SizedBox(height: screenSize.height * 0.015),
+                    SizedBox(height: sizes.createPetProfileQuestionCardsGap),
 
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -284,7 +286,7 @@ class _CreatePetProfileScreenState extends State<CreatePetProfileScreen> {
                           labelKey: 'dog_label',
                           screenWidth: screenSize.width,
                         ),
-                        SizedBox(width: screenSize.width * 0.10),
+                        SizedBox(width: sizes.createPetProfileCardsGap),
                         _buildPetTypeCard(
                           type: PetType.cat,
                           imagePath: 'assets/images/cat.png',
@@ -294,7 +296,7 @@ class _CreatePetProfileScreenState extends State<CreatePetProfileScreen> {
                       ],
                     ),
 
-                    SizedBox(height: screenSize.height * 0.035),
+                    SizedBox(height: sizes.createPetProfileCardsSectionGap),
 
                     // ----------------------------------------------------
                     // 🔵 ZID (feature "compatibilite entre animaux"):
@@ -303,7 +305,7 @@ class _CreatePetProfileScreenState extends State<CreatePetProfileScreen> {
                     // ----------------------------------------------------
                     if (_selectedPetType == PetType.dog) ...[
                       _fieldLabel('pet_category_question'.tr(), screenSize.width),
-                      SizedBox(height: screenSize.height * 0.008),
+                      SizedBox(height: sizes.createPetProfileFieldLabelGap),
                       Row(
                         children: [
                           Expanded(
@@ -315,7 +317,7 @@ class _CreatePetProfileScreenState extends State<CreatePetProfileScreen> {
                               activeColor: AppColors.vertpetsy,
                               title: Text(
                                 'pet_category_small_dog_label'.tr(),
-                                style: TextStyle(fontSize: screenSize.width * 0.032),
+                                style: TextStyle(fontSize: sizes.createPetProfileCategoryFontSize),
                               ),
                               onChanged: (value) => setState(() => _selectedCategory = value),
                             ),
@@ -329,28 +331,28 @@ class _CreatePetProfileScreenState extends State<CreatePetProfileScreen> {
                               activeColor: AppColors.vertpetsy,
                               title: Text(
                                 'pet_category_guard_dog_label'.tr(),
-                                style: TextStyle(fontSize: screenSize.width * 0.032),
+                                style: TextStyle(fontSize: sizes.createPetProfileCategoryFontSize),
                               ),
                               onChanged: (value) => setState(() => _selectedCategory = value),
                             ),
                           ),
                         ],
                       ),
-                      SizedBox(height: screenSize.height * 0.02),
+                      SizedBox(height: sizes.createPetProfileFieldBlockGap),
                     ],
 
                     _fieldLabel('name_label'.tr(), screenSize.width),
-                    SizedBox(height: screenSize.height * 0.008),
+                    SizedBox(height: sizes.createPetProfileFieldLabelGap),
                     TextFormField(
                       controller: _nameController,
                       validator: PetProfileValidators.petName,
                       decoration: _fieldDecoration(context: context),
                     ),
 
-                    SizedBox(height: screenSize.height * 0.02),
+                    SizedBox(height: sizes.createPetProfileFieldBlockGap),
 
                     _fieldLabel('pet_age_label'.tr(), screenSize.width),
-                    SizedBox(height: screenSize.height * 0.008),
+                    SizedBox(height: sizes.createPetProfileFieldLabelGap),
                     TextFormField(
                       controller: _ageController,
                       keyboardType: TextInputType.number,
@@ -369,19 +371,19 @@ class _CreatePetProfileScreenState extends State<CreatePetProfileScreen> {
                       decoration: _fieldDecoration(context: context, suffixText: 'ans'),
                     ),
 
-                    SizedBox(height: screenSize.height * 0.02),
+                    SizedBox(height: sizes.createPetProfileFieldBlockGap),
 
                     _fieldLabel('pet_breed_label'.tr(), screenSize.width),
-                    SizedBox(height: screenSize.height * 0.008),
+                    SizedBox(height: sizes.createPetProfileFieldLabelGap),
                     TextFormField(
                       controller: _breedController,
                       decoration: _fieldDecoration(context: context),
                     ),
 
-                    SizedBox(height: screenSize.height * 0.02),
+                    SizedBox(height: sizes.createPetProfileFieldBlockGap),
 
                     _fieldLabel('pet_size_label'.tr(), screenSize.width),
-                    SizedBox(height: screenSize.height * 0.008),
+                    SizedBox(height: sizes.createPetProfileFieldLabelGap),
                     TextFormField(
                       controller: _sizeController,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -394,10 +396,10 @@ class _CreatePetProfileScreenState extends State<CreatePetProfileScreen> {
                       decoration: _fieldDecoration(context: context, suffixText: 'kg'),
                     ),
 
-                    SizedBox(height: screenSize.height * 0.025),
+                    SizedBox(height: sizes.createPetProfileSizeGenderGap),
 
                     _fieldLabel('gender_label'.tr(), screenSize.width),
-                    SizedBox(height: screenSize.height * 0.005),
+                    SizedBox(height: sizes.createPetProfileGenderLabelRowGap),
                     Row(
                       children: [
                         Radio<String>(
@@ -407,7 +409,7 @@ class _CreatePetProfileScreenState extends State<CreatePetProfileScreen> {
                           onChanged: (value) => setState(() => _selectedGender = value),
                         ),
                         Text('female_label'.tr()),
-                        SizedBox(width: screenSize.width * 0.08),
+                        SizedBox(width: sizes.createPetProfileGenderSpacing),
                         Radio<String>(
                           value: 'male',
                           groupValue: _selectedGender,
@@ -416,11 +418,11 @@ class _CreatePetProfileScreenState extends State<CreatePetProfileScreen> {
                         ),
                         Text('male_label'.tr()),
                         const Spacer(),
-                        Icon(Icons.pets, color: AppColors.pinkpetsy.withOpacity(0.7), size: screenSize.width * 0.06),
+                        Icon(Icons.pets, color: AppColors.pinkpetsy.withOpacity(0.7), size: sizes.createPetProfileGenderIcon),
                       ],
                     ),
 
-                    SizedBox(height: screenSize.height * 0.04),
+                    SizedBox(height: sizes.createPetProfileButtonGap),
 
                     Center(
                       child: CustomButton(
@@ -433,7 +435,7 @@ class _CreatePetProfileScreenState extends State<CreatePetProfileScreen> {
                       ),
                     ),
 
-                    SizedBox(height: screenSize.height * 0.04),
+                    SizedBox(height: sizes.createPetProfileButtonGap),
                   ],
                 ),
               ),

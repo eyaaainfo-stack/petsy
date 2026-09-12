@@ -11,14 +11,13 @@ router.post('/login', authController.login);
 // Route Register (Lil-Sitter, Owner, Courier)
 router.post('/register', authController.register);
 
+// 🔵 ZID (kifma tlab: "Continue with Google") - route wa7da l'el login
+// W el signup (chraht fel controller, googleAuth).
+router.post('/google', authController.googleAuth);
+
 // 🔵 ZID: Forgot Password (mdp_oublier_1/2/3.dart) - 3 khtawet
 router.post('/forgot-password', authController.forgotPassword);
 router.post('/verify-reset-code', authController.verifyPasswordResetCode);
 router.post('/reset-password', authController.resetPassword);
-
-// 🔵 ZID (kifma tlab: "el email ykoun réellement mawjoud" - vérification
-// bloquante ba3d el signup)
-router.post('/verify-email', authController.verifyEmail);
-router.post('/resend-verification-email', authController.resendVerificationEmail);
 
 module.exports = router;

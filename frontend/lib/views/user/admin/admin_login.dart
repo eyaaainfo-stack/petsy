@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../../constants/app_colors.dart';
+import '../../../constants/app_sizes.dart';
 import '../../../widgets/button.dart';
 import '../../../widgets/back_button.dart';
 import '../../../widgets/paw_widget.dart';
@@ -192,7 +193,7 @@ class _AdminLoginViewState extends State<AdminLoginView> {
 
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size;
+    final sizes = AppSizes.of(context);
     final Color mutedTextColor =
         Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.65) ?? Colors.grey;
 
@@ -201,8 +202,8 @@ class _AdminLoginViewState extends State<AdminLoginView> {
         child: Stack(
           children: [
             // 🐾 Paws decoratives (nafs style el app kaملها)
-            buildPetPaw(context: context, size: screenSize.width * 0.08, topPercent: 0.02, leftPercent: 0.80, color: AppColors.vertpetsy.withOpacity(0.5)),
-            buildPetPaw(context: context, size: screenSize.width * 0.06, topPercent: 0.10, leftPercent: 0.08, color: AppColors.pinkpetsy.withOpacity(0.4)),
+            buildPetPaw(context: context, size: sizes.adminLoginPaw1Size, topPercent: 0.02, leftPercent: 0.80, color: AppColors.vertpetsy.withOpacity(0.5)),
+            buildPetPaw(context: context, size: sizes.adminLoginPaw2Size, topPercent: 0.10, leftPercent: 0.08, color: AppColors.pinkpetsy.withOpacity(0.4)),
 
             // ------------------------------------------------------------
             // SingleChildScrollView: JDID houni. Lezemna n7ottou el Form
@@ -213,32 +214,32 @@ class _AdminLoginViewState extends State<AdminLoginView> {
             // écran fi input feh.
             // ------------------------------------------------------------
             SingleChildScrollView(
-              padding: EdgeInsets.symmetric(horizontal: screenSize.width * 0.08),
+              padding: EdgeInsets.symmetric(horizontal: sizes.adminLoginHorizontalPadding),
               child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    SizedBox(height: screenSize.height * 0.16),
+                    SizedBox(height: sizes.adminLoginTopGap),
 
                     // 🖼️ Logo el app (nafs image mawjouda déjà)
                     Center(
                       child: Image.asset(
                         'assets/images/ppetsy.png',
-                        width: screenSize.width * 0.34,
+                        width: sizes.adminLoginLogoWidth,
                         fit: BoxFit.contain,
                       ),
                     ),
 
-                    SizedBox(height: screenSize.height * 0.03),
+                    SizedBox(height: sizes.adminLoginLogoBadgeGap),
 
                     // Badge sghir "Admin" - bch ywarri belli hedhi
                     // écran khassa bel Admin biss (mch ay user)
                     Center(
                       child: Container(
                         padding: EdgeInsets.symmetric(
-                          horizontal: screenSize.width * 0.035,
-                          vertical: screenSize.height * 0.007,
+                          horizontal: sizes.adminLoginBadgePaddingH,
+                          vertical: sizes.adminLoginBadgePaddingV,
                         ),
                         decoration: BoxDecoration(
                           color: AppColors.pinkpetsy.withOpacity(0.12),
@@ -247,12 +248,12 @@ class _AdminLoginViewState extends State<AdminLoginView> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.admin_panel_settings, size: screenSize.width * 0.04, color: AppColors.pinkpetsy),
-                            SizedBox(width: screenSize.width * 0.015),
+                            Icon(Icons.admin_panel_settings, size: sizes.adminLoginBadgeIcon, color: AppColors.pinkpetsy),
+                            SizedBox(width: sizes.adminLoginBadgeIconGap),
                             Text(
                               'admin_badge_label'.tr(),
                               style: TextStyle(
-                                fontSize: screenSize.width * 0.032,
+                                fontSize: sizes.adminLoginBadgeFontSize,
                                 fontWeight: FontWeight.w600,
                                 color: AppColors.pinkpetsy,
                               ),
@@ -262,31 +263,31 @@ class _AdminLoginViewState extends State<AdminLoginView> {
                       ),
                     ),
 
-                    SizedBox(height: screenSize.height * 0.02),
+                    SizedBox(height: sizes.adminLoginBadgeTitleGap),
 
                     Text(
                       'admin_login_title'.tr(),
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: screenSize.width * 0.062,
+                        fontSize: sizes.adminLoginTitleFontSize,
                         fontWeight: FontWeight.bold,
                         color: AppColors.pinkpetsy,
                       ),
                     ),
 
-                    SizedBox(height: screenSize.height * 0.012),
+                    SizedBox(height: sizes.adminLoginTitleSubtitleGap),
 
                     Text(
                       'admin_login_subtitle'.tr(),
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: screenSize.width * 0.036,
+                        fontSize: sizes.adminLoginSubtitleFontSize,
                         color: mutedTextColor,
                         height: 1.4,
                       ),
                     ),
 
-                    SizedBox(height: screenSize.height * 0.045),
+                    SizedBox(height: sizes.adminLoginSubtitleFieldsGap),
 
                     // 📧 7a9el el email
                     TextFormField(
@@ -309,7 +310,7 @@ class _AdminLoginViewState extends State<AdminLoginView> {
                       ),
                     ),
 
-                    SizedBox(height: screenSize.height * 0.02),
+                    SizedBox(height: sizes.adminLoginFieldsGap),
 
                     // 🔒 7a9el el password
                     TextFormField(
@@ -339,7 +340,7 @@ class _AdminLoginViewState extends State<AdminLoginView> {
                       ),
                     ),
 
-                    SizedBox(height: screenSize.height * 0.012),
+                    SizedBox(height: sizes.adminLoginFieldForgotGap),
 
                     // "Forgot password?" - fel lakher (right fel LTR,
                     // left fel RTL, automatique b AlignmentDirectional)
@@ -352,7 +353,7 @@ class _AdminLoginViewState extends State<AdminLoginView> {
                         child: Text(
                           'forgot_password_button'.tr(),
                           style: TextStyle(
-                            fontSize: screenSize.width * 0.034,
+                            fontSize: sizes.adminLoginForgotFontSize,
                             color: AppColors.vertpetsy,
                             fontWeight: FontWeight.w600,
                           ),
@@ -360,7 +361,7 @@ class _AdminLoginViewState extends State<AdminLoginView> {
                       ),
                     ),
 
-                    SizedBox(height: screenSize.height * 0.03),
+                    SizedBox(height: sizes.adminLoginForgotButtonGap),
 
                     // 🔘 Bouton Login (CustomButton mawjoud, bla icon/subtitle)
                     Center(
@@ -375,7 +376,7 @@ class _AdminLoginViewState extends State<AdminLoginView> {
                       ),
                     ),
 
-                    SizedBox(height: screenSize.height * 0.04),
+                    SizedBox(height: sizes.adminLoginBottomGap),
                   ],
                 ),
               ),

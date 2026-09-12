@@ -45,4 +45,29 @@ class PetRepository {
       return [];
     }
   }
+
+  // 🔵 ZID (kifma tlab: "supprimer le compte mtaa pets") - security_
+  // settings_screen.dart, "Supprimer un animal". Yerja3 true ken el
+  // delete njeh, false ken fama erreur (mathalan pet 3andou booking
+  // active - conflit 409, message.errorMessage yban lel user).
+  static Future<PetDeleteResult> deletePet(String petId) async {
+    try {
+      final response = await ApiService.delete('/pets/$petId', token: AuthSession.token);
+      if (response.statusCode == 200) {
+        return const PetDeleteResult(success: true);
+      }
+      final Map<String, dynamic> data = jsonDecode(response.body) as Map<String, dynamic>;
+      return PetDeleteResult(success: false, errorMessage: data['message'] as String?);
+    } catch (_) {
+      return const PetDeleteResult(success: false);
+    }
+  }
+}
+
+// 🔵 ZID: résultat tel deletePet (success + errorMessage optionnel, bch
+// el UI ynajjam ywarri el sabab el 7a9i9i - mathalan "active booking").
+class PetDeleteResult {
+  final bool success;
+  final String? errorMessage;
+  const PetDeleteResult({required this.success, this.errorMessage});
 }
