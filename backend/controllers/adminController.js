@@ -2,7 +2,6 @@
 const User = require('../models/user');
 const Owner = require('../models/owner');
 const Sitter = require('../models/sitter');
-const Courier = require('../models/courier');
 const Admin = require('../models/admin');
 const Animal = require('../models/animal');
 const Booking = require('../models/booking');
@@ -25,7 +24,6 @@ exports.getStats = async (req, res) => {
     const [
       totalOwners,
       totalSitters,
-      totalCouriers,
       totalAdmins,
       totalPets,
       totalBookings,
@@ -34,7 +32,6 @@ exports.getStats = async (req, res) => {
     ] = await Promise.all([
       User.countDocuments({ role: 'owner' }),
       User.countDocuments({ role: 'sitter' }),
-      User.countDocuments({ role: 'courier' }),
       User.countDocuments({ role: 'admin' }),
       Animal.countDocuments(),
       Booking.countDocuments(),
@@ -64,10 +61,9 @@ exports.getStats = async (req, res) => {
     const totalReviews = ratingAgg.length > 0 ? ratingAgg[0].count : 0;
 
     res.status(200).json({
-      totalUsers: totalOwners + totalSitters + totalCouriers + totalAdmins,
+      totalUsers: totalOwners + totalSitters + totalAdmins,
       totalOwners,
       totalSitters,
-      totalCouriers,
       totalAdmins,
       totalPets,
       totalBookings,
@@ -130,7 +126,6 @@ exports.getMonthlyRegistrations = async (req, res) => {
       total: new Array(bucketCount).fill(0),
       owner: new Array(bucketCount).fill(0),
       sitter: new Array(bucketCount).fill(0),
-      courier: new Array(bucketCount).fill(0),
     };
 
     // 🔵 label kol tranche = date bidayetha ("YYYY-MM-DD") - el frontend
@@ -329,9 +324,6 @@ exports.createUser = async (req, res) => {
         break;
       case 'sitter':
         newUser = new Sitter(userData);
-        break;
-      case 'courier':
-        newUser = new Courier(userData);
         break;
       case 'admin':
         newUser = new Admin(userData);
@@ -704,7 +696,7 @@ exports.getUserChecklist = async (req, res) => {
 // ==========================================
 exports.listValidations = async (req, res) => {
   try {
-    const candidates = await User.find({ role: { $in: ['owner', 'sitter', 'courier'] }, isVerified: { $ne: true } });
+    const candidates = await User.find({ role: { $in: ['owner', 'sitter'] }, isVerified: { $ne: true } });
 
     const results = [];
     for (const user of candidates) {

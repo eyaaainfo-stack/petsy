@@ -4,6 +4,7 @@ const Notification = require('../models/notification');
 const User = require('../models/user');
 const Sitter = require('../models/sitter');
 const Animal = require('../models/animal');
+const CheckoutQuestionnaire = require('../models/checkoutQuestionnaire');
 
 // ============================================================================
 // FEATURE "COMPATIBILITE ENTRE ANIMAUX" (safety scheduling)
@@ -130,7 +131,9 @@ function haversineDistanceKm(lat1, lng1, lat2, lng2) {
 // ============================================================================
 exports.getMyNotifications = async (req, res) => {
   try {
-    const notifications = await Notification.find({ recipient: req.userId }).sort({ createdAt: -1 });
+    const notifications = await Notification.find({ recipient: req.userId })
+      .sort({ createdAt: -1 })
+      .populate('relatedSender', 'fullName photoUrl');
     res.status(200).json({ notifications });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -541,7 +544,19 @@ exports.respondToBooking = async (req, res) => {
         }
 
         booking.status = 'accepted';
+        // 🔵 ZID (feature "partage de localisation"): el sitter ye5tar
+        // (popup fel front, request.dart) ken y9bel ychourek el position
+        // mte3ou m3a el owner - "shareLocation" (bool) jaya mel body.
+        booking.sitterShareLocation = !!req.body.shareLocation;
         await booking.save();
+        if (booking.sitterShareLocation) {
+          await Notification.create({
+            recipient: booking.owner,
+            message: `${respondingSitter?.fullName || 'The sitter'} accepted to share their location with you for this booking.`,
+            type: 'location_shared',
+            relatedBooking: booking._id,
+          });
+        }
         await Notification.create({
           recipient: booking.owner,
           message: `${respondingSitter?.fullName || 'The sitter'} accepted your booking request!`,
@@ -622,6 +637,70 @@ exports.respondToBooking = async (req, res) => {
     }
 
     res.status(200).json({ message: 'Response recorded', booking });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// ============================================================================
+// GET ACTIVE SITTER LOCATIONS (owner - feature "partage de localisation")
+// ============================================================================
+// 🔵 ZID (kifma tlab): bouton "Localisation" fel sidebar owner - ghir
+// el bookings ACTIFS (bla historique, privacy): status="accepted",
+// el sitter 9bel ychourek ("sitterShareLocation"), w a7na fel fenetre
+// [T-2h avant checkIn ... checkout confirmé/refusé]. Ay booking barra
+// had el fenetre (mazel loin, wla déjà m3ada/confirmée) ma yban-ch -
+// "active" howa un query DYNAMIQUE (bla flag "expired" mahfoudh wla
+// cron job) - direct ki l'état tel booking/questionnaire yetbeddel,
+// el localisation tetnahha automatique bla ay action manuelle.
+exports.getActiveSitterLocations = async (req, res) => {
+  try {
+    const now = new Date();
+    const twoHoursFromNow = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+
+    const bookings = await Booking.find({
+      owner: req.userId,
+      status: 'accepted',
+      sitterShareLocation: true,
+      checkIn: { $lte: twoHoursFromNow },
+    }).populate('sitter', 'fullName photoUrl location locationName');
+
+    if (bookings.length === 0) return res.status(200).json({ locations: [] });
+
+    const bookingIds = bookings.map((b) => b._id);
+    const questionnaires = await CheckoutQuestionnaire.find({ booking: { $in: bookingIds } });
+
+    // 🔵 el fenetre tetnahha (booking "khleq" mel liste) ken: (a) chi
+    // jiha jawbet "non" 3la "service fait?" (serviceDone===false), wla
+    // (b) el 2 jihat ("owner" w "sitter") 3malou checkout (checkoutDone
+    // ===true l'kol wa7ed) - kifma tlab bالضبط.
+    const stoppedBookingIds = new Set();
+    for (const bId of bookingIds) {
+      const key = bId.toString();
+      const docs = questionnaires.filter((q) => q.booking.toString() === key);
+      const serviceRefused = docs.some((q) => q.serviceDone === false);
+      const bothCheckedOut = docs.length >= 2 && docs.every((q) => q.checkoutDone === true);
+      if (serviceRefused || bothCheckedOut) stoppedBookingIds.add(key);
+    }
+
+    const locations = bookings
+      .filter((b) => {
+        if (stoppedBookingIds.has(b._id.toString())) return false;
+        if (!b.sitter || !b.sitter.location || b.sitter.location.lat == null || b.sitter.location.lng == null) return false;
+        return true;
+      })
+      .map((b) => ({
+        bookingId: b._id,
+        sitterId: b.sitter._id,
+        sitterName: b.sitter.fullName,
+        sitterPhotoUrl: b.sitter.photoUrl || '',
+        sitterLocationName: b.sitter.locationName || '',
+        location: { lat: b.sitter.location.lat, lng: b.sitter.location.lng },
+        checkIn: b.checkIn,
+        checkOut: b.checkOut,
+      }));
+
+    res.status(200).json({ locations });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

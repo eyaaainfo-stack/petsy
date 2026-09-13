@@ -153,7 +153,7 @@ class ProfileValidators {
   // kif el validators l'okhrin elli "static rules" fixe.
   // --------------------------------------------------------------------
   static String? aboutYou(String? value, String role) {
-    final bool isRequired = role == 'sitter' || role == 'courier';
+    final bool isRequired = role == 'sitter';
     if (!isRequired) return null; // owner: optionnel, ay 7aja tsa77
 
     if (value == null || value.trim().isEmpty) {

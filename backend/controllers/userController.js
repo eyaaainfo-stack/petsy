@@ -404,6 +404,18 @@ exports.getSittersByCity = async (req, res) => {
       };
     });
 
+    // 🔵 ZID (kifma tlab: "garde urgente" - el sitters el a9rab lel
+    // owner yjiw l'FOU9): tertib b el distance croissante (el a9al
+    // distance l'ewwel). Sitters bla location connue (distanceKm=null,
+    // 7ala nadra - profil na9es) yetzadou l'LEKHER (mch l'ewwel, bch
+    // ma yban-wch b'ghalta "el a9rab").
+    sittersWithDistance.sort((a, b) => {
+      if (a.distanceKm == null && b.distanceKm == null) return 0;
+      if (a.distanceKm == null) return 1;
+      if (b.distanceKm == null) return -1;
+      return a.distanceKm - b.distanceKm;
+    });
+
     res.status(200).json({ sitters: sittersWithDistance });
   } catch (error) {
     res.status(500).json({ error: error.message });

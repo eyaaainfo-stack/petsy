@@ -50,6 +50,15 @@ const bookingSchema = new mongoose.Schema(
     // 🔵 sitters elli déjà rafdou (wela el owner declina) - bch ma
     // yban-lhomch NAFS el talab mrra thenya fel "urgent" marketplace.
     rejectedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    // 🔵 ZID (feature "partage de localisation"): el sitter y9bel (ki
+    // y-accept-i un talab "pending") ye5tar ken y9bel ychourek el
+    // position mte3ou (fixe, mel profil) m3a el owner. Ma3neha ghir
+    // active tant que: booking status="accepted" + t-2h 9bal checkIn +
+    // el questionnaire ma etsajjelch كامل (chrahtha getActiveSitterLocations,
+    // bookingController.js) - ay condition (checkout kaملa wla service
+    // refusé) tنهي l'accès automatiquement, bla ay champ "expiration"
+    // separate.
+    sitterShareLocation: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

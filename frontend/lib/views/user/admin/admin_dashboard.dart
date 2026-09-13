@@ -32,7 +32,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   static const Color _totalColor = AppColors.primarySeed;
   static const Color _ownerColor = AppColors.pinkpetsy;
   static const Color _sitterColor = AppColors.vertpetsy;
-  static const Color _courierColor = Color(0xFFFFA726); // amber - 4ème loun
 
   final AdminStatsController _controller = AdminStatsController();
 
@@ -211,11 +210,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             label: 'chart_series_sitters_label'.tr(),
                             color: _sitterColor,
                             values: _data!.sitter.map((v) => v.toDouble()).toList(),
-                          ),
-                          LineChartSeries(
-                            label: 'chart_series_couriers_label'.tr(),
-                            color: _courierColor,
-                            values: _data!.courier.map((v) => v.toDouble()).toList(),
                           ),
                         ],
                       ),

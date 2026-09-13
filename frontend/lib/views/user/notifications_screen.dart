@@ -8,8 +8,11 @@ import '../../controllers/request_controller.dart';
 import '../../models/notification_item.dart';
 import '../../controllers/les_reservations_controller.dart';
 import '../../controllers/auth_session.dart';
+import '../../controllers/active_locations_controller.dart';
 import 'sitter/request.dart';
 import 'owner/booking_details.dart';
+import 'owner/sitter_location_map_screen.dart';
+import 'chat_screen.dart';
 import '../../widgets/message_dialog.dart';
 
 // ============================================================================
@@ -72,6 +75,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         return Icons.info_outline;
       case 'message':
         return Icons.chat_bubble_outline;
+      case 'location_shared':
+        return Icons.location_on_outlined;
       case 'account_verified':
         return Icons.verified;
       default:
@@ -98,6 +103,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           createdAt: n.createdAt,
           relatedBooking: n.relatedBooking,
           isActioned: true,
+          relatedConversation: n.relatedConversation,
+          relatedSenderId: n.relatedSenderId,
+          relatedSenderName: n.relatedSenderName,
+          relatedSenderPhotoUrl: n.relatedSenderPhotoUrl,
         );
       }
       _processingIds.remove(id);
@@ -145,6 +154,53 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   // el bottons Accept/Reject ye5tafou automatique, "mnghir boutonet"
   // kifma tlab), owner -> booking_details.dart.
   Future<void> _onNotificationTap(NotificationItem item) async {
+    // 🔵 ZID (feature "notification -> conversation direct"): "message"
+    // ma3andouch "relatedBooking" (ghir "relatedConversation") - lezmou
+    // ykoun 9BAL el guard "relatedBooking == null" ta7t (elli khass
+    // ghir les types el mrabtin b booking).
+    if (item.type == 'message') {
+      if (item.relatedConversation == null || item.relatedSenderId == null) return;
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ChatScreen(
+            conversationId: item.relatedConversation,
+            otherUserId: item.relatedSenderId!,
+            otherUserName: item.relatedSenderName ?? '',
+            otherUserPhotoUrl: item.relatedSenderPhotoUrl,
+          ),
+        ),
+      );
+      return;
+    }
+
+    // 🔵 ZID (feature "partage de localisation"): "location_shared" -
+    // yeftah SitterLocationMapScreen DIRECT. El écran yestenna un objet
+    // ActiveSitterLocation (mch ghir bookingId) - najbdouh mel liste
+    // "active" (nafs endpoint el bouton "Localisation" fel sidebar).
+    // Lowkan el booking ma3adech "active" (checkout confirmé entre temps,
+    // notification 9dima...), nwarrou message clair bدل crash.
+    if (item.type == 'location_shared') {
+      if (item.relatedBooking == null) return;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
+      );
+      final locations = await ActiveLocationsController().fetchActiveLocations();
+      if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).pop(); // yghaleg el loading dialog
+
+      final match = locations.where((l) => l.bookingId == item.relatedBooking).toList();
+      if (match.isEmpty) {
+        showMessageDialog(context, 'active_locations_empty'.tr());
+        return;
+      }
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => SitterLocationMapScreen(location: match.first)),
+      );
+      return;
+    }
+
     if (item.relatedBooking == null) return;
 
     if (item.type == 'booking_received') {

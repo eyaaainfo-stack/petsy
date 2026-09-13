@@ -9,7 +9,6 @@ class AdminStats {
   final int totalUsers;
   final int totalOwners;
   final int totalSitters;
-  final int totalCouriers;
   final int totalAdmins;
   final int totalPets;
   final int totalBookings;
@@ -23,7 +22,6 @@ class AdminStats {
     required this.totalUsers,
     required this.totalOwners,
     required this.totalSitters,
-    required this.totalCouriers,
     required this.totalAdmins,
     required this.totalPets,
     required this.totalBookings,
@@ -40,7 +38,6 @@ class AdminStats {
       totalUsers: json['totalUsers'] as int? ?? 0,
       totalOwners: json['totalOwners'] as int? ?? 0,
       totalSitters: json['totalSitters'] as int? ?? 0,
-      totalCouriers: json['totalCouriers'] as int? ?? 0,
       totalAdmins: json['totalAdmins'] as int? ?? 0,
       totalPets: json['totalPets'] as int? ?? 0,
       totalBookings: json['totalBookings'] as int? ?? 0,
@@ -74,14 +71,12 @@ class MonthlyRegistrations {
   final List<int> total;
   final List<int> owner;
   final List<int> sitter;
-  final List<int> courier;
 
   const MonthlyRegistrations({
     required this.months,
     required this.total,
     required this.owner,
     required this.sitter,
-    required this.courier,
   });
 
   factory MonthlyRegistrations.fromJson(Map<String, dynamic> json) {
@@ -98,7 +93,6 @@ class MonthlyRegistrations {
       total: _series('total'),
       owner: _series('owner'),
       sitter: _series('sitter'),
-      courier: _series('courier'),
     );
   }
 }

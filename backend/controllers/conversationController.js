@@ -2,6 +2,40 @@ const Conversation = require('../models/conversation');
 const Message = require('../models/message');
 const Booking = require('../models/booking');
 const User = require('../models/user');
+const Notification = require('../models/notification');
+
+// ============================================================================
+// notifyNewMessage (feature "notification -> conversation direct")
+// ============================================================================
+// 🔵 ZID (kifma tlab): kol message jdid (text wla image) yeb3ath
+// notification l'TARF L'AKHOR tel conversation (type "message"),
+// "relatedConversation" + "relatedSender" - bch el front ynajjam yeftah
+// ChatScreen DIRECT (bla recherche/liste) mel notification.
+// 🔵 silent-fail (try/catch fi da5elha): l'envoi tel message NAJJA7 déjà
+// (message.create() saved) - ken l'échec fel notification (bug/edge
+// case), ma nrejjou-ch erreur l'appelant bch ma "n-echouou-ch" el
+// requête el asliya bla ay raison.
+// ============================================================================
+async function notifyNewMessage(conversation, senderId, textPreview) {
+  try {
+    const otherId = conversation.participants.find((p) => p.toString() !== senderId.toString());
+    if (!otherId) return;
+    const sender = await User.findById(senderId).select('fullName');
+    const senderName = sender?.fullName || 'Quelqu\'un';
+    const body = textPreview
+      ? `${senderName} vous a envoyé un message : "${textPreview.length > 40 ? `${textPreview.slice(0, 40)}…` : textPreview}"`
+      : `${senderName} vous a envoyé une photo.`;
+    await Notification.create({
+      recipient: otherId,
+      message: body,
+      type: 'message',
+      relatedConversation: conversation._id,
+      relatedSender: senderId,
+    });
+  } catch (_) {
+    // silent - chraht fou9
+  }
+}
 
 // 🔵 ZID (kifma tlab: "demande de message" - "invitation" bin 2 nas
 // mafamech beynethom booking) - helper: el 2 users "déjà connectés"
@@ -256,6 +290,7 @@ exports.sendFirstMessage = async (req, res) => {
     conversation.lastMessageAt = message.createdAt;
     conversation.lastMessageSender = myId;
     await conversation.save();
+    await notifyNewMessage(conversation, myId, text);
 
     res.status(201).json({
       conversationId: conversation._id,
@@ -319,6 +354,7 @@ exports.sendFirstImageMessage = async (req, res) => {
     conversation.lastMessageAt = message.createdAt;
     conversation.lastMessageSender = myId;
     await conversation.save();
+    await notifyNewMessage(conversation, myId, null);
 
     res.status(201).json({
       conversationId: conversation._id,
@@ -397,6 +433,7 @@ exports.sendMessage = async (req, res) => {
     conversation.lastMessageAt = message.createdAt;
     conversation.lastMessageSender = myId;
     await conversation.save();
+    await notifyNewMessage(conversation, myId, text);
 
     res.status(201).json({ message });
   } catch (error) {
@@ -443,6 +480,7 @@ exports.sendImageMessage = async (req, res) => {
     conversation.lastMessageAt = message.createdAt;
     conversation.lastMessageSender = myId;
     await conversation.save();
+    await notifyNewMessage(conversation, myId, null);
 
     res.status(201).json({ message });
   } catch (error) {

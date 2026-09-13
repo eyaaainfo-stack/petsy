@@ -69,8 +69,6 @@ class _AdminAccountDetailScreenState extends State<AdminAccountDetailScreen> {
         return 'role_owner_label'.tr();
       case 'sitter':
         return 'role_sitter_label'.tr();
-      case 'courier':
-        return 'role_courier_label'.tr();
       case 'admin':
         return 'role_admin_label'.tr();
       default:
@@ -84,8 +82,6 @@ class _AdminAccountDetailScreenState extends State<AdminAccountDetailScreen> {
         return AppColors.vertpetsy;
       case 'sitter':
         return AppColors.pinkpetsy;
-      case 'courier':
-        return AppColors.primarySeed;
       case 'admin':
         return AppColors.error;
       default:

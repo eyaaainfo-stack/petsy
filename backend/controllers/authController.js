@@ -2,7 +2,6 @@
 const User = require('../models/user');
 const Owner = require('../models/owner');
 const Sitter = require('../models/sitter');
-const Courier = require('../models/courier');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
@@ -157,9 +156,6 @@ exports.register = async (req, res) => {
       case 'sitter':
         newUser = new Sitter(userData);
         break;
-      case 'courier':
-        newUser = new Courier(userData);
-        break;
       default:
         console.log(`🟡 [REGISTER] Rjaana 400 (invalid role) - (${Date.now() - startTime}ms)\n`);
         return res.status(400).json({ message: 'Invalid role for registration' });
@@ -292,9 +288,6 @@ exports.googleAuth = async (req, res) => {
         case 'sitter':
           user = new Sitter(userData);
           break;
-        case 'courier':
-          user = new Courier(userData);
-          break;
         default:
           return res.status(400).json({ message: 'Invalid role for registration' });
       }
@@ -404,9 +397,6 @@ exports.facebookAuth = async (req, res) => {
           break;
         case 'sitter':
           user = new Sitter(userData);
-          break;
-        case 'courier':
-          user = new Courier(userData);
           break;
         default:
           return res.status(400).json({ message: 'Invalid role for registration' });

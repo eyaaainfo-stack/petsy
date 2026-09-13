@@ -278,10 +278,45 @@ class _RequestScreenState extends State<RequestScreen> {
     }
   }
 
+  // 🔵 ZID (feature "partage de localisation"): ki el sitter y9bel un
+  // talab "pending" (direct, mch candidature "open" - ma3andouch me3na
+  // temma, el sitter mazel ma confirmech), ne5ou el mouwafa9a mte3ou
+  // (bool) 9bal ma nkemlou l'appel - el owner ynajjam ychouf position
+  // el sitter (fixe, mel profil) fel bouton "Localisation" (sidebar)
+  // tant que el booking active (chrahtha getActiveSitterLocations).
+  Future<bool?> _askShareLocation() {
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('share_location_dialog_title'.tr()),
+        content: Text('share_location_dialog_body'.tr()),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text('share_location_decline_button'.tr()),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text('share_location_accept_button'.tr()),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _respond(bool accept) async {
     if (_isResponding || _booking == null) return;
+
+    bool? shareLocation;
+    if (accept) {
+      shareLocation = await _askShareLocation();
+      if (shareLocation == null) return; // 🔵 user closed the dialog (back button) - abandon, ma nkemlouch l'accept
+    }
+
     setState(() => _isResponding = true);
-    final result = await _controller.respond(_booking!.id, accept: accept);
+    final result = await _controller.respond(_booking!.id, accept: accept, shareLocation: shareLocation);
     if (!mounted) return;
 
     if (!result.success) {

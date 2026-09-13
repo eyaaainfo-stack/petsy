@@ -25,6 +25,9 @@ router.get('/urgent', protect, bookingController.getUrgentBookingsForSitter);
 // 🔵 ZID (feature "compatibilite entre animaux") - "GET /alternatives"
 // LEZEM 9BAL "GET /:id" zeda (nafs raison el 3 routes ta7t).
 router.get('/alternatives', protect, bookingController.getBookingAlternatives);
+// 🔵 ZID (feature "partage de localisation") - "GET /active-locations"
+// LEZEM 9BAL "GET /:id" zeda (nafs raison el routes el fou9).
+router.get('/active-locations', protect, bookingController.getActiveSitterLocations);
 router.get('/:id', protect, bookingController.getBookingById);
 router.patch('/:id/respond', protect, bookingController.respondToBooking);
 router.patch('/:id/broadcast', protect, bookingController.broadcastBooking);

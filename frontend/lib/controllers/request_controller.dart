@@ -143,11 +143,20 @@ class RequestController {
   // (mch bool 3adi) - ki el backend yرجع 409 (conflit category/capacite,
   // ki el sitter y9bel "accept"), el message el 7a9i9i (mch générique)
   // ynajjam yban lel sitter (chrahtha views/user/sitter/request.dart).
-  Future<BookingResult> respond(String bookingId, {required bool accept}) async {
+  // 🔵 ZID (feature "partage de localisation"): "shareLocation" - ghir
+  // used ki accept=true (talab "pending" direct) - el sitter ye5tar
+  // (popup fel front, request.dart) ken y9bel ychourek el position
+  // mte3ou m3a el owner l'ma yet7ell el booking. Ma3andouch me3na
+  // barra had el 7ala (candidature "open" wla reject) - el backend
+  // ye5dou ghir fel branche "pending"+accept (bookingController.js).
+  Future<BookingResult> respond(String bookingId, {required bool accept, bool? shareLocation}) async {
     try {
       final response = await ApiService.patch(
         '/bookings/$bookingId/respond',
-        {'action': accept ? 'accept' : 'reject'},
+        {
+          'action': accept ? 'accept' : 'reject',
+          if (shareLocation != null) 'shareLocation': shareLocation,
+        },
         token: AuthSession.token,
       );
       if (response.statusCode == 200) return BookingResult.success();

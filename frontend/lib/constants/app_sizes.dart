@@ -41,16 +41,16 @@ class AppSizes {
   // Account type buttons (views/user/account_type.dart)
   // --------------------------------------------------------------------
   static const double accountButtonWidthRatio = 0.7;
-  static const double accountButtonHeightRatio = 0.11;
+  static const double accountButtonHeightRatio = 0.12;
   static const double accountButtonPaddingHRatio = 0.03;
   static const double accountButtonPaddingVRatio = 0.03;
   static const double accountButtonIconRatio = 0.045;
   static const double accountButtonArrowIconRatio = 0.038;
-  static const double accountButtonTitleFontRatio = 0.032;
-  static const double accountButtonDescFontRatio = 0.021;
+  static const double accountButtonTitleFontRatio = 0.04;
+  static const double accountButtonDescFontRatio = 0.026;
   static const double accountButtonGapRatio = 0.015;
   static const double accountButtonEndGapRatio = 0.02;
-  static const double accountButtonTitleGapRatio = 0.003;
+  static const double accountButtonTitleGapRatio = 0.005;
 
   double get accountButtonWidth => screenWidth * accountButtonWidthRatio;
   double get accountButtonHeight => screenHeight * accountButtonHeightRatio;
@@ -315,11 +315,11 @@ class AppSizes {
   static const double accountTypePawSize11Ratio = 0.1;
 
   static const double accountTypeHorizontalPaddingRatio = 0.07;
-  static const double accountTypeTopGapRatio = 0.15;
+  static const double accountTypeTopGapRatio = 0.17;
   static const double accountTypeLogoWidthRatio = 0.62;
-  static const double accountTypeLogoTitleGapRatio = 0.08;
+  static const double accountTypeLogoTitleGapRatio = 0.11;
   static const double accountTypeTitleFontRatio = 0.052;
-  static const double accountTypeTitleButtonsGapRatio = 0.029;
+  static const double accountTypeTitleButtonsGapRatio = 0.065;
   static const double accountTypeButtonSpacingRatio = 0.022;
   static const double accountTypeBottomGapRatio = 0.02;
 

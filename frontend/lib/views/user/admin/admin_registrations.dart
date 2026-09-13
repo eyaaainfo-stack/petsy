@@ -159,7 +159,6 @@ class _AdminRegistrationsScreenState extends State<AdminRegistrationsScreen> {
                         children: [
                           SizedBox(width: sizes.adminRegCardWidth, child: StatCard(icon: Icons.people_outline, color: AppColors.vertpetsy, value: '${_stats!.totalOwners}', label: 'stat_total_owners_label'.tr())),
                           SizedBox(width: sizes.adminRegCardWidth, child: StatCard(icon: Icons.volunteer_activism_outlined, color: AppColors.pinkpetsy, value: '${_stats!.totalSitters}', label: 'stat_total_sitters_label'.tr())),
-                          SizedBox(width: sizes.adminRegCardWidth, child: StatCard(icon: Icons.local_shipping_outlined, color: AppColors.vertpetsy, value: '${_stats!.totalCouriers}', label: 'stat_total_couriers_label'.tr())),
                           SizedBox(width: sizes.adminRegCardWidth, child: StatCard(icon: Icons.admin_panel_settings_outlined, color: AppColors.pinkpetsy, value: '${_stats!.totalAdmins}', label: 'stat_total_admins_label'.tr())),
                         ],
                       ),

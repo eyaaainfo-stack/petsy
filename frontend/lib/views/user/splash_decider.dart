@@ -121,7 +121,7 @@ class _SplashDeciderState extends State<SplashDecider> {
       // "reprise" (el session déjà mahfoudha/sa7i7a, ghir el profile
       // mch kammel).
       final bool isProfileComplete = user['isProfileComplete'] as bool? ?? true;
-      if (!isProfileComplete && (role == 'owner' || role == 'sitter' || role == 'courier')) {
+      if (!isProfileComplete && (role == 'owner' || role == 'sitter')) {
         return UserCreateProfileScreen(role: role);
       }
 

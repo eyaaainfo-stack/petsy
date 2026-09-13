@@ -170,8 +170,6 @@ async function computeChecklist(user) {
     metrics.goodReviewPercent = goodReviewPercent;
     metrics.goodReviewPercentRequired = goodReviewPercentRequired;
     metrics.totalReviews = totalReviews;
-  } else if (user.role === 'courier') {
-    items.vehicleType = !!(user.vehicleType && user.vehicleType.trim());
   }
 
   const values = Object.values(items);

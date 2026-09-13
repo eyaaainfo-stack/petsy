@@ -224,7 +224,6 @@ class _AdminAccountFormScreenState extends State<AdminAccountFormScreen> {
                         children: [
                           _roleChip('owner', 'role_owner_label'.tr()),
                           _roleChip('sitter', 'role_sitter_label'.tr()),
-                          _roleChip('courier', 'role_courier_label'.tr()),
                           _roleChip('admin', 'role_admin_label'.tr()),
                         ],
                       ),

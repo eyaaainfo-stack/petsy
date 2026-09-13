@@ -150,8 +150,6 @@ class _AdminAccountsScreenState extends State<AdminAccountsScreen> {
         return 'role_owner_label'.tr();
       case 'sitter':
         return 'role_sitter_label'.tr();
-      case 'courier':
-        return 'role_courier_label'.tr();
       case 'admin':
         return 'role_admin_label'.tr();
       default:
@@ -165,8 +163,6 @@ class _AdminAccountsScreenState extends State<AdminAccountsScreen> {
         return AppColors.vertpetsy;
       case 'sitter':
         return AppColors.pinkpetsy;
-      case 'courier':
-        return AppColors.primarySeed;
       case 'admin':
         return AppColors.error;
       default:
@@ -234,8 +230,6 @@ class _AdminAccountsScreenState extends State<AdminAccountsScreen> {
                           _filterChip('owner', 'role_owner_label'.tr()),
                           SizedBox(width: sizes.adminAccountsChipSpacing),
                           _filterChip('sitter', 'role_sitter_label'.tr()),
-                          SizedBox(width: sizes.adminAccountsChipSpacing),
-                          _filterChip('courier', 'role_courier_label'.tr()),
                         ],
                       ),
                     ),

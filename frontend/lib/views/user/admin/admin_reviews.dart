@@ -86,8 +86,6 @@ class _AdminReviewsScreenState extends State<AdminReviewsScreen> {
         return 'role_owner_label'.tr();
       case 'sitter':
         return 'role_sitter_label'.tr();
-      case 'courier':
-        return 'role_courier_label'.tr();
       case 'admin':
         return 'role_admin_label'.tr();
       default:

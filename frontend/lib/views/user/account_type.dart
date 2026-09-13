@@ -36,11 +36,6 @@ class AccountTypeView extends StatelessWidget {
       descriptionKey: 'account_type_sitter_description',
     ),
     _AccountType(
-      icon: Icons.admin_panel_settings,
-      titleKey: 'account_type_courier_title',
-      descriptionKey: 'account_type_courier_description',
-    ),
-    _AccountType(
       icon: Icons.local_shipping,
       titleKey: 'account_type_owner_title',
       descriptionKey: 'account_type_owner_description',
@@ -60,8 +55,6 @@ class AccountTypeView extends StatelessWidget {
       String selectedRole = 'owner';
       if (type.titleKey == 'account_type_sitter_title') {
         selectedRole = 'sitter';
-      } else if (type.titleKey == 'account_type_courier_title') {
-        selectedRole = 'courier';
       } else if (type.titleKey == 'account_type_owner_title') {
         selectedRole = 'owner';
       }

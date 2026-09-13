@@ -25,7 +25,7 @@ const notificationSchema = new mongoose.Schema(
     // Validation), notification l'user (badge bleu tawa yban lel kol).
     type: {
       type: String,
-      enum: ['booking_sent', 'booking_received', 'booking_accepted', 'booking_rejected', 'candidate_accepted', 'candidate_declined', 'new_review', 'message', 'other', 'account_verified'],
+      enum: ['booking_sent', 'booking_received', 'booking_accepted', 'booking_rejected', 'candidate_accepted', 'candidate_declined', 'new_review', 'message', 'other', 'account_verified', 'location_shared'],
       default: 'other',
     },
     isRead: { type: Boolean, default: false },
@@ -40,6 +40,14 @@ const notificationSchema = new mongoose.Schema(
     // chnowa el review el jdida (ki el user 3andou ktar men review
     // wa7da) - bch ywarriha "en gris claire" (highlight, "hedha el jdid").
     relatedReviewId: { type: mongoose.Schema.Types.ObjectId, ref: 'CheckoutQuestionnaire', default: null },
+    // 🔵 ZID (feature "notification -> conversation direct"): type
+    // "message" - bch el front ynajjam yeftah ChatScreen DIRECT (bla
+    // recherche/liste) mel notification.
+    relatedConversation: { type: mongoose.Schema.Types.ObjectId, ref: 'Conversation', default: null },
+    // 🔵 ZID: l'expéditeur (message) - bch el front 3andou l'ID/esm/photo
+    // tel tarf l'akhor direct (ChatScreen yestenna "otherUserId/Name"),
+    // bla appel API zeyed.
+    relatedSender: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   },
   { timestamps: true }
 );

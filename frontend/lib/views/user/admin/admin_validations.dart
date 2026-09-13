@@ -149,8 +149,6 @@ class _AdminValidationsScreenState extends State<AdminValidationsScreen> {
         return 'role_owner_label'.tr();
       case 'sitter':
         return 'role_sitter_label'.tr();
-      case 'courier':
-        return 'role_courier_label'.tr();
       default:
         return role;
     }
@@ -162,8 +160,6 @@ class _AdminValidationsScreenState extends State<AdminValidationsScreen> {
         return AppColors.vertpetsy;
       case 'sitter':
         return AppColors.pinkpetsy;
-      case 'courier':
-        return AppColors.primarySeed;
       default:
         return AppColors.vertpetsy;
     }

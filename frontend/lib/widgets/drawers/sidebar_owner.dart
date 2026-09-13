@@ -13,6 +13,7 @@ import '../../views/user/owner/my_profile_owner.dart';
 import '../../views/user/notifications_screen.dart';
 import '../../views/user/settings_screen.dart';
 import '../../views/user/owner/my_favourites_screen.dart';
+import '../../views/user/owner/active_locations_screen.dart';
 import '../../views/user/owner/les_reservations.dart';
 import '../../controllers/notification_controller.dart';
 import '../../views/user/messages_list_screen.dart';
@@ -309,6 +310,21 @@ class _SidebarOwnerState extends State<SidebarOwner> {
                         Navigator.of(context).pop();
                         Navigator.of(context).push(
                           MaterialPageRoute(builder: (_) => const MyFavouritesScreen()),
+                        );
+                      },
+                    ),
+                    SizedBox(height: sizes.sidebarPillGap),
+                    // 🔵 ZID (feature "partage de localisation"): liste
+                    // des gardiens actifs (booking accepté, partage
+                    // activé, dans la fenêtre T-2h) + itinéraire OSM.
+                    SidebarPillItem(
+                      icon: Icons.location_on_outlined,
+                      label: 'locations_label'.tr(),
+                      color: AppColors.vertpetsy,
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const ActiveLocationsScreen()),
                         );
                       },
                     ),
